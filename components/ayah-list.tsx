@@ -2,7 +2,8 @@
 
 import { Heart, Play } from "lucide-react";
 import { useEffect, useRef } from "react";
-import type { SurahDetail } from "@/lib/quran/types";
+import type { CSSProperties } from "react";
+import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
 
 type Props = {
   detail: SurahDetail;
@@ -13,6 +14,23 @@ type Props = {
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
 };
+
+type KaraokeStyle = CSSProperties & { "--word-progress": string };
+
+function getWordProgress(elapsedMs: number, startMs: number, endMs: number, active: boolean) {
+  if (!active) return 1;
+  if (elapsedMs <= startMs) return 0;
+  if (elapsedMs >= endMs) return 1;
+  return (elapsedMs - startMs) / (endMs - startMs);
+}
+
+function TajwidRuns({ runs }: { runs: TajwidTextRun[] }) {
+  return runs.map((run, index) => (
+    <span data-tajwid={run.rule} key={`${run.rule ?? "plain"}-${index}`}>
+      {run.text}
+    </span>
+  ));
+}
 
 export function AyahList({
   detail,
@@ -33,11 +51,21 @@ export function AyahList({
     <section className="ayah-section" aria-labelledby="ayah-list-title">
       <div className="ayah-heading">
         <div>
-          <p className="eyebrow">Karaoké mot à mot</p>
+          <p className="eyebrow">Karaoké fluide · Tajwid</p>
           <h2 id="ayah-list-title">{detail.surah.englishName}</h2>
           <p>{detail.surah.frenchName} · {detail.surah.numberOfAyahs} ayat</p>
         </div>
         <span className="arabic-heading" lang="ar" dir="rtl" translate="no">{detail.surah.name}</span>
+        <details className="tajwid-legend">
+          <summary>Code couleur</summary>
+          <div>
+            <span><i data-color="madd" />Prolongation</span>
+            <span><i data-color="ghunnah" />Nasalisation</span>
+            <span><i data-color="ikhfa" />Dissimulation</span>
+            <span><i data-color="idgham" />Fusion</span>
+            <span><i data-color="qalqalah" />Rebond</span>
+          </div>
+        </details>
       </div>
 
       <div className="ayah-list">
@@ -87,15 +115,23 @@ export function AyahList({
                   aria-label={ayah.arabicText}
                 >
                   {ayah.words.map((word) => {
-                    const isCurrentWord = karaokeActive && elapsedMs >= word.startMs && elapsedMs < word.endMs;
-                    const isCompletedWord = karaokeActive && elapsedMs >= word.endMs;
+                    const progress = getWordProgress(
+                      elapsedMs,
+                      word.startMs,
+                      word.endMs,
+                      karaokeActive,
+                    );
+                    const isCurrentWord = karaokeActive && progress > 0 && progress < 1;
+                    const style: KaraokeStyle = { "--word-progress": `${progress * 100}%` };
                     return (
                       <span
                         aria-hidden="true"
-                        className={`ayah-word ${isCurrentWord ? "current" : ""} ${isCompletedWord ? "completed" : ""}`}
+                        className={`ayah-word ${isCurrentWord ? "current" : ""}`}
                         key={`${ayah.number}-${word.position}`}
+                        style={style}
                       >
-                        {word.text}
+                        <span className="ayah-word-base"><TajwidRuns runs={word.tajwid} /></span>
+                        <span className="ayah-word-fill"><TajwidRuns runs={word.tajwid} /></span>
                       </span>
                     );
                   })}

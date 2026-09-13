@@ -14,6 +14,7 @@ import type {
   SurahDetail,
   SurahSummary,
   AyahWordTiming,
+  TajwidTextRun,
 } from "./types";
 
 const API_ROOT = "https://api.alquran.cloud/v1";
@@ -46,6 +47,7 @@ type UpstreamEnvelope = {
 type QuranFoundationWord = {
   position?: unknown;
   text_uthmani?: unknown;
+  text_uthmani_tajweed?: unknown;
   char_type_name?: unknown;
 };
 
@@ -150,8 +152,8 @@ async function fetchQuranFoundationPage(path: string): Promise<QuranFoundationPa
 async function getTimedVerses(chapterNumber: number): Promise<QuranFoundationVerse[]> {
   const params = new URLSearchParams({
     words: "true",
-    word_fields: "text_uthmani,char_type_name",
-    fields: "text_uthmani",
+    word_fields: "text_uthmani,text_uthmani_tajweed,char_type_name",
+    fields: "text_uthmani,text_uthmani_tajweed",
     audio: String(QURAN_FOUNDATION_RECITATION_ID),
     per_page: "50",
   });
@@ -178,6 +180,31 @@ async function getTimedVerses(chapterNumber: number): Promise<QuranFoundationVer
       Array.isArray(page.verses) ? (page.verses as QuranFoundationVerse[]) : [],
     ),
   ];
+}
+
+const TAJWEED_TAG = /<(\/)?(?:rule|tajweed)(?:\s+class=(?:"([a-z0-9_-]+)"|'([a-z0-9_-]+)'|([a-z0-9_-]+)))?\s*>/gi;
+
+function parseTajwidText(markup: string): TajwidTextRun[] {
+  const runs: TajwidTextRun[] = [];
+  let activeRule: string | undefined;
+  let cursor = 0;
+
+  for (const match of markup.matchAll(TAJWEED_TAG)) {
+    const index = match.index ?? cursor;
+    const text = markup.slice(cursor, index);
+    if (text) runs.push(activeRule ? { text, rule: activeRule } : { text });
+
+    if (match[1]) activeRule = undefined;
+    else activeRule = match[2] ?? match[3] ?? match[4];
+    cursor = index + match[0].length;
+  }
+
+  const remainingText = markup.slice(cursor).replace(/<[^>]*>/g, "");
+  if (remainingText) {
+    runs.push(activeRule ? { text: remainingText, rule: activeRule } : { text: remainingText });
+  }
+
+  return runs;
 }
 
 function normalizeTimedVerse(value: QuranFoundationVerse) {
@@ -210,7 +237,13 @@ function normalizeTimedVerse(value: QuranFoundationVerse) {
     const position = Number(word.position);
     const timing = timingsByPosition.get(position);
     if (!Number.isInteger(position) || typeof word.text_uthmani !== "string" || !timing) return [];
-    return [{ position, text: word.text_uthmani, ...timing }];
+    const tajwidMarkup =
+      typeof word.text_uthmani_tajweed === "string"
+        ? word.text_uthmani_tajweed
+        : word.text_uthmani;
+    const tajwid = parseTajwidText(tajwidMarkup);
+    const text = tajwid.map((run) => run.text).join("") || word.text_uthmani;
+    return [{ position, text, tajwid: tajwid.length > 0 ? tajwid : [{ text }], ...timing }];
   });
 
   if (

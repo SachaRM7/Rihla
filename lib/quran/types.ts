@@ -21,8 +21,14 @@ export type AyahPlayback = {
 export type AyahWordTiming = {
   position: number;
   text: string;
+  tajwid: TajwidTextRun[];
   startMs: number;
   endMs: number;
+};
+
+export type TajwidTextRun = {
+  text: string;
+  rule?: string;
 };
 
 export type SourceAttribution = {
