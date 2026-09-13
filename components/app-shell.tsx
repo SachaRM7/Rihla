@@ -394,7 +394,29 @@ export function AppShell() {
   );
 
   const recentHistory = useMemo(
-    () => library.listeningHistory.slice(0, 8),
+    () => {
+      const bySurah = new Map<number, typeof library.listeningHistory>();
+      for (const item of library.listeningHistory) {
+        const items = bySurah.get(item.surah) ?? [];
+        items.push(item);
+        bySurah.set(item.surah, items);
+      }
+
+      return [...bySurah.values()]
+        .map((items) => {
+          const latest = items.reduce((current, item) =>
+            item.updatedAt > current.updatedAt ? item : current,
+          );
+          const listenedAyahs = new Set(items.map((item) => item.ayah));
+          let fromAyah = latest.ayah;
+          let toAyah = latest.ayah;
+          while (listenedAyahs.has(fromAyah - 1)) fromAyah -= 1;
+          while (listenedAyahs.has(toAyah + 1)) toAyah += 1;
+          return { latest, fromAyah, toAyah };
+        })
+        .sort((a, b) => b.latest.updatedAt - a.latest.updatedAt)
+        .slice(0, 8);
+    },
     [library.listeningHistory],
   );
 
@@ -668,22 +690,25 @@ export function AppShell() {
                 <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
                 {recentHistory.length ? (
                   <div className="history-list">
-                    {recentHistory.map((item) => {
-                      const surah = surahs.find((candidate) => candidate.number === item.surah);
-                      const progress = item.durationMs > 0
-                        ? Math.min(100, (item.positionMs / item.durationMs) * 100)
+                    {recentHistory.map(({ latest, fromAyah, toAyah }) => {
+                      const surah = surahs.find((candidate) => candidate.number === latest.surah);
+                      const progress = latest.durationMs > 0
+                        ? Math.min(100, (latest.positionMs / latest.durationMs) * 100)
                         : 0;
+                      const rangeLabel = fromAyah === toAyah
+                        ? `Ayah ${toAyah}`
+                        : `Ayat ${fromAyah} à ${toAyah}`;
                       return (
                         <button
                           type="button"
                           className="history-item"
-                          key={`${item.surah}:${item.ayah}`}
-                          onClick={() => openSurah(item.surah, item.ayah, item.positionMs, true)}
+                          key={latest.surah}
+                          onClick={() => openSurah(latest.surah, latest.ayah, latest.positionMs, true)}
                         >
-                          <span className="history-reference">{item.surah}:{item.ayah}</span>
+                          <span className="history-reference">{String(latest.surah).padStart(3, "0")}</span>
                           <span className="history-copy">
-                            <strong>{surah?.englishName ?? `Sourate ${item.surah}`} · Ayah {item.ayah}</strong>
-                            <small>{formatHistoryDate(item.updatedAt)} · repris à {formatPlaybackTime(item.positionMs)}</small>
+                            <strong>{surah?.englishName ?? `Sourate ${latest.surah}`}</strong>
+                            <small>{formatHistoryDate(latest.updatedAt)} · {rangeLabel} · reprendre {latest.ayah} à {formatPlaybackTime(latest.positionMs)}</small>
                             <progress max="100" value={progress} aria-label={`Progression de ${Math.round(progress)} %`} />
                           </span>
                           <ChevronRight size={18} />
