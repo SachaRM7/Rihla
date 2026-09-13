@@ -47,13 +47,15 @@ export function MiniPlayer({
       <button type="button" className="mini-player-main" onClick={onOpen} aria-label="Ouvrir le lecteur complet">
         <span className="mini-artwork" aria-hidden="true">
           <span>{String(detail.surah.number).padStart(3, "0")}</span>
-          <small lang="ar" dir="rtl" translate="no">{detail.surah.name}</small>
+          <i />
         </span>
         <span className="mini-copy">
           <strong>{detail.surah.englishName} · Ayah {ayah.numberInSurah}</strong>
-          <small>{detail.reciterName}</small>
+          <small>
+            <span>{detail.reciterName}</span>
+            <time>{formatTime(currentTime)}</time>
+          </small>
         </span>
-        <span className="mini-time">{formatTime(currentTime)}</span>
         <ChevronUp className="mini-chevron" size={18} aria-hidden="true" />
       </button>
       <button

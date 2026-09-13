@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { PlaybackRate } from "@/lib/preferences";
 import type { SurahDetail } from "@/lib/quran/types";
 
 export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
@@ -9,6 +10,8 @@ type PlayerOptions = {
   detail: SurahDetail | null;
   activeIndex: number;
   onActiveIndexChange: (index: number) => void;
+  playbackRate: PlaybackRate;
+  repeatAyah: boolean;
 };
 
 function readableAudioError() {
@@ -19,12 +22,16 @@ export function useQuranPlayer({
   detail,
   activeIndex,
   onActiveIndexChange,
+  playbackRate,
+  repeatAyah,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
   const indexRef = useRef(activeIndex);
   const changeIndexRef = useRef(onActiveIndexChange);
   const playWhenLoadedRef = useRef(false);
+  const repeatAyahRef = useRef(repeatAyah);
+  const playbackRateRef = useRef(playbackRate);
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
@@ -35,7 +42,9 @@ export function useQuranPlayer({
     detailRef.current = detail;
     indexRef.current = activeIndex;
     changeIndexRef.current = onActiveIndexChange;
-  }, [activeIndex, detail, onActiveIndexChange]);
+    repeatAyahRef.current = repeatAyah;
+    playbackRateRef.current = playbackRate;
+  }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatAyah]);
 
   const loadAtIndex = useCallback((index: number, autoplay: boolean) => {
     const audio = audioRef.current;
@@ -91,6 +100,7 @@ export function useQuranPlayer({
     };
 
     const onLoadedMetadata = () => {
+      audio.playbackRate = playbackRateRef.current;
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       setStatus(audio.paused ? "ready" : "playing");
       if (playWhenLoadedRef.current && audio.paused) {
@@ -120,6 +130,13 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
+      if (repeatAyahRef.current) {
+        audio.currentTime = 0;
+        setCurrentTime(0);
+        playWhenLoadedRef.current = true;
+        void audio.play().catch(() => setStatus("ready"));
+        return;
+      }
       const currentDetail = detailRef.current;
       const nextIndex = indexRef.current + 1;
       if (!currentDetail || nextIndex >= currentDetail.ayahs.length) {
@@ -161,6 +178,11 @@ export function useQuranPlayer({
       audioRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) audio.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   useEffect(() => {
     if (!detail?.ayahs[activeIndex]) {

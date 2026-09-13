@@ -23,6 +23,7 @@ import { AyahList } from "@/components/ayah-list";
 import { FullPlayer } from "@/components/full-player";
 import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
+import { PreferencesPanel } from "@/components/preferences-panel";
 import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary } from "@/hooks/use-local-library";
@@ -110,6 +111,8 @@ export function AppShell() {
     toggleFavoriteSurah,
     toggleFavoriteAyah,
     saveResume,
+    setTheme,
+    setPlaybackRate,
   } = useLocalLibrary();
 
   const libraryRef = useRef(library);
@@ -117,6 +120,10 @@ export function AppShell() {
   useEffect(() => {
     libraryRef.current = library;
   }, [library]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = library.theme;
+  }, [library.theme]);
 
   const [activeView, setActiveView] = useState<AppView>("home");
   const [surahs, setSurahs] = useState<SurahSummary[]>([]);
@@ -133,6 +140,9 @@ export function AppShell() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
   const [playerOpen, setPlayerOpen] = useState(false);
+  const [repeatAyah, setRepeatAyah] = useState(false);
+  const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
+  const [sleepTimerRemaining, setSleepTimerRemaining] = useState(0);
   const initializedRef = useRef(false);
   const requestedAyahRef = useRef<number | null>(null);
 
@@ -209,7 +219,39 @@ export function AppShell() {
   }, [detailAttempt, hydrated, reciterId, selectedNumber]);
 
   const onActiveIndexChange = useCallback((index: number) => setActiveIndex(index), []);
-  const player = useQuranPlayer({ detail, activeIndex, onActiveIndexChange });
+  const player = useQuranPlayer({
+    detail,
+    activeIndex,
+    onActiveIndexChange,
+    playbackRate: library.playbackRate,
+    repeatAyah,
+  });
+
+  const setSleepTimer = useCallback((minutes: number | null) => {
+    if (minutes === null) {
+      setSleepTimerEndsAt(null);
+      setSleepTimerRemaining(0);
+      return;
+    }
+    const durationSeconds = minutes * 60;
+    setSleepTimerEndsAt(Date.now() + durationSeconds * 1000);
+    setSleepTimerRemaining(durationSeconds);
+  }, []);
+
+  useEffect(() => {
+    if (sleepTimerEndsAt === null) return;
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.ceil((sleepTimerEndsAt - Date.now()) / 1000));
+      setSleepTimerRemaining(remaining);
+      if (remaining === 0) {
+        player.pause();
+        setSleepTimerEndsAt(null);
+      }
+    };
+    updateTimer();
+    const interval = window.setInterval(updateTimer, 1000);
+    return () => window.clearInterval(interval);
+  }, [player.pause, sleepTimerEndsAt]);
 
   useEffect(() => {
     const ayah = detail?.ayahs[activeIndex];
@@ -475,6 +517,8 @@ export function AppShell() {
                 )}
               </section>
 
+              <PreferencesPanel theme={library.theme} onThemeChange={setTheme} />
+
               <FutureContent />
             </div>
           )}
@@ -507,6 +551,9 @@ export function AppShell() {
           isFavorite={currentAyahFavorite}
           canPrevious={player.canPrevious}
           canNext={player.canNext}
+          playbackRate={library.playbackRate}
+          repeatAyah={repeatAyah}
+          sleepTimerRemaining={sleepTimerRemaining}
           onClose={() => setPlayerOpen(false)}
           onToggle={player.toggle}
           onSeek={player.seek}
@@ -516,6 +563,9 @@ export function AppShell() {
           onReciterChange={setReciterId}
           onToggleFavorite={() => currentAyah && toggleFavoriteAyah(detail.surah.number, currentAyah.numberInSurah)}
           onShowText={showQuranView}
+          onPlaybackRateChange={setPlaybackRate}
+          onToggleRepeat={() => setRepeatAyah((value) => !value)}
+          onSetSleepTimer={setSleepTimer}
         />
       )}
 

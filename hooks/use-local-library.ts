@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
+import {
+  isPlaybackRate,
+  isThemeId,
+  type PlaybackRate,
+  type ThemeId,
+} from "@/lib/preferences";
 
 const STORAGE_KEY = "rihla.library.v1";
 
@@ -12,6 +18,8 @@ export type LocalLibrary = {
   lastSurah: number;
   lastAyah: number;
   reciterId: string;
+  theme: ThemeId;
+  playbackRate: PlaybackRate;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -21,6 +29,8 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   lastSurah: 1,
   lastAyah: 1,
   reciterId: DEFAULT_RECITER_ID,
+  theme: "olive",
+  playbackRate: 1,
 };
 
 function sanitizeLibrary(value: unknown): LocalLibrary {
@@ -46,6 +56,8 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
         : 1,
     lastAyah: Number.isInteger(candidate.lastAyah) && candidate.lastAyah! >= 1 ? candidate.lastAyah! : 1,
     reciterId: typeof candidate.reciterId === "string" ? candidate.reciterId : DEFAULT_RECITER_ID,
+    theme: isThemeId(candidate.theme) ? candidate.theme : "olive",
+    playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
   };
 }
 
@@ -105,11 +117,21 @@ export function useLocalLibrary() {
     }));
   }, []);
 
+  const setTheme = useCallback((theme: ThemeId) => {
+    setLibrary((current) => ({ ...current, theme }));
+  }, []);
+
+  const setPlaybackRate = useCallback((playbackRate: PlaybackRate) => {
+    setLibrary((current) => ({ ...current, playbackRate }));
+  }, []);
+
   return {
     library,
     hydrated,
     toggleFavoriteSurah,
     toggleFavoriteAyah,
     saveResume,
+    setTheme,
+    setPlaybackRate,
   };
 }

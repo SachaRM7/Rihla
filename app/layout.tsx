@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem("rihla.library.v1")||"{}").theme;if(["olive","rose","orange","violet"].includes(value))document.documentElement.dataset.theme=value}catch{}`;
+
 export const metadata: Metadata = {
   title: "RIHLA — Coran audio et texte synchronisé",
   description:
@@ -27,7 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" translate="no">
+    <html lang="fr" translate="no" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeBootstrap }} /></head>
       <body>{children}</body>
     </html>
   );

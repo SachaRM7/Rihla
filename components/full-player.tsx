@@ -1,16 +1,20 @@
 "use client";
 
 import {
+  Gauge,
   Heart,
   LoaderCircle,
   Pause,
   Play,
+  Repeat2,
   RotateCcw,
   SkipBack,
   SkipForward,
+  Timer,
   X,
 } from "lucide-react";
 import type { PlaybackStatus } from "@/hooks/use-quran-player";
+import { PLAYBACK_RATES, type PlaybackRate } from "@/lib/preferences";
 import { RECITERS } from "@/lib/quran/constants";
 import type { SurahDetail } from "@/lib/quran/types";
 import { formatTime } from "./mini-player";
@@ -27,6 +31,9 @@ type Props = {
   isFavorite: boolean;
   canPrevious: boolean;
   canNext: boolean;
+  playbackRate: PlaybackRate;
+  repeatAyah: boolean;
+  sleepTimerRemaining: number;
   onClose: () => void;
   onToggle: () => void;
   onSeek: (value: number) => void;
@@ -36,6 +43,9 @@ type Props = {
   onReciterChange: (id: string) => void;
   onToggleFavorite: () => void;
   onShowText: () => void;
+  onPlaybackRateChange: (rate: PlaybackRate) => void;
+  onToggleRepeat: () => void;
+  onSetSleepTimer: (minutes: number | null) => void;
 };
 
 export function FullPlayer({
@@ -50,6 +60,9 @@ export function FullPlayer({
   isFavorite,
   canPrevious,
   canNext,
+  playbackRate,
+  repeatAyah,
+  sleepTimerRemaining,
   onClose,
   onToggle,
   onSeek,
@@ -59,9 +72,14 @@ export function FullPlayer({
   onReciterChange,
   onToggleFavorite,
   onShowText,
+  onPlaybackRateChange,
+  onToggleRepeat,
+  onSetSleepTimer,
 }: Props) {
   const ayah = detail.ayahs[activeIndex];
   if (!ayah) return null;
+  const sleepTimerActive = sleepTimerRemaining > 0;
+  const sleepTimerMinutes = Math.max(1, Math.ceil(sleepTimerRemaining / 60));
 
   return (
     <div className="player-backdrop" role="presentation" onMouseDown={onClose}>
@@ -143,6 +161,44 @@ export function FullPlayer({
             <button type="button" onClick={onRetry}><RotateCcw size={15} /> Réessayer</button>
           </div>
         )}
+
+        <div className="player-options" aria-label="Options de lecture">
+          <label className="player-option">
+            <span><Gauge size={16} /> Vitesse</span>
+            <select
+              value={playbackRate}
+              onChange={(event) => onPlaybackRateChange(Number(event.target.value) as PlaybackRate)}
+            >
+              {PLAYBACK_RATES.map((rate) => <option value={rate} key={rate}>{rate}×</option>)}
+            </select>
+          </label>
+          <button
+            type="button"
+            className={`player-option repeat-option ${repeatAyah ? "active" : ""}`}
+            aria-pressed={repeatAyah}
+            onClick={onToggleRepeat}
+          >
+            <span><Repeat2 size={16} /> Répéter</span>
+            <strong>{repeatAyah ? "Activé" : "Non"}</strong>
+          </button>
+          <label className="player-option">
+            <span><Timer size={16} /> Minuterie</span>
+            <select
+              value={sleepTimerActive ? "active" : "off"}
+              onChange={(event) => {
+                const value = event.target.value;
+                onSetSleepTimer(value === "off" ? null : Number(value));
+              }}
+            >
+              <option value="off">Off</option>
+              {sleepTimerActive && <option value="active">{sleepTimerMinutes} min</option>}
+              <option value="5">5 min</option>
+              <option value="10">10 min</option>
+              <option value="20">20 min</option>
+              <option value="30">30 min</option>
+            </select>
+          </label>
+        </div>
 
         <label className="reciter-control">
           <span>Récitateur</span>
