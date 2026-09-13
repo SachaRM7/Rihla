@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Play, Share2 } from "lucide-react";
+import { Heart, Languages, Share2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -10,14 +10,17 @@ type Props = {
   activeIndex: number;
   isPlaying: boolean;
   currentTime: number;
+  duration: number;
   favoriteAyahs: string[];
   showTranslation: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
+  onToggleTranslation: () => void;
   onShare: (ayahNumber: number) => void;
 };
 
 type KaraokeStyle = CSSProperties & { "--word-progress": string };
+type TranslationKaraokeStyle = CSSProperties & { "--translation-progress": string };
 
 function getWordProgress(elapsedMs: number, startMs: number, endMs: number, active: boolean) {
   if (!active) return 1;
@@ -34,15 +37,44 @@ function TajwidRuns({ runs }: { runs: TajwidTextRun[] }) {
   ));
 }
 
+function TimedFrenchText({ text, progress }: { text: string; progress: number }) {
+  const words = text.trim().split(/\s+/);
+  const totalWeight = Math.max(1, words.reduce((total, word) => total + Math.max(word.length, 1), 0));
+  let elapsedWeight = 0;
+
+  return (
+    <span className="ayah-translation translation-karaoke" lang="fr" aria-label={text}>
+      {words.map((word, index) => {
+        const start = elapsedWeight / totalWeight;
+        elapsedWeight += Math.max(word.length, 1);
+        const end = elapsedWeight / totalWeight;
+        const wordProgress = getWordProgress(progress, start, end, true);
+        const style: TranslationKaraokeStyle = {
+          "--translation-progress": `${wordProgress * 100}%`,
+        };
+
+        return (
+          <span className="translation-word" key={`${word}-${index}`} style={style} aria-hidden="true">
+            <span className="translation-word-base">{word}</span>
+            <span className="translation-word-fill">{word}</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 export function AyahList({
   detail,
   activeIndex,
   isPlaying,
   currentTime,
+  duration,
   favoriteAyahs,
   showTranslation,
   onSelect,
   onToggleFavorite,
+  onToggleTranslation,
   onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
@@ -79,6 +111,9 @@ export function AyahList({
           const isActive = activeIndex === index;
           const elapsedMs = currentTime * 1000;
           const karaokeActive = isActive && (isPlaying || currentTime > 0);
+          const translationProgress = duration > 0
+            ? Math.min(1, Math.max(0, currentTime / duration))
+            : 0;
 
           return (
             <article
@@ -90,10 +125,15 @@ export function AyahList({
               <div className="ayah-meta">
                 <span>{detail.surah.number}:{ayah.numberInSurah}</span>
                 {isActive && (
-                  <span className="now-playing" aria-label={isPlaying ? "Ayah en lecture" : "Ayah sélectionnée"}>
-                    {isPlaying ? <span className="audio-bars" aria-hidden="true"><i /><i /><i /></span> : <Play size={14} />}
-                    {isPlaying ? "En lecture" : "Sélectionnée"}
-                  </span>
+                  <button
+                    type="button"
+                    className={`translation-toggle-inline ${showTranslation ? "active" : ""}`}
+                    aria-pressed={showTranslation}
+                    onClick={onToggleTranslation}
+                  >
+                    <Languages size={14} />
+                    Traduction {showTranslation ? "ON" : "OFF"}
+                  </button>
                 )}
                 <div className="ayah-meta-actions">
                   <button
@@ -150,7 +190,11 @@ export function AyahList({
                     );
                   })}
                 </span>
-                {showTranslation && <span className="ayah-translation" lang="fr">{ayah.frenchText}</span>}
+                {showTranslation && (
+                  karaokeActive
+                    ? <TimedFrenchText text={ayah.frenchText} progress={translationProgress} />
+                    : <span className="ayah-translation" lang="fr">{ayah.frenchText}</span>
+                )}
               </button>
             </article>
           );

@@ -9,7 +9,6 @@ import {
   Heart,
   History,
   Library,
-  Languages,
   LoaderCircle,
   Play,
   Radio,
@@ -606,15 +605,6 @@ export function AppShell() {
                     <div className="reading-actions">
                       <button
                         type="button"
-                        className={`secondary-action ${library.showTranslation ? "active" : ""}`}
-                        onClick={() => setShowTranslation(!library.showTranslation)}
-                        aria-pressed={library.showTranslation}
-                      >
-                        <Languages size={17} />
-                        {library.showTranslation ? "Traduction" : "Arabe seul"}
-                      </button>
-                      <button
-                        type="button"
                         className={`secondary-action ${library.favoriteSurahs.includes(selectedNumber) ? "active" : ""}`}
                         onClick={() => toggleFavoriteSurah(selectedNumber)}
                         aria-pressed={library.favoriteSurahs.includes(selectedNumber)}
@@ -641,10 +631,12 @@ export function AppShell() {
                         activeIndex={activeIndex}
                         isPlaying={player.isPlaying}
                         currentTime={player.currentTime}
+                        duration={player.duration}
                         favoriteAyahs={library.favoriteAyahs}
                         showTranslation={library.showTranslation}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
+                        onToggleTranslation={() => setShowTranslation(!library.showTranslation)}
                         onShare={(ayah) => shareAyah(
                           ayah,
                           currentAyah?.numberInSurah === ayah ? player.currentTime * 1000 : 0,
