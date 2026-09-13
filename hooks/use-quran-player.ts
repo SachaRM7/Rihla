@@ -66,6 +66,29 @@ export function useQuranPlayer({
     const audio = new Audio();
     audio.preload = "metadata";
     audioRef.current = audio;
+    let animationFrame: number | null = null;
+    let lastClockUpdate = 0;
+
+    const stopClock = () => {
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    };
+    const updateClock = (frameTime: number) => {
+      if (audio.paused) {
+        animationFrame = null;
+        return;
+      }
+      if (frameTime - lastClockUpdate >= 50) {
+        setCurrentTime(audio.currentTime);
+        lastClockUpdate = frameTime;
+      }
+      animationFrame = requestAnimationFrame(updateClock);
+    };
+    const startClock = () => {
+      stopClock();
+      lastClockUpdate = 0;
+      animationFrame = requestAnimationFrame(updateClock);
+    };
 
     const onLoadedMetadata = () => {
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
@@ -82,16 +105,21 @@ export function useQuranPlayer({
       playWhenLoadedRef.current = true;
       setStatus("playing");
       setError(null);
+      startClock();
     };
     const onPause = () => {
+      stopClock();
+      setCurrentTime(audio.currentTime);
       if (!audio.ended && audio.src) setStatus("paused");
     };
     const onError = () => {
+      stopClock();
       playWhenLoadedRef.current = false;
       setStatus("error");
       setError(readableAudioError());
     };
     const onEnded = () => {
+      stopClock();
       const currentDetail = detailRef.current;
       const nextIndex = indexRef.current + 1;
       if (!currentDetail || nextIndex >= currentDetail.ayahs.length) {
@@ -119,6 +147,7 @@ export function useQuranPlayer({
     audio.addEventListener("ended", onEnded);
 
     return () => {
+      stopClock();
       audio.pause();
       audio.removeAttribute("src");
       audio.load();

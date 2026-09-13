@@ -92,6 +92,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 .ayah-meta{display:flex;min-height:48px;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:2px 7px 2px 14px}.ayah-meta>span:first-child{color:var(--gold);font-family:ui-monospace,monospace;font-size:.68rem}.ayah-meta .favorite-button{margin-left:auto}
 .now-playing{display:inline-flex;align-items:center;gap:7px;color:var(--olive);font-size:.65rem;font-weight:710}.ayah-select{display:grid;width:100%;gap:17px;border:0;background:transparent;cursor:pointer;padding:20px 16px 22px;text-align:left}
 .ayah-arabic{overflow-wrap:anywhere;color:var(--ivory);font-family:"Traditional Arabic","Noto Naskh Arabic",serif;font-size:clamp(1.55rem,7.5vw,2rem);line-height:2;text-align:right}
+.ayah-words{display:block;word-spacing:.08em}
+.ayah-word{display:inline;color:inherit;transition:color .16s ease,text-shadow .16s ease,opacity .16s ease}
+.ayah-word:not(:last-child)::after{content:" ";white-space:pre}
+.ayah-words.karaoke-active .ayah-word{color:rgba(244,240,229,.28)}
+.ayah-words.karaoke-active .ayah-word.completed{color:rgba(244,240,229,.58)}
+.ayah-words.karaoke-active .ayah-word.current{color:#fff;text-shadow:0 0 18px rgba(255,255,255,.34)}
 .ayah-translation{color:var(--muted);font-family:Georgia,serif;font-size:.86rem;line-height:1.75}
 .audio-bars{display:inline-flex;height:13px;align-items:end;gap:2px}.audio-bars i{width:2px;border-radius:2px;background:currentColor;animation:audio-bars .72s ease-in-out infinite alternate}.audio-bars i:nth-child(1){height:6px}.audio-bars i:nth-child(2){height:12px;animation-delay:-.3s}.audio-bars i:nth-child(3){height:8px;animation-delay:-.5s}
 .source-disclosure{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;border:1px solid var(--line);border-radius:15px;background:rgba(181,201,135,.035);margin-top:12px;padding:15px}.source-disclosure>svg{color:var(--olive)}

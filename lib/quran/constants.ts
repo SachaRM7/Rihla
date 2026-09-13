@@ -2,15 +2,16 @@ import type { Reciter, SourceAttribution } from "./types";
 
 export const DEFAULT_RECITER_ID = "ar.alafasy";
 export const FRENCH_TRANSLATION_ID = "fr.hamidullah";
+export const QURAN_FOUNDATION_RECITATION_ID = 7;
 
 export const RECITERS: readonly Reciter[] = [
   { id: "ar.alafasy", name: "Mishary Rashid Alafasy", bitrate: 128 },
 ] as const;
 
 export const QURAN_SOURCE: SourceAttribution = {
-  name: "Al Quran Cloud · Islamic Network CDN",
-  url: "https://alquran.cloud",
-  termsUrl: "https://alquran.cloud/terms-and-conditions",
+  name: "Quran Foundation · traduction Al Quran Cloud",
+  url: "https://quran.foundation",
+  termsUrl: "https://api-docs.quran.com/legal/developer-terms/",
 };
 
 export const FRENCH_SURAH_NAMES: readonly string[] = [

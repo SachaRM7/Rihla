@@ -15,6 +15,14 @@ export type AyahPlayback = {
   arabicText: string;
   frenchText: string;
   audioUrl: string;
+  words: AyahWordTiming[];
+};
+
+export type AyahWordTiming = {
+  position: number;
+  text: string;
+  startMs: number;
+  endMs: number;
 };
 
 export type SourceAttribution = {

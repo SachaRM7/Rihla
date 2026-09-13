@@ -412,6 +412,7 @@ export function AppShell() {
                         detail={detail}
                         activeIndex={activeIndex}
                         isPlaying={player.isPlaying}
+                        currentTime={player.currentTime}
                         favoriteAyahs={library.favoriteAyahs}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}

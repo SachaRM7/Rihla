@@ -8,6 +8,7 @@ type Props = {
   detail: SurahDetail;
   activeIndex: number;
   isPlaying: boolean;
+  currentTime: number;
   favoriteAyahs: string[];
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
@@ -17,6 +18,7 @@ export function AyahList({
   detail,
   activeIndex,
   isPlaying,
+  currentTime,
   favoriteAyahs,
   onSelect,
   onToggleFavorite,
@@ -31,7 +33,7 @@ export function AyahList({
     <section className="ayah-section" aria-labelledby="ayah-list-title">
       <div className="ayah-heading">
         <div>
-          <p className="eyebrow">Texte synchronisé par ayah</p>
+          <p className="eyebrow">Karaoké mot à mot</p>
           <h2 id="ayah-list-title">{detail.surah.englishName}</h2>
           <p>{detail.surah.frenchName} · {detail.surah.numberOfAyahs} ayat</p>
         </div>
@@ -43,6 +45,8 @@ export function AyahList({
           const key = `${detail.surah.number}:${ayah.numberInSurah}`;
           const isFavorite = favoriteAyahs.includes(key);
           const isActive = activeIndex === index;
+          const elapsedMs = currentTime * 1000;
+          const karaokeActive = isActive && (isPlaying || currentTime > 0);
 
           return (
             <article
@@ -75,7 +79,27 @@ export function AyahList({
                 onClick={() => onSelect(index)}
                 aria-label={`Lire ${detail.surah.englishName}, ayah ${ayah.numberInSurah}`}
               >
-                <span className="ayah-arabic" lang="ar" dir="rtl" translate="no">{ayah.arabicText}</span>
+                <span
+                  className={`ayah-arabic ayah-words ${karaokeActive ? "karaoke-active" : ""}`}
+                  lang="ar"
+                  dir="rtl"
+                  translate="no"
+                  aria-label={ayah.arabicText}
+                >
+                  {ayah.words.map((word) => {
+                    const isCurrentWord = karaokeActive && elapsedMs >= word.startMs && elapsedMs < word.endMs;
+                    const isCompletedWord = karaokeActive && elapsedMs >= word.endMs;
+                    return (
+                      <span
+                        aria-hidden="true"
+                        className={`ayah-word ${isCurrentWord ? "current" : ""} ${isCompletedWord ? "completed" : ""}`}
+                        key={`${ayah.number}-${word.position}`}
+                      >
+                        {word.text}
+                      </span>
+                    );
+                  })}
+                </span>
                 <span className="ayah-translation" lang="fr">{ayah.frenchText}</span>
               </button>
             </article>
