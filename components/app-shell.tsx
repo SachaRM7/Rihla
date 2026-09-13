@@ -749,7 +749,9 @@ export function AppShell() {
         duration={player.duration}
         onOpen={() => setPlayerOpen(true)}
         onToggle={player.toggle}
+        onPrevious={player.previous}
         onNext={player.next}
+        canPrevious={player.canPrevious}
         canNext={player.canNext}
       />
 

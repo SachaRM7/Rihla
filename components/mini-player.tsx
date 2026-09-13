@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronUp, LoaderCircle, Pause, Play, SkipForward } from "lucide-react";
+import { ChevronUp, LoaderCircle, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { PlaybackStatus } from "@/hooks/use-quran-player";
 import type { SurahDetail } from "@/lib/quran/types";
 
@@ -13,7 +13,9 @@ type Props = {
   duration: number;
   onOpen: () => void;
   onToggle: () => void;
+  onPrevious: () => void;
   onNext: () => void;
+  canPrevious: boolean;
   canNext: boolean;
 };
 
@@ -33,7 +35,9 @@ export function MiniPlayer({
   duration,
   onOpen,
   onToggle,
+  onPrevious,
   onNext,
+  canPrevious,
   canNext,
 }: Props) {
   if (!detail) return null;
@@ -50,13 +54,22 @@ export function MiniPlayer({
           <i />
         </span>
         <span className="mini-copy">
-          <strong>{detail.surah.englishName} · Ayah {ayah.numberInSurah}</strong>
-          <small>
-            <span>{detail.reciterName}</span>
+          <span className="mini-title-row">
+            <strong>{detail.surah.englishName} · Ayah {ayah.numberInSurah}</strong>
             <time>{formatTime(currentTime)}</time>
-          </small>
+          </span>
+          <small>{detail.reciterName}</small>
         </span>
         <ChevronUp className="mini-chevron" size={18} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className="player-icon-button mini-previous"
+        onClick={onPrevious}
+        aria-label="Ayah précédente"
+        disabled={!canPrevious}
+      >
+        <SkipBack size={18} fill="currentColor" />
       </button>
       <button
         type="button"
