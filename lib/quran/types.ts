@@ -60,6 +60,19 @@ export type SurahDetailResponse = {
   data: SurahDetail;
 };
 
+export type QuranSearchHit = {
+  number: number;
+  surahNumber: number;
+  surahName: string;
+  surahEnglishName: string;
+  numberInSurah: number;
+  frenchText: string;
+};
+
+export type QuranSearchResponse = {
+  data: QuranSearchHit[];
+};
+
 export type ApiErrorResponse = {
   error: string;
 };

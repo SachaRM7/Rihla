@@ -10,6 +10,17 @@ import {
 } from "@/lib/preferences";
 
 const STORAGE_KEY = "rihla.library.v1";
+const MAX_HISTORY_ITEMS = 24;
+const PROGRESS_WRITE_INTERVAL_MS = 750;
+
+export type ListeningHistoryItem = {
+  surah: number;
+  ayah: number;
+  positionMs: number;
+  durationMs: number;
+  reciterId: string;
+  updatedAt: number;
+};
 
 export type LocalLibrary = {
   version: 1;
@@ -17,9 +28,11 @@ export type LocalLibrary = {
   favoriteAyahs: string[];
   lastSurah: number;
   lastAyah: number;
+  lastPositionMs: number;
   reciterId: string;
   theme: ThemeId;
   playbackRate: PlaybackRate;
+  listeningHistory: ListeningHistoryItem[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -28,10 +41,39 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   favoriteAyahs: [],
   lastSurah: 1,
   lastAyah: 1,
+  lastPositionMs: 0,
   reciterId: DEFAULT_RECITER_ID,
   theme: "olive",
   playbackRate: 1,
+  listeningHistory: [],
 };
+
+function sanitizeHistoryItem(value: unknown): ListeningHistoryItem | null {
+  if (!value || typeof value !== "object") return null;
+  const item = value as Partial<ListeningHistoryItem>;
+  if (
+    !Number.isInteger(item.surah) ||
+    item.surah! < 1 ||
+    item.surah! > 114 ||
+    !Number.isInteger(item.ayah) ||
+    item.ayah! < 1 ||
+    !Number.isFinite(item.positionMs) ||
+    !Number.isFinite(item.durationMs) ||
+    !Number.isFinite(item.updatedAt)
+  ) {
+    return null;
+  }
+
+  const durationMs = Math.max(0, Math.round(item.durationMs!));
+  return {
+    surah: item.surah!,
+    ayah: item.ayah!,
+    positionMs: Math.min(Math.max(0, Math.round(item.positionMs!)), durationMs || 86_400_000),
+    durationMs,
+    reciterId: typeof item.reciterId === "string" ? item.reciterId : DEFAULT_RECITER_ID,
+    updatedAt: Math.max(0, Math.round(item.updatedAt!)),
+  };
+}
 
 function sanitizeLibrary(value: unknown): LocalLibrary {
   if (!value || typeof value !== "object") return DEFAULT_LIBRARY;
@@ -46,6 +88,19 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     ? [...new Set(candidate.favoriteAyahs.filter((item): item is string => typeof item === "string" && /^\d{1,3}:\d{1,3}$/.test(item)))]
     : [];
 
+  const listeningHistory = Array.isArray(candidate.listeningHistory)
+    ? candidate.listeningHistory
+        .map(sanitizeHistoryItem)
+        .filter((item): item is ListeningHistoryItem => Boolean(item))
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .filter((item, index, items) =>
+          items.findIndex((candidateItem) =>
+            candidateItem.surah === item.surah && candidateItem.ayah === item.ayah,
+          ) === index,
+        )
+        .slice(0, MAX_HISTORY_ITEMS)
+    : [];
+
   return {
     version: 1,
     favoriteSurahs,
@@ -55,9 +110,14 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
         ? candidate.lastSurah!
         : 1,
     lastAyah: Number.isInteger(candidate.lastAyah) && candidate.lastAyah! >= 1 ? candidate.lastAyah! : 1,
+    lastPositionMs:
+      Number.isFinite(candidate.lastPositionMs) && candidate.lastPositionMs! >= 0
+        ? Math.min(Math.round(candidate.lastPositionMs!), 86_400_000)
+        : 0,
     reciterId: typeof candidate.reciterId === "string" ? candidate.reciterId : DEFAULT_RECITER_ID,
     theme: isThemeId(candidate.theme) ? candidate.theme : "olive",
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
+    listeningHistory,
   };
 }
 
@@ -109,12 +169,72 @@ export function useLocalLibrary() {
   }, []);
 
   const saveResume = useCallback((surah: number, ayah: number, reciterId: string) => {
-    setLibrary((current) => ({
-      ...current,
-      lastSurah: surah,
-      lastAyah: ayah,
-      reciterId,
-    }));
+    setLibrary((current) => {
+      const sameItem = current.lastSurah === surah && current.lastAyah === ayah;
+      if (sameItem && current.reciterId === reciterId) return current;
+      return {
+        ...current,
+        lastSurah: surah,
+        lastAyah: ayah,
+        lastPositionMs: sameItem ? current.lastPositionMs : 0,
+        reciterId,
+      };
+    });
+  }, []);
+
+  const savePlaybackProgress = useCallback((
+    surah: number,
+    ayah: number,
+    positionMs: number,
+    durationMs: number,
+    reciterId: string,
+    force = false,
+  ) => {
+    const safePosition = Math.max(0, Math.round(positionMs));
+    const safeDuration = Math.max(0, Math.round(durationMs));
+
+    setLibrary((current) => {
+      const existing = current.listeningHistory.find(
+        (item) => item.surah === surah && item.ayah === ayah,
+      );
+      const sameCurrentItem = current.lastSurah === surah && current.lastAyah === ayah;
+      const lastSavedPosition = sameCurrentItem
+        ? current.lastPositionMs
+        : existing?.positionMs ?? 0;
+
+      if (
+        !force &&
+        sameCurrentItem &&
+        existing &&
+        Math.abs(safePosition - lastSavedPosition) < PROGRESS_WRITE_INTERVAL_MS &&
+        Math.abs(safeDuration - existing.durationMs) < PROGRESS_WRITE_INTERVAL_MS
+      ) {
+        return current;
+      }
+
+      const nextItem: ListeningHistoryItem = {
+        surah,
+        ayah,
+        positionMs: safePosition,
+        durationMs: safeDuration,
+        reciterId,
+        updatedAt: Date.now(),
+      };
+
+      return {
+        ...current,
+        lastSurah: surah,
+        lastAyah: ayah,
+        lastPositionMs: safePosition,
+        reciterId,
+        listeningHistory: [
+          nextItem,
+          ...current.listeningHistory.filter(
+            (item) => item.surah !== surah || item.ayah !== ayah,
+          ),
+        ].slice(0, MAX_HISTORY_ITEMS),
+      };
+    });
   }, []);
 
   const setTheme = useCallback((theme: ThemeId) => {
@@ -131,6 +251,7 @@ export function useLocalLibrary() {
     toggleFavoriteSurah,
     toggleFavoriteAyah,
     saveResume,
+    savePlaybackProgress,
     setTheme,
     setPlaybackRate,
   };

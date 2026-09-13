@@ -24,6 +24,7 @@ import { FullPlayer } from "@/components/full-player";
 import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
 import { PreferencesPanel } from "@/components/preferences-panel";
+import { QuranSearchResults } from "@/components/quran-search-results";
 import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary } from "@/hooks/use-local-library";
@@ -38,6 +39,20 @@ import type {
 } from "@/lib/quran/types";
 
 const FEATURED_SURAHS = [1, 18, 36, 55, 67, 112];
+
+function formatPlaybackTime(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatHistoryDate(timestamp: number) {
+  const date = new Date(timestamp);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return "Aujourd’hui";
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(date);
+}
 
 function isValidReciter(id: string) {
   return RECITERS.some((reciter) => reciter.id === id);
@@ -111,6 +126,7 @@ export function AppShell() {
     toggleFavoriteSurah,
     toggleFavoriteAyah,
     saveResume,
+    savePlaybackProgress,
     setTheme,
     setPlaybackRate,
   } = useLocalLibrary();
@@ -145,13 +161,16 @@ export function AppShell() {
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState(0);
   const initializedRef = useRef(false);
   const requestedAyahRef = useRef<number | null>(null);
+  const requestedPositionRef = useRef<number | null>(null);
+  const requestedAutoplayRef = useRef(false);
 
   useEffect(() => {
     if (!hydrated || initializedRef.current) return;
     initializedRef.current = true;
     setSelectedNumber(library.lastSurah);
     setReciterId(isValidReciter(library.reciterId) ? library.reciterId : DEFAULT_RECITER_ID);
-  }, [hydrated, library.lastSurah, library.reciterId]);
+    requestedPositionRef.current = library.lastPositionMs;
+  }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -259,13 +278,86 @@ export function AppShell() {
     saveResume(detail.surah.number, ayah.numberInSurah, reciterId);
   }, [activeIndex, detail, reciterId, saveResume]);
 
-  const openSurah = useCallback((number: number, ayah?: number) => {
+  useEffect(() => {
+    const ayah = detail?.ayahs[activeIndex];
+    const requestedPosition = requestedPositionRef.current;
+    if (
+      !ayah ||
+      requestedPosition === null ||
+      player.loadedSourceUrl !== ayah.audioUrl
+    ) {
+      return;
+    }
+    player.seek(requestedPosition / 1000);
+    if (requestedAutoplayRef.current) player.play();
+    requestedPositionRef.current = null;
+    requestedAutoplayRef.current = false;
+  }, [activeIndex, detail, player.loadedSourceUrl, player.play, player.seek]);
+
+  useEffect(() => {
+    const ayah = detail?.ayahs[activeIndex];
+    if (
+      !hydrated ||
+      !detail ||
+      !ayah ||
+      player.status === "idle" ||
+      player.status === "loading" ||
+      player.status === "error" ||
+      (player.currentTime <= 0 && !player.isPlaying)
+    ) {
+      return;
+    }
+
+    savePlaybackProgress(
+      detail.surah.number,
+      ayah.numberInSurah,
+      player.currentTime * 1000,
+      player.duration * 1000,
+      reciterId,
+      player.status === "paused",
+    );
+  }, [
+    activeIndex,
+    detail,
+    hydrated,
+    player.currentTime,
+    player.duration,
+    player.isPlaying,
+    player.status,
+    reciterId,
+    savePlaybackProgress,
+  ]);
+
+  const openSurah = useCallback((number: number, ayah?: number, positionMs = 0, autoplay = false) => {
     requestedAyahRef.current = ayah ?? 1;
+    requestedPositionRef.current = positionMs;
+    requestedAutoplayRef.current = autoplay;
+
+    if (detail?.surah.number === number) {
+      const nextIndex = Math.max(
+        0,
+        detail.ayahs.findIndex((item) => item.numberInSurah === (ayah ?? 1)),
+      );
+      setActiveView("quran");
+      if (
+        nextIndex === activeIndex &&
+        player.loadedSourceUrl === detail.ayahs[nextIndex]?.audioUrl
+      ) {
+        player.seek(positionMs / 1000);
+        if (autoplay) player.play();
+        requestedPositionRef.current = null;
+        requestedAutoplayRef.current = false;
+      } else {
+        player.selectAyah(nextIndex, false);
+      }
+      return;
+    }
+
     setActiveIndex(0);
     setDetail(null);
     setSelectedNumber(number);
     setActiveView("quran");
-  }, []);
+  }, [activeIndex, detail, player.loadedSourceUrl, player.play, player.seek, player.selectAyah]);
 
   const selectedSummary = useMemo(
     () => surahs.find((surah) => surah.number === selectedNumber) ?? null,
@@ -280,6 +372,11 @@ export function AppShell() {
   const favoriteSurahItems = useMemo(
     () => library.favoriteSurahs.map((number) => surahs.find((surah) => surah.number === number)).filter((item): item is SurahSummary => Boolean(item)),
     [library.favoriteSurahs, surahs],
+  );
+
+  const recentHistory = useMemo(
+    () => library.listeningHistory.slice(0, 8),
+    [library.listeningHistory],
   );
 
   const currentAyah = detail?.ayahs[activeIndex] ?? null;
@@ -331,7 +428,11 @@ export function AppShell() {
                   <p className="eyebrow">{library.lastSurah === selectedNumber ? "Reprendre ma lecture" : "Prêt à écouter"}</p>
                   <h2>{detail?.surah.englishName ?? selectedSummary?.englishName ?? "Le Coran"}</h2>
                   <p>{detail?.surah.frenchName ?? selectedSummary?.frenchName ?? "Chargement de la sourate…"}</p>
-                  {detail && currentAyah && <span className="resume-line">Ayah {currentAyah.numberInSurah} · {detail.reciterName}</span>}
+                  {detail && currentAyah && (
+                    <span className="resume-line">
+                      Ayah {currentAyah.numberInSurah} · {formatPlaybackTime(library.lastPositionMs)} · {detail.reciterName}
+                    </span>
+                  )}
 
                   {detailLoading ? (
                     <button type="button" className="primary-action" disabled><LoaderCircle className="spin" size={19} /> Chargement…</button>
@@ -380,8 +481,8 @@ export function AppShell() {
             <div className="content-stack">
               <section className="page-intro">
                 <p className="eyebrow">Recherche réelle</p>
-                <h1>Trouvez une sourate.</h1>
-                <p>Recherchez par numéro, nom français, translittération ou nom arabe.</p>
+                <h1>Trouvez une sourate ou une ayah.</h1>
+                <p>Recherchez un nom, un mot dans la traduction française ou une référence comme 2:255.</p>
               </section>
               <SurahBrowser
                 surahs={surahs}
@@ -394,7 +495,9 @@ export function AppShell() {
                 loading={catalogLoading}
                 error={catalogError}
                 onRetry={() => setCatalogAttempt((value) => value + 1)}
+                searchPlaceholder="Sourate, mot ou référence 2:255"
               />
+              <QuranSearchResults query={query} onOpen={(surah, ayah) => openSurah(surah, ayah)} />
             </div>
           )}
 
@@ -478,7 +581,39 @@ export function AppShell() {
               <section className="library-summary">
                 <div><Heart size={20} /><strong>{library.favoriteSurahs.length}</strong><span>sourates favorites</span></div>
                 <div><BookOpenText size={20} /><strong>{library.favoriteAyahs.length}</strong><span>ayat sauvegardées</span></div>
-                <div><History size={20} /><strong>{library.lastSurah}:{library.lastAyah}</strong><span>dernière position</span></div>
+                <div><History size={20} /><strong>{formatPlaybackTime(library.lastPositionMs)}</strong><span>{library.lastSurah}:{library.lastAyah} · dernière position</span></div>
+              </section>
+
+              <section className="library-section">
+                <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
+                {recentHistory.length ? (
+                  <div className="history-list">
+                    {recentHistory.map((item) => {
+                      const surah = surahs.find((candidate) => candidate.number === item.surah);
+                      const progress = item.durationMs > 0
+                        ? Math.min(100, (item.positionMs / item.durationMs) * 100)
+                        : 0;
+                      return (
+                        <button
+                          type="button"
+                          className="history-item"
+                          key={`${item.surah}:${item.ayah}`}
+                          onClick={() => openSurah(item.surah, item.ayah, item.positionMs, true)}
+                        >
+                          <span className="history-reference">{item.surah}:{item.ayah}</span>
+                          <span className="history-copy">
+                            <strong>{surah?.englishName ?? `Sourate ${item.surah}`} · Ayah {item.ayah}</strong>
+                            <small>{formatHistoryDate(item.updatedAt)} · repris à {formatPlaybackTime(item.positionMs)}</small>
+                            <progress max="100" value={progress} aria-label={`Progression de ${Math.round(progress)} %`} />
+                          </span>
+                          <ChevronRight size={18} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="empty-library compact"><History size={22} /><strong>Aucune écoute récente</strong><p>Lancez une ayah pour la retrouver ici avec sa progression.</p></div>
+                )}
               </section>
 
               <section className="library-section">

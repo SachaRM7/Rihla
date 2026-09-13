@@ -15,6 +15,7 @@ type Props = {
   error?: string | null;
   onRetry?: () => void;
   showSearch?: boolean;
+  searchPlaceholder?: string;
 };
 
 function normalize(value: string) {
@@ -37,6 +38,7 @@ export function SurahBrowser({
   error,
   onRetry,
   showSearch = true,
+  searchPlaceholder = "Nom ou numéro d’une sourate",
 }: Props) {
   const normalizedQuery = normalize(query);
   const filtered = normalizedQuery
@@ -66,8 +68,8 @@ export function SurahBrowser({
           <input
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Nom ou numéro d’une sourate"
-            aria-label="Rechercher une sourate"
+            placeholder={searchPlaceholder}
+            aria-label="Rechercher une sourate, une ayah ou un mot"
           />
           {query && (
             <button type="button" onClick={() => onQueryChange("")} aria-label="Effacer la recherche">

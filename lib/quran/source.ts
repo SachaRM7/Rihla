@@ -9,6 +9,7 @@ import {
 } from "./constants";
 import type {
   AyahPlayback,
+  QuranSearchHit,
   RevelationType,
   SurahCatalogResponse,
   SurahDetail,
@@ -27,6 +28,15 @@ type UpstreamAyah = {
   numberInSurah?: unknown;
   text?: unknown;
   audio?: unknown;
+};
+
+type UpstreamSearchAyah = UpstreamAyah & {
+  surah?: unknown;
+  edition?: unknown;
+};
+
+type UpstreamSearchData = {
+  matches?: unknown;
 };
 
 type UpstreamSurah = {
@@ -262,6 +272,64 @@ function normalizeTimedVerse(value: QuranFoundationVerse) {
     audioUrl: `${QURAN_FOUNDATION_AUDIO_ROOT}/${relativeAudioUrl}`,
     words: timedWords,
   };
+}
+
+function normalizeSearchHit(value: UpstreamSearchAyah): QuranSearchHit {
+  const surah = value.surah as UpstreamSurah | undefined;
+  const number = Number(value.number);
+  const surahNumber = Number(surah?.number);
+  const numberInSurah = Number(value.numberInSurah);
+
+  if (
+    !Number.isInteger(number) ||
+    !Number.isInteger(surahNumber) ||
+    surahNumber < 1 ||
+    surahNumber > 114 ||
+    !Number.isInteger(numberInSurah) ||
+    numberInSurah < 1 ||
+    typeof surah?.name !== "string" ||
+    typeof surah.englishName !== "string" ||
+    typeof value.text !== "string"
+  ) {
+    throw new Error("Invalid Quran search result");
+  }
+
+  return {
+    number,
+    surahNumber,
+    surahName: surah.name,
+    surahEnglishName: surah.englishName,
+    numberInSurah,
+    frenchText: value.text,
+  };
+}
+
+export async function searchQuran(query: string): Promise<QuranSearchHit[]> {
+  const normalizedQuery = query.trim();
+  if (normalizedQuery.length < 2 || normalizedQuery.length > 80) {
+    throw new RangeError("Invalid Quran search query");
+  }
+
+  const reference = normalizedQuery.match(/^(\d{1,3}):(\d{1,3})$/);
+  if (reference) {
+    const surah = Number(reference[1]);
+    const ayah = Number(reference[2]);
+    if (surah < 1 || surah > 114 || ayah < 1) return [];
+    const payload = await fetchEnvelope(
+      `/ayah/${surah}:${ayah}/${FRENCH_TRANSLATION_ID}`,
+    );
+    return [normalizeSearchHit(payload.data as UpstreamSearchAyah)];
+  }
+
+  const payload = await fetchEnvelope(
+    `/search/${encodeURIComponent(normalizedQuery)}/all/${FRENCH_TRANSLATION_ID}`,
+  );
+  const data = payload.data as UpstreamSearchData;
+  if (!Array.isArray(data?.matches)) throw new Error("Invalid Quran search payload");
+
+  return data.matches
+    .slice(0, 40)
+    .map((item) => normalizeSearchHit(item as UpstreamSearchAyah));
 }
 
 export async function getSurahCatalog(): Promise<SurahCatalogResponse> {

@@ -36,6 +36,7 @@ export function useQuranPlayer({
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [loadedSourceUrl, setLoadedSourceUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export function useQuranPlayer({
     setStatus("loading");
     setCurrentTime(0);
     setDuration(0);
+    setLoadedSourceUrl("");
 
     if (audio.src !== ayah.audioUrl) {
       audio.src = ayah.audioUrl;
@@ -102,6 +104,7 @@ export function useQuranPlayer({
     const onLoadedMetadata = () => {
       audio.playbackRate = playbackRateRef.current;
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+      setLoadedSourceUrl(audio.currentSrc || audio.src);
       setStatus(audio.paused ? "ready" : "playing");
       if (playWhenLoadedRef.current && audio.paused) {
         void audio.play().catch(() => {
@@ -127,6 +130,7 @@ export function useQuranPlayer({
       playWhenLoadedRef.current = false;
       setStatus("error");
       setError(readableAudioError());
+      setLoadedSourceUrl("");
     };
     const onEnded = () => {
       stopClock();
@@ -149,6 +153,9 @@ export function useQuranPlayer({
       changeIndexRef.current(nextIndex);
       indexRef.current = nextIndex;
       const nextAyah = currentDetail.ayahs[nextIndex];
+      setCurrentTime(0);
+      setDuration(0);
+      setLoadedSourceUrl("");
       audio.src = nextAyah.audioUrl;
       audio.load();
       playWhenLoadedRef.current = true;
@@ -195,6 +202,7 @@ export function useQuranPlayer({
         queueMicrotask(() => {
           setCurrentTime(0);
           setDuration(0);
+          setLoadedSourceUrl("");
           setStatus("idle");
         });
       }
@@ -277,6 +285,7 @@ export function useQuranPlayer({
     isPlaying: status === "playing",
     currentTime,
     duration,
+    loadedSourceUrl,
     error,
     play,
     pause,
