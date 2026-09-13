@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PlaybackRate } from "@/lib/preferences";
+import type { PlaybackRate, RepeatMode } from "@/lib/preferences";
 import type { SurahDetail } from "@/lib/quran/types";
 
 export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
@@ -11,7 +11,7 @@ type PlayerOptions = {
   activeIndex: number;
   onActiveIndexChange: (index: number) => void;
   playbackRate: PlaybackRate;
-  repeatAyah: boolean;
+  repeatMode: RepeatMode;
 };
 
 function readableAudioError() {
@@ -23,14 +23,15 @@ export function useQuranPlayer({
   activeIndex,
   onActiveIndexChange,
   playbackRate,
-  repeatAyah,
+  repeatMode,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
   const indexRef = useRef(activeIndex);
   const changeIndexRef = useRef(onActiveIndexChange);
   const playWhenLoadedRef = useRef(false);
-  const repeatAyahRef = useRef(repeatAyah);
+  const repeatModeRef = useRef(repeatMode);
+  const repeatIterationRef = useRef(1);
   const playbackRateRef = useRef(playbackRate);
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
@@ -38,14 +39,24 @@ export function useQuranPlayer({
   const [duration, setDuration] = useState(0);
   const [loadedSourceUrl, setLoadedSourceUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [repeatIteration, setRepeatIteration] = useState(1);
+
+  const resetRepeatProgress = useCallback(() => {
+    repeatIterationRef.current = 1;
+    setRepeatIteration(1);
+  }, []);
 
   useEffect(() => {
     detailRef.current = detail;
     indexRef.current = activeIndex;
     changeIndexRef.current = onActiveIndexChange;
-    repeatAyahRef.current = repeatAyah;
+    repeatModeRef.current = repeatMode;
     playbackRateRef.current = playbackRate;
-  }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatAyah]);
+  }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatMode]);
+
+  useEffect(() => {
+    resetRepeatProgress();
+  }, [repeatMode, resetRepeatProgress]);
 
   const loadAtIndex = useCallback((index: number, autoplay: boolean) => {
     const audio = audioRef.current;
@@ -59,6 +70,7 @@ export function useQuranPlayer({
     setCurrentTime(0);
     setDuration(0);
     setLoadedSourceUrl("");
+    resetRepeatProgress();
 
     if (audio.src !== ayah.audioUrl) {
       audio.src = ayah.audioUrl;
@@ -71,7 +83,7 @@ export function useQuranPlayer({
         setStatus("ready");
       });
     }
-  }, []);
+  }, [resetRepeatProgress]);
 
   useEffect(() => {
     const audio = new Audio();
@@ -134,13 +146,24 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
-      if (repeatAyahRef.current) {
+      const repeatMode = repeatModeRef.current;
+      const repeatLimit = repeatMode === "continuous"
+        ? Number.POSITIVE_INFINITY
+        : repeatMode === "off"
+          ? 1
+          : Number(repeatMode);
+
+      if (repeatMode !== "off" && repeatIterationRef.current < repeatLimit) {
+        const nextIteration = repeatIterationRef.current + 1;
+        repeatIterationRef.current = nextIteration;
+        setRepeatIteration(nextIteration);
         audio.currentTime = 0;
         setCurrentTime(0);
         playWhenLoadedRef.current = true;
         void audio.play().catch(() => setStatus("ready"));
         return;
       }
+      resetRepeatProgress();
       const currentDetail = detailRef.current;
       const nextIndex = indexRef.current + 1;
       if (!currentDetail || nextIndex >= currentDetail.ayahs.length) {
@@ -184,7 +207,7 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, []);
+  }, [resetRepeatProgress]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -287,6 +310,7 @@ export function useQuranPlayer({
     duration,
     loadedSourceUrl,
     error,
+    repeatIteration,
     play,
     pause,
     toggle,

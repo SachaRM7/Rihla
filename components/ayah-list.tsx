@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Play } from "lucide-react";
+import { Heart, Play, Share2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -11,8 +11,10 @@ type Props = {
   isPlaying: boolean;
   currentTime: number;
   favoriteAyahs: string[];
+  showTranslation: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
+  onShare: (ayahNumber: number) => void;
 };
 
 type KaraokeStyle = CSSProperties & { "--word-progress": string };
@@ -38,8 +40,10 @@ export function AyahList({
   isPlaying,
   currentTime,
   favoriteAyahs,
+  showTranslation,
   onSelect,
   onToggleFavorite,
+  onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
 
@@ -91,19 +95,29 @@ export function AyahList({
                     {isPlaying ? "En lecture" : "Sélectionnée"}
                   </span>
                 )}
-                <button
-                  type="button"
-                  className={`favorite-button ${isFavorite ? "active" : ""}`}
-                  onClick={() => onToggleFavorite(ayah.numberInSurah)}
-                  aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
-                  aria-pressed={isFavorite}
-                >
-                  <Heart size={17} fill={isFavorite ? "currentColor" : "none"} />
-                </button>
+                <div className="ayah-meta-actions">
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() => onShare(ayah.numberInSurah)}
+                    aria-label={`Partager l’ayah ${ayah.numberInSurah}`}
+                  >
+                    <Share2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`favorite-button ${isFavorite ? "active" : ""}`}
+                    onClick={() => onToggleFavorite(ayah.numberInSurah)}
+                    aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
+                    aria-pressed={isFavorite}
+                  >
+                    <Heart size={17} fill={isFavorite ? "currentColor" : "none"} />
+                  </button>
+                </div>
               </div>
               <button
                 type="button"
-                className="ayah-select"
+                className={`ayah-select ${showTranslation ? "" : "translation-hidden"}`}
                 onClick={() => onSelect(index)}
                 aria-label={`Lire ${detail.surah.englishName}, ayah ${ayah.numberInSurah}`}
               >
@@ -136,7 +150,7 @@ export function AyahList({
                     );
                   })}
                 </span>
-                <span className="ayah-translation" lang="fr">{ayah.frenchText}</span>
+                {showTranslation && <span className="ayah-translation" lang="fr">{ayah.frenchText}</span>}
               </button>
             </article>
           );

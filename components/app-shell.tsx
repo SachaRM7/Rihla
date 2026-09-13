@@ -9,6 +9,7 @@ import {
   Heart,
   History,
   Library,
+  Languages,
   LoaderCircle,
   Play,
   Radio,
@@ -129,6 +130,8 @@ export function AppShell() {
     savePlaybackProgress,
     setTheme,
     setPlaybackRate,
+    setRepeatMode,
+    setShowTranslation,
   } = useLocalLibrary();
 
   const libraryRef = useRef(library);
@@ -156,9 +159,10 @@ export function AppShell() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
   const [playerOpen, setPlayerOpen] = useState(false);
-  const [repeatAyah, setRepeatAyah] = useState(false);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState(0);
+  const shareTimerRef = useRef<number | null>(null);
   const initializedRef = useRef(false);
   const requestedAyahRef = useRef<number | null>(null);
   const requestedPositionRef = useRef<number | null>(null);
@@ -167,10 +171,26 @@ export function AppShell() {
   useEffect(() => {
     if (!hydrated || initializedRef.current) return;
     initializedRef.current = true;
-    setSelectedNumber(library.lastSurah);
+    const params = new URLSearchParams(window.location.search);
+    const linkedSurah = Number(params.get("surah"));
+    const linkedAyah = Number(params.get("ayah"));
+    const linkedTimeValue = params.get("t");
+    const linkedTime = linkedTimeValue === null ? 0 : Number(linkedTimeValue);
+    const hasValidLink =
+      Number.isInteger(linkedSurah) && linkedSurah >= 1 && linkedSurah <= 114 &&
+      Number.isInteger(linkedAyah) && linkedAyah >= 1 && linkedAyah <= 286 &&
+      Number.isFinite(linkedTime) && linkedTime >= 0 && linkedTime <= 86_400;
+
+    setSelectedNumber(hasValidLink ? linkedSurah : library.lastSurah);
     setReciterId(isValidReciter(library.reciterId) ? library.reciterId : DEFAULT_RECITER_ID);
-    requestedPositionRef.current = library.lastPositionMs;
+    requestedAyahRef.current = hasValidLink ? linkedAyah : null;
+    requestedPositionRef.current = hasValidLink ? linkedTime * 1000 : library.lastPositionMs;
+    if (hasValidLink) setActiveView("quran");
   }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
+
+  useEffect(() => () => {
+    if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -243,7 +263,7 @@ export function AppShell() {
     activeIndex,
     onActiveIndexChange,
     playbackRate: library.playbackRate,
-    repeatAyah,
+    repeatMode: library.repeatMode,
   });
 
   const setSleepTimer = useCallback((minutes: number | null) => {
@@ -382,6 +402,58 @@ export function AppShell() {
   const currentAyah = detail?.ayahs[activeIndex] ?? null;
   const currentAyahKey = detail && currentAyah ? `${detail.surah.number}:${currentAyah.numberInSurah}` : "";
   const currentAyahFavorite = currentAyahKey ? library.favoriteAyahs.includes(currentAyahKey) : false;
+
+  const showShareMessage = useCallback((message: string) => {
+    setShareMessage(message);
+    if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
+    shareTimerRef.current = window.setTimeout(() => setShareMessage(null), 2600);
+  }, []);
+
+  const shareAyah = useCallback(async (ayahNumber: number, positionMs = 0) => {
+    const ayah = detail?.ayahs.find((item) => item.numberInSurah === ayahNumber);
+    if (!detail || !ayah) return;
+
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("surah", String(detail.surah.number));
+    url.searchParams.set("ayah", String(ayahNumber));
+    if (positionMs >= 1000) url.searchParams.set("t", String(Math.round(positionMs / 100) / 10));
+
+    const shareData = {
+      title: `${detail.surah.englishName} · Ayah ${ayahNumber}`,
+      text: `${ayah.arabicText}\n${ayah.frenchText}`,
+      url: url.toString(),
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        showShareMessage("Ayah partagée");
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url.toString());
+      } else {
+        const input = document.createElement("textarea");
+        input.value = url.toString();
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+      showShareMessage("Lien de l’ayah copié");
+    } catch {
+      showShareMessage("Impossible de copier le lien");
+    }
+  }, [detail, showShareMessage]);
 
   const showQuranView = () => {
     setPlayerOpen(false);
@@ -531,15 +603,26 @@ export function AppShell() {
                         {RECITERS.map((reciter) => <option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}
                       </select>
                     </label>
-                    <button
-                      type="button"
-                      className={`secondary-action ${library.favoriteSurahs.includes(selectedNumber) ? "active" : ""}`}
-                      onClick={() => toggleFavoriteSurah(selectedNumber)}
-                      aria-pressed={library.favoriteSurahs.includes(selectedNumber)}
-                    >
-                      <Heart size={17} fill={library.favoriteSurahs.includes(selectedNumber) ? "currentColor" : "none"} />
-                      {library.favoriteSurahs.includes(selectedNumber) ? "Sauvegardée" : "Sauvegarder"}
-                    </button>
+                    <div className="reading-actions">
+                      <button
+                        type="button"
+                        className={`secondary-action ${library.showTranslation ? "active" : ""}`}
+                        onClick={() => setShowTranslation(!library.showTranslation)}
+                        aria-pressed={library.showTranslation}
+                      >
+                        <Languages size={17} />
+                        {library.showTranslation ? "Traduction" : "Arabe seul"}
+                      </button>
+                      <button
+                        type="button"
+                        className={`secondary-action ${library.favoriteSurahs.includes(selectedNumber) ? "active" : ""}`}
+                        onClick={() => toggleFavoriteSurah(selectedNumber)}
+                        aria-pressed={library.favoriteSurahs.includes(selectedNumber)}
+                      >
+                        <Heart size={17} fill={library.favoriteSurahs.includes(selectedNumber) ? "currentColor" : "none"} />
+                        {library.favoriteSurahs.includes(selectedNumber) ? "Sauvegardée" : "Sauvegarder"}
+                      </button>
+                    </div>
                   </div>
 
                   {detailLoading && (
@@ -559,8 +642,13 @@ export function AppShell() {
                         isPlaying={player.isPlaying}
                         currentTime={player.currentTime}
                         favoriteAyahs={library.favoriteAyahs}
+                        showTranslation={library.showTranslation}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
+                        onShare={(ayah) => shareAyah(
+                          ayah,
+                          currentAyah?.numberInSurah === ayah ? player.currentTime * 1000 : 0,
+                        )}
                       />
                       <SourceDisclosure source={detail.source} />
                     </>
@@ -687,7 +775,8 @@ export function AppShell() {
           canPrevious={player.canPrevious}
           canNext={player.canNext}
           playbackRate={library.playbackRate}
-          repeatAyah={repeatAyah}
+          repeatMode={library.repeatMode}
+          repeatIteration={player.repeatIteration}
           sleepTimerRemaining={sleepTimerRemaining}
           onClose={() => setPlayerOpen(false)}
           onToggle={player.toggle}
@@ -699,10 +788,13 @@ export function AppShell() {
           onToggleFavorite={() => currentAyah && toggleFavoriteAyah(detail.surah.number, currentAyah.numberInSurah)}
           onShowText={showQuranView}
           onPlaybackRateChange={setPlaybackRate}
-          onToggleRepeat={() => setRepeatAyah((value) => !value)}
+          onRepeatModeChange={setRepeatMode}
           onSetSleepTimer={setSleepTimer}
+          onShare={() => currentAyah && shareAyah(currentAyah.numberInSurah, player.currentTime * 1000)}
         />
       )}
+
+      {shareMessage && <div className="action-toast" role="status">{shareMessage}</div>}
 
       <MobileNavigation activeView={activeView} onChange={setActiveView} />
     </div>

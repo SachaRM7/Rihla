@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
 import {
   isPlaybackRate,
+  isRepeatMode,
   isThemeId,
   type PlaybackRate,
+  type RepeatMode,
   type ThemeId,
 } from "@/lib/preferences";
 
@@ -32,6 +34,8 @@ export type LocalLibrary = {
   reciterId: string;
   theme: ThemeId;
   playbackRate: PlaybackRate;
+  repeatMode: RepeatMode;
+  showTranslation: boolean;
   listeningHistory: ListeningHistoryItem[];
 };
 
@@ -45,6 +49,8 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   reciterId: DEFAULT_RECITER_ID,
   theme: "olive",
   playbackRate: 1,
+  repeatMode: "off",
+  showTranslation: true,
   listeningHistory: [],
 };
 
@@ -117,6 +123,8 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     reciterId: typeof candidate.reciterId === "string" ? candidate.reciterId : DEFAULT_RECITER_ID,
     theme: isThemeId(candidate.theme) ? candidate.theme : "olive",
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
+    repeatMode: isRepeatMode(candidate.repeatMode) ? candidate.repeatMode : "off",
+    showTranslation: typeof candidate.showTranslation === "boolean" ? candidate.showTranslation : true,
     listeningHistory,
   };
 }
@@ -245,6 +253,14 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, playbackRate }));
   }, []);
 
+  const setRepeatMode = useCallback((repeatMode: RepeatMode) => {
+    setLibrary((current) => ({ ...current, repeatMode }));
+  }, []);
+
+  const setShowTranslation = useCallback((showTranslation: boolean) => {
+    setLibrary((current) => ({ ...current, showTranslation }));
+  }, []);
+
   return {
     library,
     hydrated,
@@ -254,5 +270,7 @@ export function useLocalLibrary() {
     savePlaybackProgress,
     setTheme,
     setPlaybackRate,
+    setRepeatMode,
+    setShowTranslation,
   };
 }

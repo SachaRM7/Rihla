@@ -8,13 +8,14 @@ import {
   Play,
   Repeat2,
   RotateCcw,
+  Share2,
   SkipBack,
   SkipForward,
   Timer,
   X,
 } from "lucide-react";
 import type { PlaybackStatus } from "@/hooks/use-quran-player";
-import { PLAYBACK_RATES, type PlaybackRate } from "@/lib/preferences";
+import { PLAYBACK_RATES, type PlaybackRate, type RepeatMode } from "@/lib/preferences";
 import { RECITERS } from "@/lib/quran/constants";
 import type { SurahDetail } from "@/lib/quran/types";
 import { formatTime } from "./mini-player";
@@ -32,7 +33,8 @@ type Props = {
   canPrevious: boolean;
   canNext: boolean;
   playbackRate: PlaybackRate;
-  repeatAyah: boolean;
+  repeatMode: RepeatMode;
+  repeatIteration: number;
   sleepTimerRemaining: number;
   onClose: () => void;
   onToggle: () => void;
@@ -44,8 +46,9 @@ type Props = {
   onToggleFavorite: () => void;
   onShowText: () => void;
   onPlaybackRateChange: (rate: PlaybackRate) => void;
-  onToggleRepeat: () => void;
+  onRepeatModeChange: (mode: RepeatMode) => void;
   onSetSleepTimer: (minutes: number | null) => void;
+  onShare: () => void;
 };
 
 export function FullPlayer({
@@ -61,7 +64,8 @@ export function FullPlayer({
   canPrevious,
   canNext,
   playbackRate,
-  repeatAyah,
+  repeatMode,
+  repeatIteration,
   sleepTimerRemaining,
   onClose,
   onToggle,
@@ -73,8 +77,9 @@ export function FullPlayer({
   onToggleFavorite,
   onShowText,
   onPlaybackRateChange,
-  onToggleRepeat,
+  onRepeatModeChange,
   onSetSleepTimer,
+  onShare,
 }: Props) {
   const ayah = detail.ayahs[activeIndex];
   if (!ayah) return null;
@@ -110,16 +115,26 @@ export function FullPlayer({
           <div>
             <h3>Ayah {ayah.numberInSurah}</h3>
             <p>{detail.reciterName}</p>
+            {repeatMode !== "off" && (
+              <span className="repeat-progress">
+                {repeatMode === "continuous" ? "Boucle continue" : `Passage ${repeatIteration}/${repeatMode}`}
+              </span>
+            )}
           </div>
-          <button
-            type="button"
-            className={`favorite-button ${isFavorite ? "active" : ""}`}
-            aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
-            aria-pressed={isFavorite}
-            onClick={onToggleFavorite}
-          >
-            <Heart size={21} fill={isFavorite ? "currentColor" : "none"} />
-          </button>
+          <div className="player-track-actions">
+            <button type="button" className="icon-button" aria-label="Partager cette ayah" onClick={onShare}>
+              <Share2 size={19} />
+            </button>
+            <button
+              type="button"
+              className={`favorite-button ${isFavorite ? "active" : ""}`}
+              aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
+              aria-pressed={isFavorite}
+              onClick={onToggleFavorite}
+            >
+              <Heart size={21} fill={isFavorite ? "currentColor" : "none"} />
+            </button>
+          </div>
         </div>
 
         <div className="player-timeline">
@@ -172,15 +187,19 @@ export function FullPlayer({
               {PLAYBACK_RATES.map((rate) => <option value={rate} key={rate}>{rate}×</option>)}
             </select>
           </label>
-          <button
-            type="button"
-            className={`player-option repeat-option ${repeatAyah ? "active" : ""}`}
-            aria-pressed={repeatAyah}
-            onClick={onToggleRepeat}
-          >
+          <label className={`player-option ${repeatMode !== "off" ? "active" : ""}`}>
             <span><Repeat2 size={16} /> Répéter</span>
-            <strong>{repeatAyah ? "Activé" : "Non"}</strong>
-          </button>
+            <select
+              value={repeatMode}
+              onChange={(event) => onRepeatModeChange(event.target.value as RepeatMode)}
+            >
+              <option value="off">Off</option>
+              <option value="3">3 fois</option>
+              <option value="5">5 fois</option>
+              <option value="10">10 fois</option>
+              <option value="continuous">Continu</option>
+            </select>
+          </label>
           <label className="player-option">
             <span><Timer size={16} /> Minuterie</span>
             <select
