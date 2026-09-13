@@ -125,7 +125,7 @@ export function AyahList({
             >
               <div className="ayah-meta">
                 <span>{detail.surah.number}:{ayah.numberInSurah}</span>
-                {isActive && (
+                <div className="ayah-meta-actions">
                   <button
                     type="button"
                     className={`translation-toggle-inline ${showTranslation ? "active" : ""}`}
@@ -136,8 +136,6 @@ export function AyahList({
                   >
                     <Languages size={17} />
                   </button>
-                )}
-                <div className="ayah-meta-actions">
                   <button
                     type="button"
                     className="icon-button"
