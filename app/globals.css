@@ -157,5 +157,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
   .page-content{padding-inline:38px}.featured-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.quran-workspace{grid-template-columns:minmax(330px,.72fr) minmax(0,1.45fr);align-items:start}.quran-catalog-column{position:sticky;top:88px}
   .library-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+/* Keep every surface inside narrow mobile and in-app browser viewports. */
+html,body{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+.app-shell,.app-main,.page-content,.content-stack,.home-intro,.page-intro,.quran-hero,.hero-copy,.featured-section,.future-card,.surah-browser,.quran-workspace,.quran-reading-column{min-width:0;max-width:100%}
+.page-content{overflow-x:clip}
+.home-intro h1,.page-intro h1,.home-intro p,.page-intro p{max-width:100%;overflow-wrap:anywhere}
+.hero-actions{min-width:0}
+.hero-actions>button{width:100%;min-width:0;white-space:normal;text-align:center}
+.mini-player,.mobile-navigation{max-width:100vw}
+
+@media(max-width:899px){
+  .featured-grid{width:100%;max-width:100%;margin-right:0;padding-right:0;overscroll-behavior-inline:contain}
+}
+
+@media(max-width:359px){
+  .page-content{padding-inline:12px}
+  .home-intro h1,.page-intro h1{font-size:clamp(2rem,11vw,2.6rem)}
+  .hero-copy{padding-inline:16px}
+}
+
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
