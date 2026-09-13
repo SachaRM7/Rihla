@@ -109,6 +109,7 @@ export function AyahList({
           const key = `${detail.surah.number}:${ayah.numberInSurah}`;
           const isFavorite = favoriteAyahs.includes(key);
           const isActive = activeIndex === index;
+          const isPast = index < activeIndex;
           const elapsedMs = currentTime * 1000;
           const karaokeActive = isActive && (isPlaying || currentTime > 0);
           const translationProgress = duration > 0
@@ -129,10 +130,11 @@ export function AyahList({
                     type="button"
                     className={`translation-toggle-inline ${showTranslation ? "active" : ""}`}
                     aria-pressed={showTranslation}
+                    aria-label={showTranslation ? "Masquer la traduction française" : "Afficher la traduction française"}
+                    title={showTranslation ? "Masquer la traduction" : "Afficher la traduction"}
                     onClick={onToggleTranslation}
                   >
-                    <Languages size={14} />
-                    Traduction {showTranslation ? "ON" : "OFF"}
+                    <Languages size={17} />
                   </button>
                 )}
                 <div className="ayah-meta-actions">
@@ -169,12 +171,11 @@ export function AyahList({
                   aria-label={ayah.arabicText}
                 >
                   {ayah.words.map((word) => {
-                    const progress = getWordProgress(
-                      elapsedMs,
-                      word.startMs,
-                      word.endMs,
-                      karaokeActive,
-                    );
+                    const progress = karaokeActive
+                      ? getWordProgress(elapsedMs, word.startMs, word.endMs, true)
+                      : isPast
+                        ? 1
+                        : 0;
                     const isCurrentWord = karaokeActive && progress > 0 && progress < 1;
                     const style: KaraokeStyle = { "--word-progress": `${progress * 100}%` };
                     return (
