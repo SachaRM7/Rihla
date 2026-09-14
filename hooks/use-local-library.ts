@@ -13,6 +13,8 @@ import {
 
 const STORAGE_KEY = "rihla.library.v1";
 const MAX_HISTORY_ITEMS = 24;
+const MAX_NOTES = 250;
+const MAX_NOTE_LENGTH = 2_000;
 const PROGRESS_WRITE_INTERVAL_MS = 750;
 
 export type ListeningHistoryItem = {
@@ -21,6 +23,13 @@ export type ListeningHistoryItem = {
   positionMs: number;
   durationMs: number;
   reciterId: string;
+  updatedAt: number;
+};
+
+export type AyahNote = {
+  surah: number;
+  ayah: number;
+  text: string;
   updatedAt: number;
 };
 
@@ -37,6 +46,7 @@ export type LocalLibrary = {
   repeatMode: RepeatMode;
   showTranslation: boolean;
   listeningHistory: ListeningHistoryItem[];
+  ayahNotes: AyahNote[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -52,7 +62,33 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   repeatMode: "off",
   showTranslation: true,
   listeningHistory: [],
+  ayahNotes: [],
 };
+
+function sanitizeAyahNote(value: unknown): AyahNote | null {
+  if (!value || typeof value !== "object") return null;
+  const note = value as Partial<AyahNote>;
+  if (
+    !Number.isInteger(note.surah) ||
+    note.surah! < 1 ||
+    note.surah! > 114 ||
+    !Number.isInteger(note.ayah) ||
+    note.ayah! < 1 ||
+    typeof note.text !== "string" ||
+    !Number.isFinite(note.updatedAt)
+  ) {
+    return null;
+  }
+
+  const text = note.text.trim().slice(0, MAX_NOTE_LENGTH);
+  if (!text) return null;
+  return {
+    surah: note.surah!,
+    ayah: note.ayah!,
+    text,
+    updatedAt: Math.max(0, Math.round(note.updatedAt!)),
+  };
+}
 
 function sanitizeHistoryItem(value: unknown): ListeningHistoryItem | null {
   if (!value || typeof value !== "object") return null;
@@ -107,6 +143,19 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
         .slice(0, MAX_HISTORY_ITEMS)
     : [];
 
+  const ayahNotes = Array.isArray(candidate.ayahNotes)
+    ? candidate.ayahNotes
+        .map(sanitizeAyahNote)
+        .filter((item): item is AyahNote => Boolean(item))
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .filter((item, index, items) =>
+          items.findIndex((candidateItem) =>
+            candidateItem.surah === item.surah && candidateItem.ayah === item.ayah,
+          ) === index,
+        )
+        .slice(0, MAX_NOTES)
+    : [];
+
   return {
     version: 1,
     favoriteSurahs,
@@ -126,6 +175,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     repeatMode: isRepeatMode(candidate.repeatMode) ? candidate.repeatMode : "off",
     showTranslation: typeof candidate.showTranslation === "boolean" ? candidate.showTranslation : true,
     listeningHistory,
+    ayahNotes,
   };
 }
 
@@ -261,6 +311,19 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, showTranslation }));
   }, []);
 
+  const saveAyahNote = useCallback((surah: number, ayah: number, text: string) => {
+    const normalizedText = text.trim().slice(0, MAX_NOTE_LENGTH);
+    setLibrary((current) => ({
+      ...current,
+      ayahNotes: normalizedText
+        ? [
+            { surah, ayah, text: normalizedText, updatedAt: Date.now() },
+            ...current.ayahNotes.filter((item) => item.surah !== surah || item.ayah !== ayah),
+          ].slice(0, MAX_NOTES)
+        : current.ayahNotes.filter((item) => item.surah !== surah || item.ayah !== ayah),
+    }));
+  }, []);
+
   return {
     library,
     hydrated,
@@ -272,5 +335,6 @@ export function useLocalLibrary() {
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
+    saveAyahNote,
   };
 }

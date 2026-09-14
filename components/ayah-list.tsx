@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Languages, Share2 } from "lucide-react";
+import { Heart, Languages, Share2, StickyNote } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -12,10 +12,12 @@ type Props = {
   currentTime: number;
   duration: number;
   favoriteAyahs: string[];
+  notedAyahs: string[];
   showTranslation: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
   onToggleTranslation: () => void;
+  onEditNote: (ayahNumber: number) => void;
   onShare: (ayahNumber: number) => void;
 };
 
@@ -71,10 +73,12 @@ export function AyahList({
   currentTime,
   duration,
   favoriteAyahs,
+  notedAyahs,
   showTranslation,
   onSelect,
   onToggleFavorite,
   onToggleTranslation,
+  onEditNote,
   onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
@@ -108,6 +112,7 @@ export function AyahList({
         {detail.ayahs.map((ayah, index) => {
           const key = `${detail.surah.number}:${ayah.numberInSurah}`;
           const isFavorite = favoriteAyahs.includes(key);
+          const hasNote = notedAyahs.includes(key);
           const isActive = activeIndex === index;
           const isPast = index < activeIndex;
           const elapsedMs = currentTime * 1000;
@@ -135,6 +140,15 @@ export function AyahList({
                     onClick={onToggleTranslation}
                   >
                     <Languages size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    className={`icon-button ${hasNote ? "active" : ""}`}
+                    onClick={() => onEditNote(ayah.numberInSurah)}
+                    aria-label={hasNote ? `Modifier la note de l’ayah ${ayah.numberInSurah}` : `Ajouter une note à l’ayah ${ayah.numberInSurah}`}
+                    title={hasNote ? "Modifier la note" : "Ajouter une note"}
+                  >
+                    <StickyNote size={16} fill={hasNote ? "currentColor" : "none"} />
                   </button>
                   <button
                     type="button"

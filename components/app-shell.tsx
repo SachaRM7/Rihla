@@ -15,11 +15,13 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  StickyNote,
   Video,
   WifiOff,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
+import { AyahNoteDialog } from "@/components/ayah-note-dialog";
 import { FullPlayer } from "@/components/full-player";
 import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
@@ -131,6 +133,7 @@ export function AppShell() {
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
+    saveAyahNote,
   } = useLocalLibrary();
 
   const libraryRef = useRef(library);
@@ -161,6 +164,11 @@ export function AppShell() {
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState(0);
+  const [noteTarget, setNoteTarget] = useState<{
+    surah: number;
+    ayah: number;
+    surahName: string;
+  } | null>(null);
   const shareTimerRef = useRef<number | null>(null);
   const initializedRef = useRef(false);
   const requestedAyahRef = useRef<number | null>(null);
@@ -423,6 +431,10 @@ export function AppShell() {
   const currentAyah = detail?.ayahs[activeIndex] ?? null;
   const currentAyahKey = detail && currentAyah ? `${detail.surah.number}:${currentAyah.numberInSurah}` : "";
   const currentAyahFavorite = currentAyahKey ? library.favoriteAyahs.includes(currentAyahKey) : false;
+  const notedAyahKeys = useMemo(
+    () => library.ayahNotes.map((note) => `${note.surah}:${note.ayah}`),
+    [library.ayahNotes],
+  );
 
   const showShareMessage = useCallback((message: string) => {
     setShareMessage(message);
@@ -655,9 +667,15 @@ export function AppShell() {
                         currentTime={player.currentTime}
                         duration={player.duration}
                         favoriteAyahs={library.favoriteAyahs}
+                        notedAyahs={notedAyahKeys}
                         showTranslation={library.showTranslation}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
+                        onEditNote={(ayah) => setNoteTarget({
+                          surah: detail.surah.number,
+                          ayah,
+                          surahName: detail.surah.englishName,
+                        })}
                         onToggleTranslation={() => setShowTranslation(!library.showTranslation)}
                         onShare={(ayah) => shareAyah(
                           ayah,
@@ -757,6 +775,42 @@ export function AppShell() {
                 )}
               </section>
 
+              <section className="library-section">
+                <div className="section-title-row">
+                  <div><p className="eyebrow">Réflexions</p><h2>Notes personnelles</h2></div>
+                  <span className="section-count">{library.ayahNotes.length}</span>
+                </div>
+                {library.ayahNotes.length ? (
+                  <div className="notes-list">
+                    {library.ayahNotes.map((note) => {
+                      const surah = surahs.find((item) => item.number === note.surah);
+                      return (
+                        <button
+                          type="button"
+                          className="note-item"
+                          key={`${note.surah}:${note.ayah}`}
+                          onClick={() => openSurah(note.surah, note.ayah)}
+                        >
+                          <span className="note-item-icon"><StickyNote size={18} /></span>
+                          <span className="note-item-copy">
+                            <strong>{surah?.englishName ?? `Sourate ${note.surah}`} · {note.surah}:{note.ayah}</strong>
+                            <small>{note.text}</small>
+                            <em>Modifiée {formatHistoryDate(note.updatedAt).toLocaleLowerCase("fr-FR")}</em>
+                          </span>
+                          <ChevronRight size={18} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="empty-library compact">
+                    <StickyNote size={22} />
+                    <strong>Aucune note personnelle</strong>
+                    <p>Ajoutez une réflexion depuis l’icône note d’une ayah.</p>
+                  </div>
+                )}
+              </section>
+
               <PreferencesPanel theme={library.theme} onThemeChange={setTheme} />
 
               <FutureContent />
@@ -814,6 +868,24 @@ export function AppShell() {
       )}
 
       {shareMessage && <div className="action-toast" role="status">{shareMessage}</div>}
+
+      {noteTarget && (
+        <AyahNoteDialog
+          key={`${noteTarget.surah}:${noteTarget.ayah}`}
+          surahName={noteTarget.surahName}
+          surahNumber={noteTarget.surah}
+          ayahNumber={noteTarget.ayah}
+          initialValue={library.ayahNotes.find(
+            (note) => note.surah === noteTarget.surah && note.ayah === noteTarget.ayah,
+          )?.text ?? ""}
+          onClose={() => setNoteTarget(null)}
+          onSave={(value) => {
+            saveAyahNote(noteTarget.surah, noteTarget.ayah, value);
+            setNoteTarget(null);
+            showShareMessage(value.trim() ? "Note enregistrée" : "Note supprimée");
+          }}
+        />
+      )}
 
       <MobileNavigation activeView={activeView} onChange={setActiveView} />
     </div>
