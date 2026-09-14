@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PlaybackRate, RepeatMode } from "@/lib/preferences";
+import type { PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
 import type { SurahDetail } from "@/lib/quran/types";
 
 export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
@@ -12,6 +12,7 @@ type PlayerOptions = {
   onActiveIndexChange: (index: number) => void;
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
+  studyLoop: StudyLoopPreference | null;
 };
 
 function readableAudioError() {
@@ -24,6 +25,7 @@ export function useQuranPlayer({
   onActiveIndexChange,
   playbackRate,
   repeatMode,
+  studyLoop,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
@@ -32,6 +34,8 @@ export function useQuranPlayer({
   const playWhenLoadedRef = useRef(false);
   const repeatModeRef = useRef(repeatMode);
   const repeatIterationRef = useRef(1);
+  const studyLoopRef = useRef(studyLoop);
+  const studyLoopIterationRef = useRef(1);
   const playbackRateRef = useRef(playbackRate);
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
@@ -40,10 +44,16 @@ export function useQuranPlayer({
   const [loadedSourceUrl, setLoadedSourceUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [repeatIteration, setRepeatIteration] = useState(1);
+  const [studyLoopIteration, setStudyLoopIteration] = useState(1);
 
   const resetRepeatProgress = useCallback(() => {
     repeatIterationRef.current = 1;
     setRepeatIteration(1);
+  }, []);
+
+  const resetStudyLoopProgress = useCallback(() => {
+    studyLoopIterationRef.current = 1;
+    setStudyLoopIteration(1);
   }, []);
 
   useEffect(() => {
@@ -51,12 +61,17 @@ export function useQuranPlayer({
     indexRef.current = activeIndex;
     changeIndexRef.current = onActiveIndexChange;
     repeatModeRef.current = repeatMode;
+    studyLoopRef.current = studyLoop;
     playbackRateRef.current = playbackRate;
-  }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatMode]);
+  }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatMode, studyLoop]);
 
   useEffect(() => {
     resetRepeatProgress();
   }, [repeatMode, resetRepeatProgress]);
+
+  useEffect(() => {
+    resetStudyLoopProgress();
+  }, [studyLoop, resetStudyLoopProgress]);
 
   const loadAtIndex = useCallback((index: number, autoplay: boolean) => {
     const audio = audioRef.current;
@@ -146,6 +161,59 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
+      const currentDetail = detailRef.current;
+      const currentIndex = indexRef.current;
+
+      const moveToIndex = (targetIndex: number, autoplay: boolean) => {
+        const targetAyah = currentDetail?.ayahs[targetIndex];
+        if (!currentDetail || !targetAyah) return false;
+        changeIndexRef.current(targetIndex);
+        indexRef.current = targetIndex;
+        setCurrentTime(0);
+        setDuration(0);
+        setLoadedSourceUrl("");
+        setStatus("loading");
+        audio.src = targetAyah.audioUrl;
+        audio.load();
+        playWhenLoadedRef.current = autoplay;
+        if (autoplay) void audio.play().catch(() => setStatus("ready"));
+        return true;
+      };
+
+      const studyLoop = studyLoopRef.current;
+      if (studyLoop && currentDetail?.surah.number === studyLoop.surah) {
+        const startIndex = currentDetail.ayahs.findIndex(
+          (ayah) => ayah.numberInSurah === studyLoop.startAyah,
+        );
+        const endIndex = currentDetail.ayahs.findIndex(
+          (ayah) => ayah.numberInSurah === studyLoop.endAyah,
+        );
+        const isInsideRange = startIndex >= 0 && endIndex >= startIndex && currentIndex >= startIndex && currentIndex <= endIndex;
+
+        if (isInsideRange) {
+          resetRepeatProgress();
+          if (currentIndex < endIndex) {
+            moveToIndex(currentIndex + 1, true);
+            return;
+          }
+
+          const cycleLimit = studyLoop.cycles === "continuous"
+            ? Number.POSITIVE_INFINITY
+            : Number(studyLoop.cycles);
+          if (studyLoopIterationRef.current < cycleLimit) {
+            const nextIteration = studyLoopIterationRef.current + 1;
+            studyLoopIterationRef.current = nextIteration;
+            setStudyLoopIteration(nextIteration);
+            moveToIndex(startIndex, true);
+            return;
+          }
+
+          resetStudyLoopProgress();
+          moveToIndex(startIndex, false);
+          return;
+        }
+      }
+
       const repeatMode = repeatModeRef.current;
       const repeatLimit = repeatMode === "continuous"
         ? Number.POSITIVE_INFINITY
@@ -164,7 +232,6 @@ export function useQuranPlayer({
         return;
       }
       resetRepeatProgress();
-      const currentDetail = detailRef.current;
       const nextIndex = indexRef.current + 1;
       if (!currentDetail || nextIndex >= currentDetail.ayahs.length) {
         playWhenLoadedRef.current = false;
@@ -173,16 +240,7 @@ export function useQuranPlayer({
         return;
       }
 
-      changeIndexRef.current(nextIndex);
-      indexRef.current = nextIndex;
-      const nextAyah = currentDetail.ayahs[nextIndex];
-      setCurrentTime(0);
-      setDuration(0);
-      setLoadedSourceUrl("");
-      audio.src = nextAyah.audioUrl;
-      audio.load();
-      playWhenLoadedRef.current = true;
-      void audio.play().catch(() => setStatus("ready"));
+      moveToIndex(nextIndex, true);
     };
 
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
@@ -207,7 +265,7 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, [resetRepeatProgress]);
+  }, [resetRepeatProgress, resetStudyLoopProgress]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -311,6 +369,7 @@ export function useQuranPlayer({
     loadedSourceUrl,
     error,
     repeatIteration,
+    studyLoopIteration,
     play,
     pause,
     toggle,

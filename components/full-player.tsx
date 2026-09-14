@@ -15,10 +15,16 @@ import {
   X,
 } from "lucide-react";
 import type { PlaybackStatus } from "@/hooks/use-quran-player";
-import { PLAYBACK_RATES, type PlaybackRate, type RepeatMode } from "@/lib/preferences";
+import {
+  PLAYBACK_RATES,
+  type PlaybackRate,
+  type RepeatMode,
+  type StudyLoopPreference,
+} from "@/lib/preferences";
 import { RECITERS } from "@/lib/quran/constants";
 import type { SurahDetail } from "@/lib/quran/types";
 import { formatTime } from "./mini-player";
+import { StudyLoopControl } from "./study-loop-control";
 
 type Props = {
   detail: SurahDetail;
@@ -35,6 +41,8 @@ type Props = {
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
   repeatIteration: number;
+  studyLoop: StudyLoopPreference | null;
+  studyLoopIteration: number;
   sleepTimerRemaining: number;
   onClose: () => void;
   onToggle: () => void;
@@ -47,6 +55,8 @@ type Props = {
   onShowText: () => void;
   onPlaybackRateChange: (rate: PlaybackRate) => void;
   onRepeatModeChange: (mode: RepeatMode) => void;
+  onApplyStudyLoop: (value: StudyLoopPreference) => void;
+  onStopStudyLoop: () => void;
   onSetSleepTimer: (minutes: number | null) => void;
   onShare: () => void;
 };
@@ -66,6 +76,8 @@ export function FullPlayer({
   playbackRate,
   repeatMode,
   repeatIteration,
+  studyLoop,
+  studyLoopIteration,
   sleepTimerRemaining,
   onClose,
   onToggle,
@@ -78,6 +90,8 @@ export function FullPlayer({
   onShowText,
   onPlaybackRateChange,
   onRepeatModeChange,
+  onApplyStudyLoop,
+  onStopStudyLoop,
   onSetSleepTimer,
   onShare,
 }: Props) {
@@ -115,7 +129,11 @@ export function FullPlayer({
           <div>
             <h3>Ayah {ayah.numberInSurah}</h3>
             <p>{detail.reciterName}</p>
-            {repeatMode !== "off" && (
+            {studyLoop ? (
+              <span className="repeat-progress">
+                A–B {studyLoop.startAyah}–{studyLoop.endAyah} · {studyLoop.cycles === "continuous" ? `passage ${studyLoopIteration}` : `${studyLoopIteration}/${studyLoop.cycles}`}
+              </span>
+            ) : repeatMode !== "off" && (
               <span className="repeat-progress">
                 {repeatMode === "continuous" ? "Boucle continue" : `Passage ${repeatIteration}/${repeatMode}`}
               </span>
@@ -218,6 +236,16 @@ export function FullPlayer({
             </select>
           </label>
         </div>
+
+        <StudyLoopControl
+          surahNumber={detail.surah.number}
+          ayahCount={detail.ayahs.length}
+          activeAyah={ayah.numberInSurah}
+          value={studyLoop}
+          iteration={studyLoopIteration}
+          onApply={onApplyStudyLoop}
+          onStop={onStopStudyLoop}
+        />
 
         <label className="reciter-control">
           <span>Récitateur</span>

@@ -133,6 +133,7 @@ export function AppShell() {
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
+    setStudyLoop,
     saveAyahNote,
   } = useLocalLibrary();
 
@@ -271,6 +272,7 @@ export function AppShell() {
     onActiveIndexChange,
     playbackRate: library.playbackRate,
     repeatMode: library.repeatMode,
+    studyLoop: library.studyLoop,
   });
 
   const setSleepTimer = useCallback((minutes: number | null) => {
@@ -431,6 +433,9 @@ export function AppShell() {
   const currentAyah = detail?.ayahs[activeIndex] ?? null;
   const currentAyahKey = detail && currentAyah ? `${detail.surah.number}:${currentAyah.numberInSurah}` : "";
   const currentAyahFavorite = currentAyahKey ? library.favoriteAyahs.includes(currentAyahKey) : false;
+  const activeStudyLoop = detail && library.studyLoop?.surah === detail.surah.number
+    ? library.studyLoop
+    : null;
   const notedAyahKeys = useMemo(
     () => library.ayahNotes.map((note) => `${note.surah}:${note.ayah}`),
     [library.ayahNotes],
@@ -850,6 +855,8 @@ export function AppShell() {
           playbackRate={library.playbackRate}
           repeatMode={library.repeatMode}
           repeatIteration={player.repeatIteration}
+          studyLoop={activeStudyLoop}
+          studyLoopIteration={player.studyLoopIteration}
           sleepTimerRemaining={sleepTimerRemaining}
           onClose={() => setPlayerOpen(false)}
           onToggle={player.toggle}
@@ -862,6 +869,20 @@ export function AppShell() {
           onShowText={showQuranView}
           onPlaybackRateChange={setPlaybackRate}
           onRepeatModeChange={setRepeatMode}
+          onApplyStudyLoop={(value) => {
+            const startIndex = detail.ayahs.findIndex(
+              (ayah) => ayah.numberInSurah === value.startAyah,
+            );
+            if (startIndex < 0) return;
+            setRepeatMode("off");
+            setStudyLoop(value);
+            player.selectAyah(startIndex, true);
+            showShareMessage(`Boucle ${value.startAyah}–${value.endAyah} lancée`);
+          }}
+          onStopStudyLoop={() => {
+            setStudyLoop(null);
+            showShareMessage("Boucle d’étude arrêtée");
+          }}
           onSetSleepTimer={setSleepTimer}
           onShare={() => currentAyah && shareAyah(currentAyah.numberInSurah, player.currentTime * 1000)}
         />

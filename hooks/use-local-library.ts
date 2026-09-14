@@ -6,8 +6,10 @@ import {
   isPlaybackRate,
   isRepeatMode,
   isThemeId,
+  sanitizeStudyLoop,
   type PlaybackRate,
   type RepeatMode,
+  type StudyLoopPreference,
   type ThemeId,
 } from "@/lib/preferences";
 
@@ -45,6 +47,7 @@ export type LocalLibrary = {
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
   showTranslation: boolean;
+  studyLoop: StudyLoopPreference | null;
   listeningHistory: ListeningHistoryItem[];
   ayahNotes: AyahNote[];
 };
@@ -61,6 +64,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   playbackRate: 1,
   repeatMode: "off",
   showTranslation: true,
+  studyLoop: null,
   listeningHistory: [],
   ayahNotes: [],
 };
@@ -174,6 +178,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
     repeatMode: isRepeatMode(candidate.repeatMode) ? candidate.repeatMode : "off",
     showTranslation: typeof candidate.showTranslation === "boolean" ? candidate.showTranslation : true,
+    studyLoop: sanitizeStudyLoop(candidate.studyLoop),
     listeningHistory,
     ayahNotes,
   };
@@ -311,6 +316,10 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, showTranslation }));
   }, []);
 
+  const setStudyLoop = useCallback((studyLoop: StudyLoopPreference | null) => {
+    setLibrary((current) => ({ ...current, studyLoop: sanitizeStudyLoop(studyLoop) }));
+  }, []);
+
   const saveAyahNote = useCallback((surah: number, ayah: number, text: string) => {
     const normalizedText = text.trim().slice(0, MAX_NOTE_LENGTH);
     setLibrary((current) => ({
@@ -335,6 +344,7 @@ export function useLocalLibrary() {
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
+    setStudyLoop,
     saveAyahNote,
   };
 }
