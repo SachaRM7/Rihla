@@ -7,6 +7,15 @@ export const COLOR_THEMES: readonly { id: ThemeId; label: string }[] = [
   { id: "violet", label: "Violet" },
 ] as const;
 
+export const READING_SIZES = ["compact", "comfortable", "large"] as const;
+export type ReadingSize = (typeof READING_SIZES)[number];
+
+export const READING_SIZE_LABELS: Record<ReadingSize, string> = {
+  compact: "Compact",
+  comfortable: "Confort",
+  large: "Grand",
+};
+
 export const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5] as const;
 export type PlaybackRate = (typeof PLAYBACK_RATES)[number];
 
@@ -25,6 +34,10 @@ export type StudyLoopPreference = {
 
 export function isThemeId(value: unknown): value is ThemeId {
   return COLOR_THEMES.some((theme) => theme.id === value);
+}
+
+export function isReadingSize(value: unknown): value is ReadingSize {
+  return READING_SIZES.some((size) => size === value);
 }
 
 export function isPlaybackRate(value: unknown): value is PlaybackRate {

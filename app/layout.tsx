@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem("rihla.library.v1")||"{}").theme;if(["olive","rose","orange","violet"].includes(value))document.documentElement.dataset.theme=value}catch{}`;
+const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem("rihla.library.v1")||"{}");if(["olive","rose","orange","violet"].includes(value.theme))document.documentElement.dataset.theme=value.theme;if(["compact","comfortable","large"].includes(value.readingSize))document.documentElement.dataset.readingSize=value.readingSize}catch{}`;
 
 export const metadata: Metadata = {
   title: "RIHLA — Coran audio et texte synchronisé",

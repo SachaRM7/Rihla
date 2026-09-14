@@ -136,6 +136,8 @@ export function AppShell() {
     saveResume,
     savePlaybackProgress,
     setTheme,
+    setReadingSize,
+    setAutoScroll,
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
@@ -153,6 +155,10 @@ export function AppShell() {
     document.documentElement.dataset.theme = library.theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[library.theme]);
   }, [library.theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.readingSize = library.readingSize;
+  }, [library.readingSize]);
 
   const [activeView, setActiveView] = useState<AppView>("home");
   const [surahs, setSurahs] = useState<SurahSummary[]>([]);
@@ -694,6 +700,7 @@ export function AppShell() {
                         favoriteAyahs={library.favoriteAyahs}
                         notedAyahs={notedAyahKeys}
                         showTranslation={library.showTranslation}
+                        autoScroll={library.autoScroll}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onEditNote={(ayah) => setNoteTarget({
@@ -836,7 +843,23 @@ export function AppShell() {
                 )}
               </section>
 
-              <PreferencesPanel theme={library.theme} onThemeChange={setTheme} />
+              <PreferencesPanel
+                theme={library.theme}
+                readingSize={library.readingSize}
+                autoScroll={library.autoScroll}
+                onThemeChange={(theme) => {
+                  setTheme(theme);
+                  showShareMessage("Thème appliqué");
+                }}
+                onReadingSizeChange={(size) => {
+                  setReadingSize(size);
+                  showShareMessage("Taille de lecture appliquée");
+                }}
+                onAutoScrollChange={(enabled) => {
+                  setAutoScroll(enabled);
+                  showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
+                }}
+              />
 
               <FutureContent />
             </div>

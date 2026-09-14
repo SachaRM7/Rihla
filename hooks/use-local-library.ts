@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
 import {
   isPlaybackRate,
+  isReadingSize,
   isRepeatMode,
   isThemeId,
   sanitizeStudyLoop,
   type PlaybackRate,
+  type ReadingSize,
   type RepeatMode,
   type StudyLoopPreference,
   type ThemeId,
@@ -44,6 +46,8 @@ export type LocalLibrary = {
   lastPositionMs: number;
   reciterId: string;
   theme: ThemeId;
+  readingSize: ReadingSize;
+  autoScroll: boolean;
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
   showTranslation: boolean;
@@ -61,6 +65,8 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   lastPositionMs: 0,
   reciterId: DEFAULT_RECITER_ID,
   theme: "olive",
+  readingSize: "comfortable",
+  autoScroll: true,
   playbackRate: 1,
   repeatMode: "off",
   showTranslation: true,
@@ -175,6 +181,8 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
         : 0,
     reciterId: typeof candidate.reciterId === "string" ? candidate.reciterId : DEFAULT_RECITER_ID,
     theme: isThemeId(candidate.theme) ? candidate.theme : "olive",
+    readingSize: isReadingSize(candidate.readingSize) ? candidate.readingSize : "comfortable",
+    autoScroll: typeof candidate.autoScroll === "boolean" ? candidate.autoScroll : true,
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
     repeatMode: isRepeatMode(candidate.repeatMode) ? candidate.repeatMode : "off",
     showTranslation: typeof candidate.showTranslation === "boolean" ? candidate.showTranslation : true,
@@ -304,6 +312,14 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, theme }));
   }, []);
 
+  const setReadingSize = useCallback((readingSize: ReadingSize) => {
+    setLibrary((current) => ({ ...current, readingSize }));
+  }, []);
+
+  const setAutoScroll = useCallback((autoScroll: boolean) => {
+    setLibrary((current) => ({ ...current, autoScroll }));
+  }, []);
+
   const setPlaybackRate = useCallback((playbackRate: PlaybackRate) => {
     setLibrary((current) => ({ ...current, playbackRate }));
   }, []);
@@ -341,6 +357,8 @@ export function useLocalLibrary() {
     saveResume,
     savePlaybackProgress,
     setTheme,
+    setReadingSize,
+    setAutoScroll,
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,

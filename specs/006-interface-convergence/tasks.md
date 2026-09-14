@@ -10,4 +10,4 @@
 - [x] Ajouter safe areas, overscroll et rendu progressif des listes.
 - [x] Exécuter lint et build.
 - [x] Vérifier visuellement mobile et desktop.
-- [ ] Publier le lot sur le site existant.
+- [x] Publier le lot sur le site existant.

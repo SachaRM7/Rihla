@@ -14,6 +14,7 @@ type Props = {
   favoriteAyahs: string[];
   notedAyahs: string[];
   showTranslation: boolean;
+  autoScroll: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
   onToggleTranslation: () => void;
@@ -76,6 +77,7 @@ export function AyahList({
   favoriteAyahs,
   notedAyahs,
   showTranslation,
+  autoScroll,
   onSelect,
   onToggleFavorite,
   onToggleTranslation,
@@ -85,8 +87,9 @@ export function AyahList({
   const activeRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (!autoScroll) return;
     activeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [activeIndex]);
+  }, [activeIndex, autoScroll]);
 
   return (
     <section className="ayah-section" aria-labelledby="ayah-list-title">
