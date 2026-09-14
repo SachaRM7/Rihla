@@ -2,6 +2,8 @@
 
 Ce registre doit être relu avant chaque nouveau lot fonctionnel. Il sépare les sources déjà branchées des pistes qui nécessitent encore une validation juridique ou technique.
 
+Pour tout lot UI/UX, lire aussi `C:\Users\SachaRbone\.codex\RESSOURCES.md` puis `design-system/MASTER.md`. Les références servent à extraire des patterns adaptés à RIHLA — hiérarchie, densité, interaction, accessibilité et motion — et non à copier un écran.
+
 ## Coran — sources actuellement utilisées
 
 - **Quran Foundation / Quran.com API v4** : texte uthmani, balises de tajwid, récitation et segments temporels mot à mot pour l’expérience karaoké.
