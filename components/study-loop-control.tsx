@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Play, Repeat2, Square } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   STUDY_LOOP_CYCLES,
   type StudyLoopCycles,
@@ -43,14 +43,6 @@ export function StudyLoopControl({
     [ayahCount],
   );
 
-  useEffect(() => {
-    if (!value) return;
-    setStartAyah(value.startAyah);
-    setEndAyah(value.endAyah);
-    setCycles(value.cycles);
-    setExpanded(true);
-  }, [value]);
-
   const toggleExpanded = () => {
     setExpanded((current) => {
       if (!current && !value) {
@@ -87,6 +79,8 @@ export function StudyLoopControl({
             <label>
               <span>Début</span>
               <select
+                name="study-loop-start"
+                autoComplete="off"
                 value={startAyah}
                 onChange={(event) => {
                   const nextStart = Number(event.target.value);
@@ -99,7 +93,7 @@ export function StudyLoopControl({
             </label>
             <label>
               <span>Fin</span>
-              <select value={endAyah} onChange={(event) => setEndAyah(Number(event.target.value))}>
+              <select name="study-loop-end" autoComplete="off" value={endAyah} onChange={(event) => setEndAyah(Number(event.target.value))}>
                 {ayahNumbers.filter((number) => number >= startAyah).map((number) => (
                   <option value={number} key={number}>Ayah {number}</option>
                 ))}
@@ -107,7 +101,7 @@ export function StudyLoopControl({
             </label>
             <label>
               <span>Cycles</span>
-              <select value={cycles} onChange={(event) => setCycles(event.target.value as StudyLoopCycles)}>
+              <select name="study-loop-cycles" autoComplete="off" value={cycles} onChange={(event) => setCycles(event.target.value as StudyLoopCycles)}>
                 {STUDY_LOOP_CYCLES.map((cycle) => (
                   <option value={cycle} key={cycle}>{CYCLE_LABELS[cycle]}</option>
                 ))}

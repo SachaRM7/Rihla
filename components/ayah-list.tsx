@@ -42,14 +42,15 @@ function TajwidRuns({ runs }: { runs: TajwidTextRun[] }) {
 function TimedFrenchText({ text, progress }: { text: string; progress: number }) {
   const words = text.trim().split(/\s+/);
   const totalWeight = Math.max(1, words.reduce((total, word) => total + Math.max(word.length, 1), 0));
-  let elapsedWeight = 0;
 
   return (
     <span className="ayah-translation translation-karaoke" lang="fr" aria-label={text}>
       {words.map((word, index) => {
-        const start = elapsedWeight / totalWeight;
-        elapsedWeight += Math.max(word.length, 1);
-        const end = elapsedWeight / totalWeight;
+        const precedingWeight = words
+          .slice(0, index)
+          .reduce((total, precedingWord) => total + Math.max(precedingWord.length, 1), 0);
+        const start = precedingWeight / totalWeight;
+        const end = (precedingWeight + Math.max(word.length, 1)) / totalWeight;
         const wordProgress = getWordProgress(progress, start, end, true);
         const style: TranslationKaraokeStyle = {
           "--translation-progress": `${wordProgress * 100}%`,
@@ -139,7 +140,7 @@ export function AyahList({
                     title={showTranslation ? "Masquer la traduction" : "Afficher la traduction"}
                     onClick={onToggleTranslation}
                   >
-                    <Languages size={17} />
+                    <Languages size={17} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -148,7 +149,7 @@ export function AyahList({
                     aria-label={hasNote ? `Modifier la note de l’ayah ${ayah.numberInSurah}` : `Ajouter une note à l’ayah ${ayah.numberInSurah}`}
                     title={hasNote ? "Modifier la note" : "Ajouter une note"}
                   >
-                    <StickyNote size={16} fill={hasNote ? "currentColor" : "none"} />
+                    <StickyNote size={16} fill={hasNote ? "currentColor" : "none"} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -156,7 +157,7 @@ export function AyahList({
                     onClick={() => onShare(ayah.numberInSurah)}
                     aria-label={`Partager l’ayah ${ayah.numberInSurah}`}
                   >
-                    <Share2 size={16} />
+                    <Share2 size={16} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -165,7 +166,7 @@ export function AyahList({
                     aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
                     aria-pressed={isFavorite}
                   >
-                    <Heart size={17} fill={isFavorite ? "currentColor" : "none"} />
+                    <Heart size={17} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
                   </button>
                 </div>
               </div>

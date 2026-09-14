@@ -38,7 +38,7 @@ export function SurahBrowser({
   error,
   onRetry,
   showSearch = true,
-  searchPlaceholder = "Nom ou numéro d’une sourate",
+  searchPlaceholder = "Nom ou numéro d’une sourate…",
 }: Props) {
   const normalizedQuery = normalize(query);
   const filtered = normalizedQuery
@@ -66,6 +66,10 @@ export function SurahBrowser({
         <label className="search-control">
           <Search size={19} aria-hidden="true" />
           <input
+            type="search"
+            name="quran-search"
+            autoComplete="off"
+            spellCheck={false}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={searchPlaceholder}
@@ -73,7 +77,7 @@ export function SurahBrowser({
           />
           {query && (
             <button type="button" onClick={() => onQueryChange("")} aria-label="Effacer la recherche">
-              <X size={18} />
+              <X size={18} aria-hidden="true" />
             </button>
           )}
         </label>
@@ -126,7 +130,7 @@ export function SurahBrowser({
                   aria-label={isFavorite ? "Retirer cette sourate des favoris" : "Ajouter cette sourate aux favoris"}
                   aria-pressed={isFavorite}
                 >
-                  <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
+                  <Heart size={18} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
                 </button>
               </article>
             );

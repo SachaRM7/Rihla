@@ -25,6 +25,7 @@ import { RECITERS } from "@/lib/quran/constants";
 import type { SurahDetail } from "@/lib/quran/types";
 import { formatTime } from "./mini-player";
 import { StudyLoopControl } from "./study-loop-control";
+import { useModalAccessibility } from "@/hooks/use-modal-accessibility";
 
 type Props = {
   detail: SurahDetail;
@@ -95,18 +96,22 @@ export function FullPlayer({
   onSetSleepTimer,
   onShare,
 }: Props) {
+  const { dialogRef, onDialogKeyDown, requestClose } = useModalAccessibility({ onClose });
   const ayah = detail.ayahs[activeIndex];
   if (!ayah) return null;
   const sleepTimerActive = sleepTimerRemaining > 0;
   const sleepTimerMinutes = Math.max(1, Math.ceil(sleepTimerRemaining / 60));
 
   return (
-    <div className="player-backdrop" role="presentation" onMouseDown={onClose}>
+    <div className="player-backdrop" role="presentation" onMouseDown={requestClose}>
       <section
+        ref={dialogRef}
         className="full-player"
         role="dialog"
         aria-modal="true"
         aria-labelledby="full-player-title"
+        tabIndex={-1}
+        onKeyDown={onDialogKeyDown}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="full-player-header">
@@ -114,8 +119,8 @@ export function FullPlayer({
             <p>Récitation en cours</p>
             <h2 id="full-player-title">{detail.surah.englishName}</h2>
           </div>
-          <button type="button" className="icon-button" onClick={onClose} aria-label="Fermer le lecteur">
-            <X size={21} />
+          <button type="button" className="icon-button" onClick={requestClose} aria-label="Fermer le lecteur">
+            <X size={21} aria-hidden="true" />
           </button>
         </header>
 
@@ -158,6 +163,7 @@ export function FullPlayer({
         <div className="player-timeline">
           <input
             type="range"
+            name="ayah-position"
             min={0}
             max={duration || 0}
             step={0.1}
@@ -199,6 +205,8 @@ export function FullPlayer({
           <label className="player-option">
             <span><Gauge size={16} /> Vitesse</span>
             <select
+              name="playback-rate"
+              autoComplete="off"
               value={playbackRate}
               onChange={(event) => onPlaybackRateChange(Number(event.target.value) as PlaybackRate)}
             >
@@ -208,6 +216,8 @@ export function FullPlayer({
           <label className={`player-option ${repeatMode !== "off" ? "active" : ""}`}>
             <span><Repeat2 size={16} /> Répéter</span>
             <select
+              name="repeat-mode"
+              autoComplete="off"
               value={repeatMode}
               onChange={(event) => onRepeatModeChange(event.target.value as RepeatMode)}
             >
@@ -221,6 +231,8 @@ export function FullPlayer({
           <label className="player-option">
             <span><Timer size={16} /> Minuterie</span>
             <select
+              name="sleep-timer"
+              autoComplete="off"
               value={sleepTimerActive ? "active" : "off"}
               onChange={(event) => {
                 const value = event.target.value;
@@ -238,6 +250,7 @@ export function FullPlayer({
         </div>
 
         <StudyLoopControl
+          key={detail.surah.number}
           surahNumber={detail.surah.number}
           ayahCount={detail.ayahs.length}
           activeAyah={ayah.numberInSurah}
@@ -249,7 +262,7 @@ export function FullPlayer({
 
         <label className="reciter-control">
           <span>Récitateur</span>
-          <select value={reciterId} onChange={(event) => onReciterChange(event.target.value)}>
+          <select name="player-reciter" autoComplete="off" value={reciterId} onChange={(event) => onReciterChange(event.target.value)}>
             {RECITERS.map((reciter) => <option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}
           </select>
         </label>

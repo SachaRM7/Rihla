@@ -23,10 +23,10 @@ export function QuranSearchResults({ query, onOpen }: Props) {
   useEffect(() => {
     if (normalizedQuery.length < 2) return;
     const controller = new AbortController();
-    setLoading(true);
-    setResults([]);
-    setError(null);
     const timeout = window.setTimeout(async () => {
+      setLoading(true);
+      setResults([]);
+      setError(null);
       try {
         const response = await fetch(
           `/api/quran/search?q=${encodeURIComponent(normalizedQuery)}`,

@@ -66,11 +66,13 @@ export function useQuranPlayer({
   }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatMode, studyLoop]);
 
   useEffect(() => {
-    resetRepeatProgress();
+    const frame = window.requestAnimationFrame(resetRepeatProgress);
+    return () => window.cancelAnimationFrame(frame);
   }, [repeatMode, resetRepeatProgress]);
 
   useEffect(() => {
-    resetStudyLoopProgress();
+    const frame = window.requestAnimationFrame(resetStudyLoopProgress);
+    return () => window.cancelAnimationFrame(frame);
   }, [studyLoop, resetStudyLoopProgress]);
 
   const loadAtIndex = useCallback((index: number, autoplay: boolean) => {

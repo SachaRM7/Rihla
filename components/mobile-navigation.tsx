@@ -27,7 +27,7 @@ export function MobileNavigation({ activeView, onChange }: Props) {
           aria-current={activeView === id ? "page" : undefined}
           onClick={() => onChange(id)}
         >
-          <Icon size={20} strokeWidth={activeView === id ? 2.4 : 1.8} />
+          <Icon size={20} strokeWidth={activeView === id ? 2.4 : 1.8} aria-hidden="true" />
           <span>{label}</span>
         </button>
       ))}

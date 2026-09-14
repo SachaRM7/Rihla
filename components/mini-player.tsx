@@ -69,7 +69,7 @@ export function MiniPlayer({
         aria-label="Ayah précédente"
         disabled={!canPrevious}
       >
-        <SkipBack size={18} fill="currentColor" />
+        <SkipBack size={18} fill="currentColor" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -78,7 +78,7 @@ export function MiniPlayer({
         aria-label={isPlaying ? "Mettre en pause" : "Lire"}
         disabled={status === "loading"}
       >
-        {status === "loading" ? <LoaderCircle className="spin" size={19} /> : isPlaying ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}
+        {status === "loading" ? <LoaderCircle className="spin" size={19} aria-hidden="true" /> : isPlaying ? <Pause size={19} fill="currentColor" aria-hidden="true" /> : <Play size={19} fill="currentColor" aria-hidden="true" />}
       </button>
       <button
         type="button"
@@ -87,7 +87,7 @@ export function MiniPlayer({
         aria-label="Ayah suivante"
         disabled={!canNext}
       >
-        <SkipForward size={18} fill="currentColor" />
+        <SkipForward size={18} fill="currentColor" aria-hidden="true" />
       </button>
       <span className="mini-progress" style={{ width: `${progress}%` }} aria-hidden="true" />
     </aside>

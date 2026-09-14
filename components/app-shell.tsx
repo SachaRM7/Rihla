@@ -29,7 +29,7 @@ import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
 import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
-import { useLocalLibrary } from "@/hooks/use-local-library";
+import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
 import { useQuranPlayer } from "@/hooks/use-quran-player";
 import { DEFAULT_RECITER_ID, RECITERS } from "@/lib/quran/constants";
 import type {
@@ -41,6 +41,12 @@ import type {
 } from "@/lib/quran/types";
 
 const FEATURED_SURAHS = [1, 18, 36, 55, 67, 112];
+const THEME_COLORS = {
+  olive: "#0a0c0a",
+  rose: "#0f0a0d",
+  orange: "#0e0b08",
+  violet: "#0c0a10",
+} as const;
 
 function formatPlaybackTime(milliseconds: number) {
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
@@ -75,7 +81,7 @@ function FutureContent() {
           Ces catalogues restent volontairement désactivés jusqu’à la validation des licences et au branchement de sources réelles.
         </p>
       </div>
-      <span className="future-status"><ShieldCheck size={15} /> Aucun faux contenu</span>
+      <span className="future-status"><ShieldCheck size={15} aria-hidden="true" /> Aucun faux contenu</span>
     </section>
   );
 }
@@ -109,12 +115,12 @@ function DesktopNavigation({
             aria-current={activeView === id ? "page" : undefined}
             onClick={() => onChange(id)}
           >
-            <Icon size={19} /><span>{label}</span>
+            <Icon size={19} aria-hidden="true" /><span>{label}</span>
           </button>
         ))}
       </nav>
       <div className="sidebar-proof">
-        <CheckCircle2 size={17} />
+        <CheckCircle2 size={17} aria-hidden="true" />
         <div><strong>Version fonctionnelle</strong><small>Audio et données réels</small></div>
       </div>
     </aside>
@@ -145,6 +151,7 @@ export function AppShell() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = library.theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLORS[library.theme]);
   }, [library.theme]);
 
   const [activeView, setActiveView] = useState<AppView>("home");
@@ -193,7 +200,7 @@ export function AppShell() {
     setReciterId(isValidReciter(library.reciterId) ? library.reciterId : DEFAULT_RECITER_ID);
     requestedAyahRef.current = hasValidLink ? linkedAyah : null;
     requestedPositionRef.current = hasValidLink ? linkedTime * 1000 : library.lastPositionMs;
-    if (hasValidLink) setActiveView("quran");
+    if (hasValidLink) window.requestAnimationFrame(() => setActiveView("quran"));
   }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
 
   useEffect(() => () => {
@@ -274,6 +281,13 @@ export function AppShell() {
     repeatMode: library.repeatMode,
     studyLoop: library.studyLoop,
   });
+  const {
+    loadedSourceUrl,
+    pause: pausePlayback,
+    play: playPlayback,
+    seek: seekPlayback,
+    selectAyah: selectPlaybackAyah,
+  } = player;
 
   const setSleepTimer = useCallback((minutes: number | null) => {
     if (minutes === null) {
@@ -292,14 +306,14 @@ export function AppShell() {
       const remaining = Math.max(0, Math.ceil((sleepTimerEndsAt - Date.now()) / 1000));
       setSleepTimerRemaining(remaining);
       if (remaining === 0) {
-        player.pause();
+        pausePlayback();
         setSleepTimerEndsAt(null);
       }
     };
     updateTimer();
     const interval = window.setInterval(updateTimer, 1000);
     return () => window.clearInterval(interval);
-  }, [player.pause, sleepTimerEndsAt]);
+  }, [pausePlayback, sleepTimerEndsAt]);
 
   useEffect(() => {
     const ayah = detail?.ayahs[activeIndex];
@@ -313,15 +327,15 @@ export function AppShell() {
     if (
       !ayah ||
       requestedPosition === null ||
-      player.loadedSourceUrl !== ayah.audioUrl
+      loadedSourceUrl !== ayah.audioUrl
     ) {
       return;
     }
-    player.seek(requestedPosition / 1000);
-    if (requestedAutoplayRef.current) player.play();
+    seekPlayback(requestedPosition / 1000);
+    if (requestedAutoplayRef.current) playPlayback();
     requestedPositionRef.current = null;
     requestedAutoplayRef.current = false;
-  }, [activeIndex, detail, player.loadedSourceUrl, player.play, player.seek]);
+  }, [activeIndex, detail, loadedSourceUrl, playPlayback, seekPlayback]);
 
   useEffect(() => {
     const ayah = detail?.ayahs[activeIndex];
@@ -370,14 +384,14 @@ export function AppShell() {
       setActiveView("quran");
       if (
         nextIndex === activeIndex &&
-        player.loadedSourceUrl === detail.ayahs[nextIndex]?.audioUrl
+        loadedSourceUrl === detail.ayahs[nextIndex]?.audioUrl
       ) {
-        player.seek(positionMs / 1000);
-        if (autoplay) player.play();
+        seekPlayback(positionMs / 1000);
+        if (autoplay) playPlayback();
         requestedPositionRef.current = null;
         requestedAutoplayRef.current = false;
       } else {
-        player.selectAyah(nextIndex, false);
+        selectPlaybackAyah(nextIndex, false);
       }
       return;
     }
@@ -386,7 +400,7 @@ export function AppShell() {
     setDetail(null);
     setSelectedNumber(number);
     setActiveView("quran");
-  }, [activeIndex, detail, player.loadedSourceUrl, player.play, player.seek, player.selectAyah]);
+  }, [activeIndex, detail, loadedSourceUrl, playPlayback, seekPlayback, selectPlaybackAyah]);
 
   const selectedSummary = useMemo(
     () => surahs.find((surah) => surah.number === selectedNumber) ?? null,
@@ -405,7 +419,7 @@ export function AppShell() {
 
   const recentHistory = useMemo(
     () => {
-      const bySurah = new Map<number, typeof library.listeningHistory>();
+      const bySurah = new Map<number, ListeningHistoryItem[]>();
       for (const item of library.listeningHistory) {
         const items = bySurah.get(item.surah) ?? [];
         items.push(item);
@@ -500,6 +514,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">Aller au contenu principal</a>
       <DesktopNavigation activeView={activeView} onChange={setActiveView} />
 
       <div className="app-main">
@@ -510,15 +525,20 @@ export function AppShell() {
           </button>
           <div className="topbar-context">
             <span>Coran audio & texte synchronisé</span>
-            <small><Cloud size={13} /> Données réelles</small>
+            <small><Cloud size={13} aria-hidden="true" /> Données réelles</small>
           </div>
-          <button type="button" className="topbar-library" onClick={() => setActiveView("library")}>
-            <Heart size={17} />
+          <button
+            type="button"
+            className="topbar-library"
+            onClick={() => setActiveView("library")}
+            aria-label={`Ouvrir la bibliothèque — ${library.favoriteSurahs.length + library.favoriteAyahs.length} éléments sauvegardés`}
+          >
+            <Heart size={17} aria-hidden="true" />
             <span>{library.favoriteSurahs.length + library.favoriteAyahs.length}</span>
           </button>
         </header>
 
-        <main className={`page-content view-${activeView}`}>
+        <main id="main-content" tabIndex={-1} className={`page-content view-${activeView}`}>
           {activeView === "home" && (
             <div className="content-stack">
               <section className="home-intro">
@@ -605,7 +625,7 @@ export function AppShell() {
                 loading={catalogLoading}
                 error={catalogError}
                 onRetry={() => setCatalogAttempt((value) => value + 1)}
-                searchPlaceholder="Sourate, mot ou référence 2:255"
+                searchPlaceholder="Sourate, mot ou référence 2:255…"
               />
               <QuranSearchResults query={query} onOpen={(surah, ayah) => openSurah(surah, ayah)} />
             </div>
@@ -637,7 +657,7 @@ export function AppShell() {
                   <div className="reading-toolbar">
                     <label>
                       <span>Récitateur</span>
-                      <select value={reciterId} onChange={(event) => setReciterId(event.target.value)}>
+                      <select name="reader-reciter" autoComplete="off" value={reciterId} onChange={(event) => setReciterId(event.target.value)}>
                         {RECITERS.map((reciter) => <option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}
                       </select>
                     </label>
@@ -888,7 +908,7 @@ export function AppShell() {
         />
       )}
 
-      {shareMessage && <div className="action-toast" role="status">{shareMessage}</div>}
+      {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
 
       {noteTarget && (
         <AyahNoteDialog
