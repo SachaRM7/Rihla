@@ -1,10 +1,4 @@
 "use client";
-  const playSpokenContent = (content: ContentItem) => {
-    const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
-    if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
-    setSpokenNowPlaying({ content, asset });
-  };
-
 import {
   BookOpenText,
   Bookmark,
@@ -488,6 +482,16 @@ export function AppShell() {
     () => surahs.find((surah) => surah.number === selectedNumber) ?? null,
     [selectedNumber, surahs],
   );
+
+  const spokenContents = publicContents(SPOKEN_CATALOG);
+  const hasSpokenContents = spokenContents.length > 0;
+  const selectedCreator = SPOKEN_CATALOG.creators.find((item) => item.id === selectedCreatorId) ?? null;
+  const selectedSeries = SPOKEN_CATALOG.series.find((item) => item.id === selectedSeriesId) ?? null;
+  const playSpokenContent = (content: ContentItem) => {
+    const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
+    if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
+    setSpokenNowPlaying({ content, asset });
+  };
 
   const featuredSurahs = useMemo(
     () => FEATURED_SURAHS.map((number) => surahs.find((surah) => surah.number === number)).filter((item): item is SurahSummary => Boolean(item)),
