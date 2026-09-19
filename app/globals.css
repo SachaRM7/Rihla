@@ -462,3 +462,5 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .surah-progress{display:grid;gap:5px}.surah-progress>div{display:flex;justify-content:space-between;color:var(--faint);font-size:.67rem}.surah-progress-track{display:block;height:4px;overflow:hidden;border-radius:999px;background:var(--line)}.surah-progress-track i{display:block;height:100%;border-radius:inherit;background:rgba(var(--accent-rgb),.62)}
 
 .source-disclosure.compact{grid-template-columns:18px minmax(0,1fr) auto;padding:9px 10px}.source-disclosure.compact p{font-size:.68rem;line-height:1.45}.source-disclosure.compact>svg{width:16px}
+
+.offline-download{width:max-content}.offline-available{display:inline-flex;align-items:center;gap:6px;color:var(--olive-strong);font-size:.72rem;font-weight:750}
