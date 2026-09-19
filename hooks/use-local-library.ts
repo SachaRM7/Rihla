@@ -88,6 +88,7 @@ export type LocalLibrary = {
   readingGoalAyahsPerDay: number;
   readingDays: Record<string, string[]>;
   follows: FollowedTarget[];
+  spokenPlaybackRate: PlaybackRate;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -125,6 +126,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   readingGoalAyahsPerDay: 10,
   readingDays: {},
   follows: [],
+  spokenPlaybackRate: 1,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -276,6 +278,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
         )
       : {},
     follows: Array.isArray(candidate.follows) ? candidate.follows.filter((item): item is FollowedTarget => Boolean(item && typeof item === "object" && typeof (item as FollowedTarget).id === "string" && ((item as FollowedTarget).type === "CREATOR" || (item as FollowedTarget).type === "SERIES"))).slice(0, 200) : [],
+    spokenPlaybackRate: isPlaybackRate(candidate.spokenPlaybackRate) ? candidate.spokenPlaybackRate : 1,
   };
 }
 
@@ -365,6 +368,8 @@ export function useLocalLibrary() {
   const setFollowNotification = useCallback((id: string, type: "CREATOR" | "SERIES", notify: boolean) => {
     setLibrary((current) => ({ ...current, follows: current.follows.map((item) => item.id === id && item.type === type ? { ...item, notify } : item) }));
   }, []);
+
+  const setSpokenPlaybackRate = useCallback((spokenPlaybackRate: PlaybackRate) => setLibrary((current) => ({ ...current, spokenPlaybackRate })), []);
 
   const setReadingGoal = useCallback((enabled: boolean, ayahsPerDay?: number) => {
     setLibrary((current) => ({ ...current, readingGoalEnabled: enabled, readingGoalAyahsPerDay: ayahsPerDay ?? current.readingGoalAyahsPerDay }));
@@ -634,6 +639,7 @@ export function useLocalLibrary() {
     setReminderPreferences,
     setMemorizationRevealDelay,
     setReadingGoal,
+    setSpokenPlaybackRate,
     toggleFollow,
     setFollowNotification,
     setAudioQuality,
