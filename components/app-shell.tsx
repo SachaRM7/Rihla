@@ -693,7 +693,13 @@ export function AppShell() {
                   <div className="reading-toolbar">
                     <label>
                       <span>Récitateur</span>
-                      <select name="reader-reciter" autoComplete="off" value={reciterId} onChange={(event) => setReciterId(event.target.value)}>
+                      <select name="reader-reciter" autoComplete="off" value={reciterId} onChange={(event) => {
+                        const ayahNumber = detail?.ayahs[activeIndex]?.numberInSurah ?? library.lastAyah;
+                        setReciterId(event.target.value);
+                        setInitialAyah(ayahNumber);
+                        setInitialPositionMs(0);
+                        setInitialAutoplay(player.isPlaying);
+                      }}>
                         {RECITERS.map((reciter) => <option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}
                       </select>
                     </label>
