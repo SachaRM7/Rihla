@@ -38,6 +38,7 @@ export function StudyLoopControl({
   const [startAyah, setStartAyah] = useState(value?.startAyah ?? activeAyah);
   const [endAyah, setEndAyah] = useState(value?.endAyah ?? Math.min(ayahCount, activeAyah + 2));
   const [cycles, setCycles] = useState<StudyLoopCycles>(value?.cycles ?? "3");
+  const [pauseSeconds, setPauseSeconds] = useState(value?.pauseSeconds ?? 0);
   const ayahNumbers = useMemo(
     () => Array.from({ length: ayahCount }, (_, index) => index + 1),
     [ayahCount],
@@ -107,6 +108,12 @@ export function StudyLoopControl({
                 ))}
               </select>
             </label>
+            <label>
+              <span>Pause</span>
+              <select name="study-loop-pause" value={pauseSeconds} onChange={(event) => setPauseSeconds(Number(event.target.value))}>
+                <option value={0}>Aucune</option><option value={2}>2 s</option><option value={5}>5 s</option><option value={10}>10 s</option>
+              </select>
+            </label>
           </div>
           <p>La lecture revient à l’ayah {startAyah} après l’ayah {endAyah}.</p>
           <div className="study-loop-actions">
@@ -118,7 +125,7 @@ export function StudyLoopControl({
             <button
               type="button"
               className="primary-action"
-              onClick={() => onApply({ surah: surahNumber, startAyah, endAyah, cycles })}
+              onClick={() => onApply({ surah: surahNumber, startAyah, endAyah, cycles, pauseSeconds })}
             >
               <Play size={15} fill="currentColor" /> {value ? "Relancer" : "Lancer la boucle"}
             </button>
