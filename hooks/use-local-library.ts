@@ -92,6 +92,7 @@ export type LocalLibrary = {
   follows: FollowedTarget[];
   spokenPlaybackRate: PlaybackRate;
   spokenProgress: SpokenProgress[];
+  allowCrossFamilyAutoAdvance: boolean;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -131,6 +132,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   follows: [],
   spokenPlaybackRate: 1,
   spokenProgress: [],
+  allowCrossFamilyAutoAdvance: false,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -284,6 +286,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     follows: Array.isArray(candidate.follows) ? candidate.follows.filter((item): item is FollowedTarget => Boolean(item && typeof item === "object" && typeof (item as FollowedTarget).id === "string" && ((item as FollowedTarget).type === "CREATOR" || (item as FollowedTarget).type === "SERIES"))).slice(0, 200) : [],
     spokenPlaybackRate: isPlaybackRate(candidate.spokenPlaybackRate) ? candidate.spokenPlaybackRate : 1,
     spokenProgress: Array.isArray(candidate.spokenProgress) ? candidate.spokenProgress.filter((item): item is SpokenProgress => Boolean(item && typeof item === "object" && typeof (item as SpokenProgress).contentId === "string" && Number.isFinite((item as SpokenProgress).positionMs))).slice(0, 100) : [],
+    allowCrossFamilyAutoAdvance: typeof candidate.allowCrossFamilyAutoAdvance === "boolean" ? candidate.allowCrossFamilyAutoAdvance : false,
   };
 }
 
@@ -380,6 +383,8 @@ export function useLocalLibrary() {
       spokenProgress: [{ contentId, positionMs: Math.max(0, Math.round(positionMs)), durationMs: Math.max(0, Math.round(durationMs)), updatedAt: Date.now() }, ...current.spokenProgress.filter((item) => item.contentId !== contentId)].slice(0, 100),
     }));
   }, []);
+
+  const setCrossFamilyAutoAdvance = useCallback((allowCrossFamilyAutoAdvance: boolean) => setLibrary((current) => ({ ...current, allowCrossFamilyAutoAdvance })), []);
 
   const setSpokenPlaybackRate = useCallback((spokenPlaybackRate: PlaybackRate) => setLibrary((current) => ({ ...current, spokenPlaybackRate })), []);
 
@@ -633,6 +638,7 @@ export function useLocalLibrary() {
     setMemorizationRevealDelay,
     setReadingGoal,
     setSpokenPlaybackRate,
+    setCrossFamilyAutoAdvance,
     saveSpokenProgress,
     toggleFollow,
     setFollowNotification,
