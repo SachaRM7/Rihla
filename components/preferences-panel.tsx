@@ -2,27 +2,34 @@
 
 import { Check, MoveVertical, Palette, Type } from "lucide-react";
 import {
+  APPEARANCE_LABELS,
+  APPEARANCE_MODES,
   COLOR_THEMES,
   READING_SIZES,
   READING_SIZE_LABELS,
+  type AppearanceMode,
   type ReadingSize,
   type ThemeId,
 } from "@/lib/preferences";
 
 type Props = {
   theme: ThemeId;
+  appearance: AppearanceMode;
   readingSize: ReadingSize;
   autoScroll: boolean;
   onThemeChange: (theme: ThemeId) => void;
+  onAppearanceChange: (appearance: AppearanceMode) => void;
   onReadingSizeChange: (size: ReadingSize) => void;
   onAutoScrollChange: (enabled: boolean) => void;
 };
 
 export function PreferencesPanel({
   theme,
+  appearance,
   readingSize,
   autoScroll,
   onThemeChange,
+  onAppearanceChange,
   onReadingSizeChange,
   onAutoScrollChange,
 }: Props) {
@@ -82,7 +89,22 @@ export function PreferencesPanel({
           </div>
           <Palette size={20} aria-hidden="true" />
         </div>
-        <p className="preferences-copy">La couleur choisie s’applique à toute l’application et reste enregistrée sur cet appareil.</p>
+        <p className="preferences-copy">Le mode clair ou sombre est indépendant de votre couleur d’accent.</p>
+        <div className="segmented-control appearance-control" role="radiogroup" aria-label="Apparence">
+          {APPEARANCE_MODES.map((mode) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={appearance === mode}
+              className={appearance === mode ? "selected" : ""}
+              key={mode}
+              onClick={() => onAppearanceChange(mode)}
+            >
+              {APPEARANCE_LABELS[mode]}
+            </button>
+          ))}
+        </div>
+        <p className="setting-label accent-label">Couleur d’accent</p>
         <div className="theme-options" role="radiogroup" aria-label="Thème de couleur">
           {COLOR_THEMES.map((item) => {
             const selected = item.id === theme;
