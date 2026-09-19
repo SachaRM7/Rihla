@@ -542,6 +542,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">Aller au contenu</a>
       {!isOnline && <div className="network-banner" role="status">Hors connexion · les contenus déjà chargés restent accessibles</div>}
       <a className="skip-link" href="#main-content">Aller au contenu principal</a>
       <DesktopNavigation activeView={activeView} onChange={setActiveView} />
