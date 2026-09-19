@@ -1229,7 +1229,18 @@ export function AppShell() {
         />
       )}
 
-      {spokenNowPlaying && <SpokenPlayer content={spokenNowPlaying.content} asset={spokenNowPlaying.asset} playbackRate={library.spokenPlaybackRate} initialPositionMs={library.spokenProgress.find((item) => item.contentId === spokenNowPlaying.content.id)?.positionMs ?? 0} onProgress={(positionMs, durationMs) => saveSpokenProgress(spokenNowPlaying.content.id, positionMs, durationMs)} onClose={() => setSpokenNowPlaying(null)} />}
+      {spokenNowPlaying && <SpokenPlayer
+        content={spokenNowPlaying.content}
+        asset={spokenNowPlaying.asset}
+        playbackRate={library.spokenPlaybackRate}
+        transcript={SPOKEN_CATALOG.transcripts?.find((item) => item.contentId === spokenNowPlaying.content.id)}
+        transcriptSegments={SPOKEN_CATALOG.transcriptSegments ?? []}
+        chapters={(SPOKEN_CATALOG.chapters ?? []).filter((item) => item.contentId === spokenNowPlaying.content.id)}
+        initialPositionMs={library.spokenProgress.find((item) => item.contentId === spokenNowPlaying.content.id)?.positionMs ?? 0}
+        onProgress={(positionMs, durationMs) => saveSpokenProgress(spokenNowPlaying.content.id, positionMs, durationMs)}
+        onReportIssue={() => setShareMessage("Signalement enregistré localement · envoi serveur à connecter")}
+        onClose={() => setSpokenNowPlaying(null)}
+      />}
       
             {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
 
