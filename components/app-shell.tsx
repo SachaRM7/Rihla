@@ -180,6 +180,7 @@ export function AppShell() {
   const [continuousQuran, setContinuousQuran] = useState(false);
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -716,10 +717,10 @@ export function AppShell() {
                 <button type="button" onClick={() => setLibrarySection("bookmarks")}><Bookmark size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("notes")}><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("history")}><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
-                <button type="button" onClick={() => setLibrarySection("playlists")}><ListMusic size={19} /><span><strong>Playlists</strong><small>{library.playlists.length} collection{library.playlists.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => { setSelectedPlaylistId(null); setLibrarySection("playlists"); }}><ListMusic size={19} /><span><strong>Playlists</strong><small>{library.playlists.length} collection{library.playlists.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
               </section>
 
-              {librarySection !== "all" && <button type="button" className="text-action library-back" onClick={() => setLibrarySection("all")}>← Toute la bibliothèque</button>}
+              {librarySection !== "all" && <button type="button" className="text-action library-back" onClick={() => { setSelectedPlaylistId(null); setLibrarySection("all"); }}>← Toute la bibliothèque</button>}
               {(librarySection === "all" || librarySection === "playlists") && <section className="library-section">
                 <div className="section-title-row">
                   <div><p className="eyebrow">Collections personnelles</p><h2>Playlists</h2></div>
@@ -728,7 +729,23 @@ export function AppShell() {
                     if (title) { createPlaylist(title); showShareMessage("Playlist créée"); }
                   }}><Plus size={16} /> Créer</button>
                 </div>
-                {library.playlists.length ? <div className="library-grid">
+                {selectedPlaylistId ? (() => {
+                  const playlist = library.playlists.find((item) => item.id === selectedPlaylistId);
+                  if (!playlist) return null;
+                  return <div className="playlist-detail">
+                    <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
+                    <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><span className="section-count">{playlist.ayahKeys.length}</span></div>
+                    {playlist.ayahKeys.length ? <div className="saved-ayah-grid">
+                      {playlist.ayahKeys.map((key) => {
+                        const [surahNumber, ayahNumber] = key.split(":").map(Number);
+                        const surah = surahs.find((item) => item.number === surahNumber);
+                        return <button type="button" key={key} onClick={() => openSurah(surahNumber, ayahNumber)}>
+                          <span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong><small>Ouvrir le passage</small>
+                        </button>;
+                      })}
+                    </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Playlist vide</strong><p>Ajoutez des passages depuis le menu d’un verset.</p></div>}
+                  </div>;
+                })() : library.playlists.length ? <div className="library-grid">
                   {library.playlists.map((playlist) => <div className="playlist-row" key={playlist.id}>
                     <button type="button" onClick={() => setSelectedPlaylistId(playlist.id)}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
                     <button type="button" className="playlist-delete" aria-label={`Supprimer ${playlist.title}`} onClick={() => { if (window.confirm(`Supprimer la playlist « ${playlist.title} » ?`)) deletePlaylist(playlist.id); }}>×</button>
