@@ -289,3 +289,7 @@ html[data-appearance="light"] .ayah-word-base{color:rgba(28,33,27,.55)}
 .recent-searches{display:grid;gap:4px}
 .recent-search-chips{display:flex;flex-wrap:wrap;gap:8px}
 .recent-search-chips button{display:inline-flex;min-height:40px;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);padding:0 13px;font-size:.75rem;cursor:pointer}
+
+html[data-translation-size="small"] .ayah-translation{font-size:.78rem;line-height:1.55}
+html[data-translation-size="comfortable"] .ayah-translation{font-size:.9rem;line-height:1.65}
+html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-height:1.75}
