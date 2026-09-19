@@ -403,6 +403,17 @@ export function useLocalLibrary() {
     }));
   }, []);
 
+  const removeAyahFromPlaylist = useCallback((playlistId: string, key: string) => {
+    setLibrary((current) => ({
+      ...current,
+      playlists: current.playlists.map((playlist) => playlist.id === playlistId ? {
+        ...playlist,
+        ayahKeys: playlist.ayahKeys.filter((item) => item !== key),
+        updatedAt: Date.now(),
+      } : playlist),
+    }));
+  }, []);
+
   const renamePlaylist = useCallback((playlistId: string, title: string) => {
     const normalized = title.trim().slice(0, 80);
     if (!normalized) return;
@@ -486,6 +497,7 @@ export function useLocalLibrary() {
     deletePlaylist,
     movePlaylistAyah,
     renamePlaylist,
+    removeAyahFromPlaylist,
     renamePlaylist,
     movePlaylistAyah,
     exportData: () => JSON.stringify(library, null, 2),
