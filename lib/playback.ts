@@ -37,10 +37,14 @@ export interface PlaybackError {
   recoverable: boolean;
 }
 
+export const SPOKEN_SKIP_SECONDS = 15;
+
 export type PlaybackCommand =
   | { type: "PLAY" }
   | { type: "PAUSE" }
   | { type: "SEEK"; positionMs: number }
+  | { type: "SKIP_BACK"; seconds?: number }
+  | { type: "SKIP_FORWARD"; seconds?: number }
   | { type: "PLAY_ITEM"; item: PlaybackItem }
   | { type: "QUEUE_ADD"; entry: QueueEntry }
   | { type: "QUEUE_REMOVE"; entryId: string }
@@ -61,6 +65,13 @@ export interface PlaybackPreferences {
   recitationSpeed: number;
   autoAdvanceWithinFamily: boolean;
   allowCrossFamilyAutoAdvance: false;
+}
+
+export function skipTarget(item: PlaybackItem, positionMs: number, direction: "back" | "forward", seconds = SPOKEN_SKIP_SECONDS) {
+  if (item.family !== "SPOKEN") return positionMs;
+  const delta = Math.max(1, seconds) * 1000 * (direction === "back" ? -1 : 1);
+  const target = positionMs + delta;
+  return Math.min(Math.max(0, target), item.durationMs ?? Number.POSITIVE_INFINITY);
 }
 
 export function canAutoAdvance(from: PlaybackItem, to: PlaybackItem, preferences: PlaybackPreferences) {
