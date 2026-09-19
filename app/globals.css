@@ -432,3 +432,8 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .transcript-segments button.active{border-left-color:var(--olive);background:rgba(var(--accent-rgb),.06);color:var(--cream)}
 .transcript-segments time{color:var(--faint);font-size:.68rem;font-variant-numeric:tabular-nums}
 .transcript-segments span{font-size:.82rem;line-height:1.5}
+
+.media-chapters{display:grid;gap:10px}.media-chapters>.transcript-header{display:flex;align-items:center;justify-content:space-between;color:var(--muted)}
+.chapter-list{display:grid;gap:3px}.chapter-list button{display:grid;grid-template-columns:54px minmax(0,1fr);gap:9px;min-height:44px;align-items:center;border:0;border-left:2px solid transparent;background:transparent;color:var(--muted);padding:7px 9px;text-align:left;cursor:pointer}
+.chapter-list button.active{border-left-color:var(--olive);background:rgba(var(--accent-rgb),.06);color:var(--cream)}
+.chapter-list time{font-size:.7rem;font-variant-numeric:tabular-nums;color:var(--faint)}.chapter-list span{font-size:.8rem;font-weight:650}
