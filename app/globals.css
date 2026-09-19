@@ -446,3 +446,5 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .issue-report{display:grid;gap:9px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px}
 .issue-report label{display:grid;gap:4px;color:var(--muted);font-size:.7rem}.issue-report select,.issue-report textarea{border:1px solid var(--line);border-radius:9px;background:var(--ink-soft);color:var(--ivory);padding:8px}.issue-report textarea{min-height:72px;resize:vertical}
 .issue-report>div{display:flex;justify-content:flex-end;gap:7px}
+
+.editorial-collections{display:grid;gap:10px}.editorial-collection-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.editorial-collection-grid button{display:grid;gap:5px;min-height:116px;align-content:end;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,var(--surface),rgba(var(--accent-rgb),.08));color:var(--cream);padding:13px;text-align:left;cursor:pointer}.editorial-collection-grid span,.editorial-collection-grid small{color:var(--muted);font-size:.7rem;line-height:1.4}@media(max-width:520px){.editorial-collection-grid{grid-template-columns:1fr}}
