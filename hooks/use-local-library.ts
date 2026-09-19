@@ -412,6 +412,15 @@ export function useLocalLibrary() {
     }));
   }, []);
 
+  const renamePlaylist = useCallback((playlistId: string, title: string) => {
+    const normalized = title.trim().slice(0, 80);
+    if (!normalized) return;
+    setLibrary((current) => ({
+      ...current,
+      playlists: current.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, title: normalized, updatedAt: Date.now() } : playlist),
+    }));
+  }, []);
+
   const movePlaylistAyah = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
     setLibrary((current) => ({
       ...current,
@@ -476,6 +485,7 @@ export function useLocalLibrary() {
     toggleAyahInPlaylist,
     deletePlaylist,
     movePlaylistAyah,
+    renamePlaylist,
     renamePlaylist,
     movePlaylistAyah,
     exportData: () => JSON.stringify(library, null, 2),
