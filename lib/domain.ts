@@ -197,6 +197,17 @@ export interface Recitation {
   audioAssetId: string;
 }
 
+export interface DownloadRecord {
+  id: string;
+  contentId: string;
+  mediaAssetId: string;
+  transcriptId?: string;
+  sizeBytes?: number;
+  quality?: "DATA_SAVER" | "STANDARD" | "HIGH";
+  downloadedAt: string;
+  status: "QUEUED" | "DOWNLOADING" | "AVAILABLE" | "ERROR";
+}
+
 export interface PlaybackProgress {
   contentId: string;
   positionMs: number;
