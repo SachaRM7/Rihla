@@ -319,3 +319,12 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .playlist-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:6px}
 .playlist-row>button:first-child{width:100%}
 .playlist-delete{min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted);font-size:1.25rem;cursor:pointer}
+
+.playlist-detail{border-top:1px solid var(--line);padding-top:14px}
+.playlist-items{display:grid;gap:6px}
+.playlist-item{display:grid;grid-template-columns:minmax(0,1fr) 40px 40px 40px;gap:5px;align-items:center}
+.playlist-item>button{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--cream);cursor:pointer}
+.playlist-item>button:disabled{opacity:.35;cursor:default}
+.playlist-open{display:flex;align-items:center;gap:10px;padding:0 11px;text-align:left}
+.playlist-open span{color:var(--olive);font-size:.72rem}
+.playlist-open strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
