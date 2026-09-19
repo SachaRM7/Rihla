@@ -13,7 +13,7 @@ import {
   Play,
   Radio,
   Search,
-  ShieldCheck,
+  Settings,
   Sparkles,
   StickyNote,
   Video,
@@ -66,26 +66,6 @@ function isValidReciter(id: string) {
   return RECITERS.some((reciter) => reciter.id === id);
 }
 
-function FutureContent() {
-  return (
-    <section className="future-card" aria-labelledby="future-content-title">
-      <div className="future-icon-stack" aria-hidden="true">
-        <span><Headphones size={23} /></span>
-        <span><Video size={23} /></span>
-        <span><Radio size={23} /></span>
-      </div>
-      <div>
-        <p className="eyebrow">Prochaine étape</p>
-        <h2 id="future-content-title">Podcasts, conférences et vidéos</h2>
-        <p>
-          Ces catalogues restent volontairement désactivés jusqu’à la validation des licences et au branchement de sources réelles.
-        </p>
-      </div>
-      <span className="future-status"><ShieldCheck size={15} aria-hidden="true" /> Aucun faux contenu</span>
-    </section>
-  );
-}
-
 function DesktopNavigation({
   activeView,
   onChange,
@@ -119,10 +99,6 @@ function DesktopNavigation({
           </button>
         ))}
       </nav>
-      <div className="sidebar-proof">
-        <CheckCircle2 size={17} aria-hidden="true" />
-        <div><strong>Version fonctionnelle</strong><small>Audio et données réels</small></div>
-      </div>
     </aside>
   );
 }
@@ -530,17 +506,16 @@ export function AppShell() {
             <strong>RIHLA</strong>
           </button>
           <div className="topbar-context">
-            <span>Coran audio & texte synchronisé</span>
-            <small><Cloud size={13} aria-hidden="true" /> Données réelles</small>
+            <span>{activeView === "quran" ? "Le Coran" : activeView === "library" ? "Bibliothèque" : activeView === "search" ? "Recherche" : activeView === "settings" ? "Réglages" : "Accueil"}</span>
           </div>
           <button
             type="button"
             className="topbar-library"
-            onClick={() => setActiveView("library")}
-            aria-label={`Ouvrir la bibliothèque — ${library.favoriteSurahs.length + library.favoriteAyahs.length} éléments sauvegardés`}
+            onClick={() => setActiveView("settings")}
+            aria-label="Ouvrir les réglages"
+            aria-current={activeView === "settings" ? "page" : undefined}
           >
-            <Heart size={17} aria-hidden="true" />
-            <span>{library.favoriteSurahs.length + library.favoriteAyahs.length}</span>
+            <Settings size={18} aria-hidden="true" />
           </button>
         </header>
 
@@ -608,8 +583,6 @@ export function AppShell() {
                   ))}
                 </div>
               </section>
-
-              <FutureContent />
             </div>
           )}
 
@@ -842,6 +815,15 @@ export function AppShell() {
                   </div>
                 )}
               </section>
+            </div>
+          )}
+          {activeView === "settings" && (
+            <div className="content-stack">
+              <section className="page-intro compact">
+                <p className="eyebrow">Préférences</p>
+                <h1>Réglages</h1>
+                <p>Adaptez l’apparence et la lecture sans encombrer votre bibliothèque.</p>
+              </section>
 
               <PreferencesPanel
                 theme={library.theme}
@@ -860,10 +842,9 @@ export function AppShell() {
                   showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
                 }}
               />
-
-              <FutureContent />
             </div>
           )}
+
         </main>
       </div>
 
