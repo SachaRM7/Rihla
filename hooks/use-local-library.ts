@@ -34,6 +34,14 @@ export type ListeningHistoryItem = {
   updatedAt: number;
 };
 
+export type PersonalPlaylist = {
+  id: string;
+  title: string;
+  ayahKeys: string[];
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type AyahNote = {
   surah: number;
   ayah: number;
@@ -61,6 +69,7 @@ export type LocalLibrary = {
   listeningHistory: ListeningHistoryItem[];
   ayahNotes: AyahNote[];
   historyEnabled: boolean;
+  playlists: PersonalPlaylist[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -83,6 +92,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   listeningHistory: [],
   ayahNotes: [],
   historyEnabled: true,
+  playlists: [],
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -202,6 +212,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     listeningHistory,
     ayahNotes,
     historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
+    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item): item is PersonalPlaylist => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100) : [],
   };
 }
 
@@ -370,6 +381,16 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, studyLoop: sanitizeStudyLoop(studyLoop) }));
   }, []);
 
+  const createPlaylist = useCallback((title: string) => {
+    const normalized = title.trim().slice(0, 80);
+    if (!normalized) return;
+    const now = Date.now();
+    setLibrary((current) => ({
+      ...current,
+      playlists: [{ id: crypto.randomUUID(), title: normalized, ayahKeys: [], createdAt: now, updatedAt: now }, ...current.playlists],
+    }));
+  }, []);
+
   const saveAyahNote = useCallback((surah: number, ayah: number, text: string) => {
     const normalizedText = text.trim().slice(0, MAX_NOTE_LENGTH);
     setLibrary((current) => ({
@@ -400,6 +421,7 @@ export function useLocalLibrary() {
     setShowTranslation,
     setStudyLoop,
     saveAyahNote,
+    createPlaylist,
     exportData: () => JSON.stringify(library, null, 2),
     setHistoryEnabled,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
