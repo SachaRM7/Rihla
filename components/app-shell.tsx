@@ -133,8 +133,6 @@ export function AppShell() {
     movePlaylistAyah,
     renamePlaylist,
     removeAyahFromPlaylist,
-    renamePlaylist,
-    movePlaylistAyah,
     exportData,
     importData,
     clearHistory,
