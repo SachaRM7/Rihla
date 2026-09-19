@@ -1,0 +1,31 @@
+export type QuranDivisionKind = "juz" | "hizb";
+
+export type QuranDivisionTarget = {
+  kind: QuranDivisionKind;
+  number: number;
+  surah: number;
+  ayah: number;
+};
+
+// Canonical starting references for the 30 juz. Hizb resolution can be supplied
+// by the Quran source once its division endpoint is connected.
+export const JUZ_STARTS: Array<[number, number]> = [
+  [1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],
+  [9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],
+  [29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1],
+];
+
+export function resolveJuz(number: number): QuranDivisionTarget | null {
+  if (!Number.isInteger(number) || number < 1 || number > 30) return null;
+  const start = JUZ_STARTS[number - 1];
+  return { kind: "juz", number, surah: start[0], ayah: start[1] };
+}
+
+export function parseQuranJump(value: string) {
+  const normalized = value.trim().toLocaleLowerCase("fr").replace(/\s+/g, " ");
+  const juz = normalized.match(/^(?:juz|juz'|juzz)\s*(\d{1,2})$/);
+  if (juz) return resolveJuz(Number(juz[1]));
+  const reference = normalized.match(/^(\d{1,3})(?::(\d{1,3}))?$/);
+  if (reference) return { kind: "ayah" as const, surah: Number(reference[1]), ayah: Number(reference[2] ?? 1) };
+  return null;
+}
