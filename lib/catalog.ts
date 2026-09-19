@@ -1,4 +1,4 @@
-import type { ContentItem, Creator, MediaAsset, RightsRecord, Series, SourceRef } from "./domain";
+import type { ContentItem, Creator, EditorialCollection, MediaAsset, RightsRecord, Series, SourceRef } from "./domain";
 
 export interface CatalogBundle {
   sources: SourceRef[];
@@ -7,6 +7,7 @@ export interface CatalogBundle {
   series: Series[];
   media: MediaAsset[];
   contents: ContentItem[];
+  collections?: EditorialCollection[];
 }
 
 export interface PublishabilityIssue {
