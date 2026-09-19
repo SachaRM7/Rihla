@@ -367,3 +367,11 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .search-filters::-webkit-scrollbar{display:none}
 .search-filters button{min-height:40px;flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);padding:0 13px;font-size:.75rem;font-weight:700;cursor:pointer}
 .search-filters button.active{border-color:rgba(var(--accent-rgb),.42);background:rgba(var(--accent-rgb),.12);color:var(--olive-strong)}
+
+.time-discovery{display:grid;gap:10px}
+.time-discovery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.time-discovery-grid button{display:grid;min-height:104px;align-content:end;gap:3px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,rgba(var(--accent-rgb),.08),var(--surface));color:var(--cream);padding:13px;text-align:left;cursor:pointer}
+.time-discovery-grid span{color:var(--olive-strong);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.time-discovery-grid strong{font-size:.9rem}
+.time-discovery-grid small{color:var(--muted);font-size:.7rem}
+@media(max-width:620px){.time-discovery-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:3px}.time-discovery-grid button{min-width:72%;scroll-snap-align:start}}
