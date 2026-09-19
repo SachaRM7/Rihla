@@ -8,6 +8,8 @@ import {
   Home,
   History,
   Library,
+  ListMusic,
+  Plus,
   LoaderCircle,
   Play,
   Search,
@@ -117,6 +119,7 @@ export function AppShell() {
     setShowTranslation,
     setStudyLoop,
     saveAyahNote,
+    createPlaylist,
     exportData,
     clearHistory,
     setHistoryEnabled,
@@ -168,7 +171,7 @@ export function AppShell() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
   const [continuousQuran, setContinuousQuran] = useState(false);
-  const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history">("all");
+  const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -699,9 +702,25 @@ export function AppShell() {
                 <button type="button" onClick={() => setLibrarySection("bookmarks")}><Bookmark size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("notes")}><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("history")}><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => setLibrarySection("playlists")}><ListMusic size={19} /><span><strong>Playlists</strong><small>{library.playlists.length} collection{library.playlists.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
               </section>
 
               {librarySection !== "all" && <button type="button" className="text-action library-back" onClick={() => setLibrarySection("all")}>← Toute la bibliothèque</button>}
+              {(librarySection === "all" || librarySection === "playlists") && <section className="library-section">
+                <div className="section-title-row">
+                  <div><p className="eyebrow">Collections personnelles</p><h2>Playlists</h2></div>
+                  <button type="button" className="text-action" onClick={() => {
+                    const title = window.prompt("Nom de la playlist");
+                    if (title) { createPlaylist(title); showShareMessage("Playlist créée"); }
+                  }}><Plus size={16} /> Créer</button>
+                </div>
+                {library.playlists.length ? <div className="library-grid">
+                  {library.playlists.map((playlist) => <button type="button" key={playlist.id}>
+                    <ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} />
+                  </button>)}
+                </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Aucune playlist</strong><p>Créez une collection personnelle pour organiser vos écoutes.</p></div>}
+              </section>}
+
               {(librarySection === "all" || librarySection === "history") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
                 {recentHistory.length ? (
