@@ -224,7 +224,14 @@ export function useQuranPlayer({
             const nextIteration = studyLoopIterationRef.current + 1;
             studyLoopIterationRef.current = nextIteration;
             setStudyLoopIteration(nextIteration);
-            moveToIndex(startIndex, true);
+            const pauseMs = Math.max(0, (studyLoop.pauseSeconds ?? 0) * 1000);
+            if (pauseMs > 0) {
+              playWhenLoadedRef.current = false;
+              setStatus("paused");
+              window.setTimeout(() => moveToIndex(startIndex, true), pauseMs);
+            } else {
+              moveToIndex(startIndex, true);
+            }
             return;
           }
 
@@ -247,8 +254,18 @@ export function useQuranPlayer({
         setRepeatIteration(nextIteration);
         audio.currentTime = 0;
         setCurrentTime(0);
-        playWhenLoadedRef.current = true;
-        void audio.play().catch(() => setStatus("ready"));
+        const repeatPauseMs = Math.max(0, (studyLoopRef.current?.pauseSeconds ?? 0) * 1000);
+        if (repeatPauseMs > 0) {
+          playWhenLoadedRef.current = false;
+          setStatus("paused");
+          window.setTimeout(() => {
+            playWhenLoadedRef.current = true;
+            void audio.play().catch(() => setStatus("ready"));
+          }, repeatPauseMs);
+        } else {
+          playWhenLoadedRef.current = true;
+          void audio.play().catch(() => setStatus("ready"));
+        }
         return;
       }
       resetRepeatProgress();
