@@ -695,9 +695,9 @@ export function AppShell() {
           {activeView === "search" && (
             <div className="content-stack">
               <div className="search-filters" role="group" aria-label="Type de contenu">
-                <button type="button" className={searchType === "all" ? "active" : ""} onClick={() => setSearchType("all")}>Tout</button>
-                <button type="button" className={searchType === "quran" ? "active" : ""} onClick={() => setSearchType("quran")}>Coran</button>
-                <button type="button" className={searchType === "spoken" ? "active" : ""} onClick={() => setSearchType("spoken")}>Cours & rappels</button>
+                <button type="button" className={searchType === "all" ? "active" : ""} onClick={() => { setSearchType("all"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Tout</button>
+                <button type="button" className={searchType === "quran" ? "active" : ""} onClick={() => { setSearchType("quran"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Coran</button>
+                <button type="button" className={searchType === "spoken" ? "active" : ""} onClick={() => { setSearchType("spoken"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Cours & rappels</button>
               </div>
               {searchType !== "spoken" && <SurahBrowser
                 surahs={surahs}
@@ -715,6 +715,7 @@ export function AppShell() {
               {searchType !== "spoken" && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
               {searchType === "spoken" && !hasSpokenContents && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
               {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="library-grid">{spokenContents.map((item) => <button type="button" key={item.id} onClick={() => { const creatorId = item.creatorIds[0]; if (creatorId) setSelectedCreatorId(creatorId); else if (item.seriesId) setSelectedSeriesId(item.seriesId); }}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_", " ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18} /></button>)}</div>}
+              {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
               {searchType === "spoken" && selectedSeries && <SeriesProfile series={selectedSeries} contents={spokenContents} followed={library.follows.some((item)=>item.id===selectedSeries.id&&item.type==="SERIES")} notifications={library.follows.find((item)=>item.id===selectedSeries.id&&item.type==="SERIES")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedSeries.id,"SERIES")} onToggleNotifications={(enabled)=>setFollowNotification(selectedSeries.id,"SERIES",enabled)} onOpen={()=>{}} />}
             </div>
