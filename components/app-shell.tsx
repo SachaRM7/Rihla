@@ -442,10 +442,6 @@ export function AppShell() {
   const activeStudyLoop = detail && library.studyLoop?.surah === detail.surah.number
     ? library.studyLoop
     : null;
-  const notedAyahKeys = useMemo(
-    () => library.ayahNotes.map((note) => `${note.surah}:${note.ayah}`),
-    [library.ayahNotes],
-  );
 
   const showShareMessage = useCallback((message: string) => {
     setShareMessage(message);
