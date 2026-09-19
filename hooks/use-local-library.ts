@@ -44,6 +44,8 @@ export type PersonalPlaylist = {
   updatedAt: number;
 };
 
+export type SpokenProgress = { contentId: string; positionMs: number; durationMs: number; updatedAt: number };
+
 export type FollowedTarget = { id: string; type: "CREATOR" | "SERIES"; notify: boolean };
 
 export type AyahNote = {
@@ -89,6 +91,7 @@ export type LocalLibrary = {
   readingDays: Record<string, string[]>;
   follows: FollowedTarget[];
   spokenPlaybackRate: PlaybackRate;
+  spokenProgress: SpokenProgress[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -127,6 +130,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   readingDays: {},
   follows: [],
   spokenPlaybackRate: 1,
+  spokenProgress: [],
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -279,6 +283,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
       : {},
     follows: Array.isArray(candidate.follows) ? candidate.follows.filter((item): item is FollowedTarget => Boolean(item && typeof item === "object" && typeof (item as FollowedTarget).id === "string" && ((item as FollowedTarget).type === "CREATOR" || (item as FollowedTarget).type === "SERIES"))).slice(0, 200) : [],
     spokenPlaybackRate: isPlaybackRate(candidate.spokenPlaybackRate) ? candidate.spokenPlaybackRate : 1,
+    spokenProgress: Array.isArray(candidate.spokenProgress) ? candidate.spokenProgress.filter((item): item is SpokenProgress => Boolean(item && typeof item === "object" && typeof (item as SpokenProgress).contentId === "string" && Number.isFinite((item as SpokenProgress).positionMs))).slice(0, 100) : [],
   };
 }
 
@@ -367,6 +372,13 @@ export function useLocalLibrary() {
 
   const setFollowNotification = useCallback((id: string, type: "CREATOR" | "SERIES", notify: boolean) => {
     setLibrary((current) => ({ ...current, follows: current.follows.map((item) => item.id === id && item.type === type ? { ...item, notify } : item) }));
+  }, []);
+
+  const saveSpokenProgress = useCallback((contentId: string, positionMs: number, durationMs: number) => {
+    setLibrary((current) => ({
+      ...current,
+      spokenProgress: [{ contentId, positionMs: Math.max(0, Math.round(positionMs)), durationMs: Math.max(0, Math.round(durationMs)), updatedAt: Date.now() }, ...current.spokenProgress.filter((item) => item.contentId !== contentId)].slice(0, 100),
+    }));
   }, []);
 
   const setSpokenPlaybackRate = useCallback((spokenPlaybackRate: PlaybackRate) => setLibrary((current) => ({ ...current, spokenPlaybackRate })), []);
@@ -621,6 +633,7 @@ export function useLocalLibrary() {
     setMemorizationRevealDelay,
     setReadingGoal,
     setSpokenPlaybackRate,
+    saveSpokenProgress,
     toggleFollow,
     setFollowNotification,
     setAudioQuality,
