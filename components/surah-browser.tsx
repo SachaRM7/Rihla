@@ -68,6 +68,7 @@ export function SurahBrowser({
   searchPlaceholder = "Nom ou numéro d’une sourate…",
 }: Props) {
   const queryForms = searchForms(query);
+  const estimateMinutes = (ayahs: number) => Math.max(1, Math.round(ayahs * 0.55));
   const normalizedQuery = normalize(query);
   const filtered = normalizedQuery
     ? surahs.filter((surah) => {
