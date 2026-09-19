@@ -14,9 +14,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Pencil,
-  ArrowUp,
-  ArrowDown,
   LoaderCircle,
   Play,
   Search,
@@ -24,7 +21,6 @@ import {
   Wifi,
   Bell,
   StickyNote,
-  WifiOff,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
