@@ -137,6 +137,16 @@ export interface MediaChapter {
   position: number;
 }
 
+export interface TranscriptIssue {
+  id: string;
+  transcriptId: string;
+  segmentId?: string;
+  kind: "TEXT" | "TIMING" | "SOURCE" | "UNAVAILABLE";
+  note?: string;
+  createdAt: string;
+  status: "OPEN" | "RESOLVED";
+}
+
 export interface Transcript {
   id: string;
   contentId: string;
