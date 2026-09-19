@@ -30,6 +30,14 @@ export const READING_SIZE_LABELS: Record<ReadingSize, string> = {
   large: "Grand",
 };
 
+export const AUDIO_QUALITIES = ["data-saver", "standard", "high"] as const;
+export type AudioQuality = (typeof AUDIO_QUALITIES)[number];
+export const AUDIO_QUALITY_LABELS: Record<AudioQuality, string> = {
+  "data-saver": "Économie",
+  standard: "Standard",
+  high: "Haute",
+};
+
 export const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5] as const;
 export type PlaybackRate = (typeof PLAYBACK_RATES)[number];
 
@@ -61,6 +69,10 @@ export function isTranslationSize(value: unknown): value is TranslationSize {
 
 export function isReadingSize(value: unknown): value is ReadingSize {
   return READING_SIZES.some((size) => size === value);
+}
+
+export function isAudioQuality(value: unknown): value is AudioQuality {
+  return AUDIO_QUALITIES.some((quality) => quality === value);
 }
 
 export function isPlaybackRate(value: unknown): value is PlaybackRate {
