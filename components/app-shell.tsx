@@ -151,6 +151,8 @@ export function AppShell() {
     setMemorizationRevealDelay,
     setReadingGoal,
     setSpokenPlaybackRate,
+    toggleFollow,
+    setFollowNotification,
     hideRecommendation,
     restoreRecommendations,
     setReminderPreferences,
@@ -209,6 +211,8 @@ export function AppShell() {
   const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
   const [noteQuery, setNoteQuery] = useState("");
   const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
