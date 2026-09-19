@@ -118,6 +118,7 @@ export function AppShell() {
     saveAyahNote,
     exportData,
     clearHistory,
+    setHistoryEnabled,
     clearPersonalData,
   } = useLocalLibrary();
 
@@ -838,6 +839,13 @@ export function AppShell() {
               <section className="data-settings" aria-labelledby="data-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Données</p><h2 id="data-settings-title">Vos données locales</h2></div></div>
                 <p>Vos notes, favoris, playlists et historique sont privés par défaut. Un futur compte servira uniquement à les synchroniser si vous le choisissez.</p>
+                <button type="button" role="switch" aria-checked={library.historyEnabled} className="setting-toggle history-toggle" onClick={() => {
+                  setHistoryEnabled(!library.historyEnabled);
+                  showShareMessage(library.historyEnabled ? "Historique suspendu" : "Historique activé");
+                }}>
+                  <span className="setting-copy"><strong>Enregistrer l’historique</strong><small>{library.historyEnabled ? "Les prochaines écoutes seront ajoutées" : "Les nouvelles écoutes ne seront pas ajoutées"}</small></span>
+                  <span className="switch-track" aria-hidden="true"><i /></span>
+                </button>
                 <div className="data-settings-actions">
                   <button type="button" className="secondary-action" onClick={() => {
                     const blob = new Blob([exportData()], { type: "application/json" });
