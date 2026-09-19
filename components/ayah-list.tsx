@@ -10,20 +10,15 @@ type Props = {
   activeIndex: number;
   isPlaying: boolean;
   currentTime: number;
-  duration: number;
   favoriteAyahs: string[];
-  notedAyahs: string[];
   showTranslation: boolean;
   autoScroll: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
-  onToggleTranslation: () => void;
   onEditNote: (ayahNumber: number) => void;
-  onShare: (ayahNumber: number) => void;
 };
 
 type KaraokeStyle = CSSProperties & { "--word-progress": string };
-type TranslationKaraokeStyle = CSSProperties & { "--translation-progress": string };
 
 function getWordProgress(elapsedMs: number, startMs: number, endMs: number, active: boolean) {
   if (!active) return 1;
@@ -45,16 +40,12 @@ export function AyahList({
   activeIndex,
   isPlaying,
   currentTime,
-  duration: _duration,
   favoriteAyahs,
-  notedAyahs: _notedAyahs,
   showTranslation,
   autoScroll,
   onSelect,
   onToggleFavorite,
-  onToggleTranslation: _onToggleTranslation,
   onEditNote,
-  onShare: _onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
   const [followSuspended, setFollowSuspended] = useState(false);
