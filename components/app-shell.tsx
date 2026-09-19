@@ -467,7 +467,7 @@ export function AppShell() {
 
     const shareData = {
       title: `${detail.surah.englishName} · Ayah ${ayahNumber}`,
-      text: `${ayah.arabicText}\n${ayah.frenchText}`,
+      text: `${ayah.arabicText}\n\n${ayah.frenchText}\n\n${detail.surah.englishName} ${detail.surah.number}:${ayahNumber}\nTraduction française · source indiquée dans RIHLA`,
       url: url.toString(),
     };
 
@@ -714,7 +714,7 @@ export function AppShell() {
                           <span className="history-reference">{String(latest.surah).padStart(3, "0")}</span>
                           <span className="history-copy">
                             <strong>{surah?.englishName ?? `Sourate ${latest.surah}`}</strong>
-                            <small>{formatHistoryDate(latest.updatedAt)} · {rangeLabel} · reprendre {latest.ayah} à {formatPlaybackTime(latest.positionMs)}</small>
+                            <small>{formatHistoryDate(latest.updatedAt)} · {rangeLabel} · reprise à {formatPlaybackTime(latest.positionMs)}</small>
                             <progress max="100" value={progress} aria-label={`Progression de ${Math.round(progress)} %`} />
                           </span>
                           <ChevronRight size={18} />
