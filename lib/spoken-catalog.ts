@@ -11,4 +11,5 @@ export const SPOKEN_CATALOG: CatalogBundle = {
   series: [],
   media: [],
   contents: [],
+  collections: [],
 };
