@@ -71,8 +71,8 @@ export function AyahList({
         </div>
         <span className="arabic-heading" lang="ar" dir="rtl" translate="no">{detail.surah.name}</span>
         <details className="tajwid-legend">
-          <summary>Code couleur</summary>
-          <div>
+          <summary>Couleurs de tajwid</summary>
+          <div><p className="tajwid-help">Ces couleurs indiquent des règles de tajwid. La surbrillance olive du verset indique uniquement le suivi audio.</p>
             <span><i data-color="madd" />Prolongation</span>
             <span><i data-color="ghunnah" />Nasalisation</span>
             <span><i data-color="ikhfa" />Dissimulation</span>
