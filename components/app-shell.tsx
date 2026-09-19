@@ -154,6 +154,7 @@ export function AppShell() {
     setMemorizationMode,
     setMemorizationRevealDelay,
     setReadingGoal,
+    setReadingGoalMode,
     setSpokenPlaybackRate,
     setCrossFamilyAutoAdvance,
     saveSpokenProgress,
@@ -1080,7 +1081,9 @@ export function AppShell() {
                 <button type="button" role="switch" aria-checked={library.readingGoalEnabled} className="setting-toggle" onClick={() => setReadingGoal(!library.readingGoalEnabled)}>
                   <span className="setting-icon"><BookOpenText size={18} /></span><span className="setting-copy"><strong>Suivre un rythme personnel</strong><small>Aucun classement, série ou pénalité si vous manquez un jour</small></span><span className="switch-track" aria-hidden="true"><i /></span>
                 </button>
-                {library.readingGoalEnabled && <label className="quality-setting"><span>Ayat par jour</span><input type="number" min={1} max={100} value={library.readingGoalAyahsPerDay} onChange={(event) => setReadingGoal(true, Math.min(100, Math.max(1, Number(event.target.value))))} /></label>}
+                {library.readingGoalEnabled && <div className="segmented-control reading-goal-mode" role="radiogroup" aria-label="Type d’objectif"><button type="button" role="radio" aria-checked={library.readingGoalMode==="AYAT"} className={library.readingGoalMode==="AYAT"?"selected":""} onClick={()=>setReadingGoalMode("AYAT")}>Ayat / jour</button><button type="button" role="radio" aria-checked={library.readingGoalMode==="KHATMA"} className={library.readingGoalMode==="KHATMA"?"selected":""} onClick={()=>setReadingGoalMode("KHATMA")}>Lecture complète</button></div>}
+                {library.readingGoalEnabled && library.readingGoalMode==="KHATMA" && <label className="quality-setting"><span>Durée souhaitée</span><select value={library.khatmaTargetDays} onChange={(event)=>setReadingGoalMode("KHATMA",Number(event.target.value))}><option value={30}>30 jours</option><option value={60}>60 jours</option><option value={90}>90 jours</option><option value={180}>6 mois</option><option value={365}>1 an</option></select></label>}
+                {library.readingGoalEnabled && library.readingGoalMode==="AYAT" && <label className="quality-setting"><span>Ayat par jour</span><input type="number" min={1} max={100} value={library.readingGoalAyahsPerDay} onChange={(event) => setReadingGoal(true, Math.min(100, Math.max(1, Number(event.target.value))))} /></label>}
               </section>
 
               <section className="data-settings" aria-labelledby="reminder-settings-title">
