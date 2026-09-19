@@ -1,7 +1,7 @@
 "use client";
 
-import { Heart, Languages, Share2, StickyNote } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Heart, Languages, MoreHorizontal, Navigation } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
 
@@ -40,34 +40,6 @@ function TajwidRuns({ runs }: { runs: TajwidTextRun[] }) {
   ));
 }
 
-function TimedFrenchText({ text, progress }: { text: string; progress: number }) {
-  const words = text.trim().split(/\s+/);
-  const totalWeight = Math.max(1, words.reduce((total, word) => total + Math.max(word.length, 1), 0));
-
-  return (
-    <span className="ayah-translation translation-karaoke" lang="fr" aria-label={text}>
-      {words.map((word, index) => {
-        const precedingWeight = words
-          .slice(0, index)
-          .reduce((total, precedingWord) => total + Math.max(precedingWord.length, 1), 0);
-        const start = precedingWeight / totalWeight;
-        const end = (precedingWeight + Math.max(word.length, 1)) / totalWeight;
-        const wordProgress = getWordProgress(progress, start, end, true);
-        const style: TranslationKaraokeStyle = {
-          "--translation-progress": `${wordProgress * 100}%`,
-        };
-
-        return (
-          <span className="translation-word" key={`${word}-${index}`} style={style} aria-hidden="true">
-            <span className="translation-word-base">{word}</span>
-            <span className="translation-word-fill">{word}</span>
-          </span>
-        );
-      })}
-    </span>
-  );
-}
-
 export function AyahList({
   detail,
   activeIndex,
@@ -85,17 +57,18 @@ export function AyahList({
   onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
+  const [followSuspended, setFollowSuspended] = useState(false);
 
   useEffect(() => {
-    if (!autoScroll) return;
+    if (!autoScroll || followSuspended) return;
     activeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [activeIndex, autoScroll]);
+  }, [activeIndex, autoScroll, followSuspended]);
 
   return (
     <section className="ayah-section" aria-labelledby="ayah-list-title">
       <div className="ayah-heading">
         <div>
-          <p className="eyebrow">Karaoké fluide · Tajwid</p>
+          <p className="eyebrow">Lecture · Tajwid</p>
           <h2 id="ayah-list-title">{detail.surah.englishName}</h2>
           <p>{detail.surah.frenchName} · {detail.surah.numberOfAyahs} ayat</p>
         </div>
@@ -112,7 +85,24 @@ export function AyahList({
         </details>
       </div>
 
-      <div className="ayah-list">
+      {autoScroll && followSuspended && (
+        <button
+          type="button"
+          className="return-to-current"
+          onClick={() => {
+            setFollowSuspended(false);
+            activeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+        >
+          <Navigation size={16} aria-hidden="true" /> Revenir au verset en cours
+        </button>
+      )}
+
+      <div
+        className="ayah-list"
+        onWheel={() => setFollowSuspended(true)}
+        onTouchMove={() => setFollowSuspended(true)}
+      >
         {detail.ayahs.map((ayah, index) => {
           const key = `${detail.surah.number}:${ayah.numberInSurah}`;
           const isFavorite = favoriteAyahs.includes(key);
@@ -121,9 +111,6 @@ export function AyahList({
           const isPast = index < activeIndex;
           const elapsedMs = currentTime * 1000;
           const karaokeActive = isActive && (isPlaying || currentTime > 0);
-          const translationProgress = duration > 0
-            ? Math.min(1, Math.max(0, currentTime / duration))
-            : 0;
 
           return (
             <article
@@ -137,30 +124,12 @@ export function AyahList({
                 <div className="ayah-meta-actions">
                   <button
                     type="button"
-                    className={`translation-toggle-inline ${showTranslation ? "active" : ""}`}
-                    aria-pressed={showTranslation}
-                    aria-label={showTranslation ? "Masquer la traduction française" : "Afficher la traduction française"}
-                    title={showTranslation ? "Masquer la traduction" : "Afficher la traduction"}
-                    onClick={onToggleTranslation}
-                  >
-                    <Languages size={17} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    className={`icon-button ${hasNote ? "active" : ""}`}
-                    onClick={() => onEditNote(ayah.numberInSurah)}
-                    aria-label={hasNote ? `Modifier la note de l’ayah ${ayah.numberInSurah}` : `Ajouter une note à l’ayah ${ayah.numberInSurah}`}
-                    title={hasNote ? "Modifier la note" : "Ajouter une note"}
-                  >
-                    <StickyNote size={16} fill={hasNote ? "currentColor" : "none"} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
                     className="icon-button"
-                    onClick={() => onShare(ayah.numberInSurah)}
-                    aria-label={`Partager l’ayah ${ayah.numberInSurah}`}
+                    aria-label={`Options de l’ayah ${ayah.numberInSurah}`}
+                    title="Options"
+                    onClick={() => onEditNote(ayah.numberInSurah)}
                   >
-                    <Share2 size={16} aria-hidden="true" />
+                    <MoreHorizontal size={18} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -208,9 +177,9 @@ export function AyahList({
                   })}
                 </span>
                 {showTranslation && (
-                  karaokeActive
-                    ? <TimedFrenchText text={ayah.frenchText} progress={translationProgress} />
-                    : <span className="ayah-translation" lang="fr">{ayah.frenchText}</span>
+                  <span className={`ayah-translation ${karaokeActive ? "active-translation" : ""}`} lang="fr">
+                    {ayah.frenchText}
+                  </span>
                 )}
               </button>
             </article>
