@@ -120,6 +120,15 @@ export interface EditorialCollection {
   contentIds: string[];
 }
 
+export interface ReligiousCitation {
+  id: string;
+  kind: "HADITH" | "QURAN_REFERENCE" | "SCHOLAR_QUOTE";
+  text: string;
+  reference: string;
+  sourceUrl?: string;
+  grading?: Array<{ label: string; attributedTo: string; sourceUrl?: string }>;
+}
+
 export interface FollowPreference {
   id: string;
   targetType: "CREATOR" | "SERIES";
