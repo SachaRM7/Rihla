@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Languages, MoreHorizontal, Navigation } from "lucide-react";
+import { Heart, MoreHorizontal, Navigation } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -45,16 +45,16 @@ export function AyahList({
   activeIndex,
   isPlaying,
   currentTime,
-  duration,
+  duration: _duration,
   favoriteAyahs,
-  notedAyahs,
+  notedAyahs: _notedAyahs,
   showTranslation,
   autoScroll,
   onSelect,
   onToggleFavorite,
-  onToggleTranslation,
+  onToggleTranslation: _onToggleTranslation,
   onEditNote,
-  onShare,
+  onShare: _onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
   const [followSuspended, setFollowSuspended] = useState(false);
