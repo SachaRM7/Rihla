@@ -339,3 +339,6 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .playlist-order button:disabled{opacity:.3;cursor:default}
 
 .playlist-title-actions{display:flex;align-items:center;gap:7px}
+
+.import-data-action{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.import-data-action input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
