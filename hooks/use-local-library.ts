@@ -70,6 +70,9 @@ export type LocalLibrary = {
   ayahNotes: AyahNote[];
   historyEnabled: boolean;
   playlists: PersonalPlaylist[];
+  quranReadingSurah: number;
+  quranReadingAyah: number;
+  quranReadingUpdatedAt: number;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -93,6 +96,9 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   ayahNotes: [],
   historyEnabled: true,
   playlists: [],
+  quranReadingSurah: 1,
+  quranReadingAyah: 1,
+  quranReadingUpdatedAt: 0,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -213,6 +219,9 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     ayahNotes,
     historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
     playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item): item is PersonalPlaylist => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100) : [],
+    quranReadingSurah: Number.isInteger(candidate.quranReadingSurah) && candidate.quranReadingSurah! >= 1 && candidate.quranReadingSurah! <= 114 ? candidate.quranReadingSurah! : 1,
+    quranReadingAyah: Number.isInteger(candidate.quranReadingAyah) && candidate.quranReadingAyah! >= 1 ? candidate.quranReadingAyah! : 1,
+    quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
   };
 }
 
@@ -243,6 +252,15 @@ export function useLocalLibrary() {
       // Storage is an enhancement, never a playback dependency.
     }
   }, [hydrated, library]);
+
+  const saveReadingProgress = useCallback((surah: number, ayah: number) => {
+    setLibrary((current) => ({
+      ...current,
+      quranReadingSurah: surah,
+      quranReadingAyah: ayah,
+      quranReadingUpdatedAt: Date.now(),
+    }));
+  }, []);
 
   const toggleFavoriteSurah = useCallback((number: number) => {
     setLibrary((current) => ({
@@ -490,6 +508,7 @@ export function useLocalLibrary() {
     library,
     hydrated,
     toggleFavoriteSurah,
+    saveReadingProgress,
     toggleFavoriteAyah,
     saveResume,
     savePlaybackProgress,
