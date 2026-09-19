@@ -116,6 +116,9 @@ export function AppShell() {
     setShowTranslation,
     setStudyLoop,
     saveAyahNote,
+    exportData,
+    clearHistory,
+    clearPersonalData,
   } = useLocalLibrary();
 
   const libraryRef = useRef(library);
@@ -832,6 +835,34 @@ export function AppShell() {
                   showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
                 }}
               />
+              <section className="data-settings" aria-labelledby="data-settings-title">
+                <div className="section-title-row"><div><p className="eyebrow">Données</p><h2 id="data-settings-title">Vos données locales</h2></div></div>
+                <p>Vos notes, favoris et historique restent privés sur cet appareil tant qu’aucun compte n’est utilisé.</p>
+                <div className="data-settings-actions">
+                  <button type="button" className="secondary-action" onClick={() => {
+                    const blob = new Blob([exportData()], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const anchor = document.createElement("a");
+                    anchor.href = url;
+                    anchor.download = "rihla-donnees.json";
+                    anchor.click();
+                    URL.revokeObjectURL(url);
+                    showShareMessage("Export préparé");
+                  }}>Exporter mes données</button>
+                  <button type="button" className="secondary-action" onClick={() => {
+                    if (window.confirm("Effacer tout l’historique d’écoute sur cet appareil ?")) {
+                      clearHistory();
+                      showShareMessage("Historique effacé");
+                    }
+                  }}>Effacer l’historique</button>
+                  <button type="button" className="danger-action" onClick={() => {
+                    if (window.confirm("Supprimer favoris, notes, historique et préférences de lecture de cet appareil ?")) {
+                      clearPersonalData();
+                      showShareMessage("Données personnelles supprimées");
+                    }
+                  }}>Supprimer mes données</button>
+                </div>
+              </section>
             </div>
           )}
 
