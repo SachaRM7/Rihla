@@ -1,0 +1,11 @@
+{
+  "name": "RIHLA",
+  "short_name": "RIHLA",
+  "description": "Le Coran et vos contenus islamiques, à écouter et à suivre.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d0b",
+  "theme_color": "#0b0d0b",
+  "lang": "fr",
+  "dir": "ltr"
+}
