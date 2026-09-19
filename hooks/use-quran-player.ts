@@ -49,6 +49,7 @@ export function useQuranPlayer({
   const [error, setError] = useState<string | null>(null);
   const [repeatIteration, setRepeatIteration] = useState(1);
   const [studyLoopIteration, setStudyLoopIteration] = useState(1);
+  const pauseTimeoutRef = useRef<number | null>(null);
 
   const resetRepeatProgress = useCallback(() => {
     repeatIterationRef.current = 1;
@@ -228,7 +229,7 @@ export function useQuranPlayer({
             if (pauseMs > 0) {
               playWhenLoadedRef.current = false;
               setStatus("paused");
-              window.setTimeout(() => moveToIndex(startIndex, true), pauseMs);
+              pauseTimeoutRef.current = window.setTimeout(() => { pauseTimeoutRef.current = null; moveToIndex(startIndex, true); }, pauseMs);
             } else {
               moveToIndex(startIndex, true);
             }
@@ -258,7 +259,8 @@ export function useQuranPlayer({
         if (repeatPauseMs > 0) {
           playWhenLoadedRef.current = false;
           setStatus("paused");
-          window.setTimeout(() => {
+          pauseTimeoutRef.current = window.setTimeout(() => {
+            pauseTimeoutRef.current = null;
             playWhenLoadedRef.current = true;
             void audio.play().catch(() => setStatus("ready"));
           }, repeatPauseMs);
@@ -293,6 +295,10 @@ export function useQuranPlayer({
 
     return () => {
       stopClock();
+      if (pauseTimeoutRef.current !== null) {
+        window.clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
       audio.pause();
       audio.removeAttribute("src");
       audio.load();
