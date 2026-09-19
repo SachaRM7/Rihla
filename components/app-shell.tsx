@@ -663,9 +663,7 @@ export function AppShell() {
                         activeIndex={activeIndex}
                         isPlaying={player.isPlaying}
                         currentTime={player.currentTime}
-                        duration={player.duration}
                         favoriteAyahs={library.favoriteAyahs}
-                        notedAyahs={notedAyahKeys}
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
                         onSelect={(index) => player.selectAyah(index, true)}
@@ -675,11 +673,6 @@ export function AppShell() {
                           ayah,
                           surahName: detail.surah.englishName,
                         })}
-                        onToggleTranslation={() => setShowTranslation(!library.showTranslation)}
-                        onShare={(ayah) => shareAyah(
-                          ayah,
-                          currentAyah?.numberInSurah === ayah ? player.currentTime * 1000 : 0,
-                        )}
                       />
                       <SourceDisclosure source={detail.source} />
                     </>
