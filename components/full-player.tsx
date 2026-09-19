@@ -59,6 +59,7 @@ type Props = {
   onApplyStudyLoop: (value: StudyLoopPreference) => void;
   onStopStudyLoop: () => void;
   onSetSleepTimer: (minutes: number | null) => void;
+  onSetSleepAtEnd: (mode: "ayah" | "surah" | null) => void;
   onShare: () => void;
 };
 
@@ -94,6 +95,7 @@ export function FullPlayer({
   onApplyStudyLoop,
   onStopStudyLoop,
   onSetSleepTimer,
+  onSetSleepAtEnd,
   onShare,
 }: Props) {
   const { dialogRef, onDialogKeyDown, requestClose } = useModalAccessibility({ onClose });
@@ -237,7 +239,8 @@ export function FullPlayer({
               value={sleepTimerActive ? "active" : "off"}
               onChange={(event) => {
                 const value = event.target.value;
-                onSetSleepTimer(value === "off" ? null : Number(value));
+                if (value === "end-ayah" || value === "end-surah") onSetSleepAtEnd(value === "end-ayah" ? "ayah" : "surah");
+                else { onSetSleepAtEnd(null); onSetSleepTimer(value === "off" ? null : Number(value)); }
               }}
             >
               <option value="off">Off</option>
@@ -246,6 +249,8 @@ export function FullPlayer({
               <option value="10">10 min</option>
               <option value="20">20 min</option>
               <option value="30">30 min</option>
+              <option value="end-ayah">Fin du verset</option>
+              <option value="end-surah">Fin de la sourate</option>
             </select>
           </label>
         </div>
