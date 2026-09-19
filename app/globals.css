@@ -379,3 +379,7 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .tajwid-help{grid-column:1/-1;margin:0 0 4px;color:var(--muted);font-size:.7rem;line-height:1.45}
 
 .tafsir-modal>p{margin:0;color:var(--muted);font-size:.82rem;line-height:1.6}
+
+.memorization-hidden{filter:blur(8px);opacity:.18;user-select:none;transition:filter .18s ease,opacity .18s ease}
+.ayah-card.revealed .memorization-hidden{filter:none;opacity:1;user-select:text}
+.reveal-ayah{min-height:40px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--olive-strong);font-size:.72rem;font-weight:800;cursor:pointer}
