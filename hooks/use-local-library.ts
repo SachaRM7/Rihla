@@ -286,12 +286,18 @@ export function useLocalLibrary() {
   }, [hydrated, library]);
 
   const saveReadingProgress = useCallback((surah: number, ayah: number) => {
-    setLibrary((current) => ({
-      ...current,
-      quranReadingSurah: surah,
-      quranReadingAyah: ayah,
-      quranReadingUpdatedAt: Date.now(),
-    }));
+    setLibrary((current) => {
+      const day = new Date().toISOString().slice(0, 10);
+      const key = String(surah) + ":" + String(ayah);
+      const today = current.readingDays[day] ?? [];
+      return {
+        ...current,
+        quranReadingSurah: surah,
+        quranReadingAyah: ayah,
+        quranReadingUpdatedAt: Date.now(),
+        readingDays: { ...current.readingDays, [day]: today.includes(key) ? today : [...today, key] },
+      };
+    });
   }, []);
 
   const toggleFavoriteSurah = useCallback((number: number) => {
