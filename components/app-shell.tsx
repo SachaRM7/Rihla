@@ -141,6 +141,7 @@ export function AppShell() {
     setWifiOnlyDownloads,
     setMemorizationMode,
     hideRecommendation,
+    restoreRecommendations,
     setAudioQuality,
     clearPersonalData,
   } = useLocalLibrary();
@@ -999,6 +1000,12 @@ export function AppShell() {
                   showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
                 }}
               />
+              {library.hiddenRecommendations.length > 0 && <section className="data-settings" aria-labelledby="recommendation-settings-title">
+                <div className="section-title-row"><div><p className="eyebrow">Accueil</p><h2 id="recommendation-settings-title">Recommandations masquées</h2></div><span className="section-count">{library.hiddenRecommendations.length}</span></div>
+                <p>Vous pouvez repartir de zéro sans toucher à vos favoris ou à votre historique.</p>
+                <button type="button" className="secondary-action" onClick={() => { restoreRecommendations(); showShareMessage("Recommandations restaurées"); }}>Tout réafficher</button>
+              </section>}
+
               <section className="data-settings" aria-labelledby="network-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Réseau</p><h2 id="network-settings-title">Économie de données</h2></div></div>
                 <button type="button" role="switch" aria-checked={library.wifiOnlyDownloads} className="setting-toggle" onClick={() => setWifiOnlyDownloads(!library.wifiOnlyDownloads)}>
