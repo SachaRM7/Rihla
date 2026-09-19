@@ -10,7 +10,6 @@ import {
   Play,
   Search,
   Settings,
-  Sparkles,
   StickyNote,
   WifiOff,
 } from "lucide-react";
