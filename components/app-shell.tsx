@@ -10,6 +10,9 @@ import {
   Library,
   ListMusic,
   Plus,
+  Pencil,
+  ArrowUp,
+  ArrowDown,
   LoaderCircle,
   Play,
   Search,
@@ -122,6 +125,8 @@ export function AppShell() {
     createPlaylist,
     toggleAyahInPlaylist,
     deletePlaylist,
+    renamePlaylist,
+    movePlaylistAyah,
     exportData,
     clearHistory,
     setHistoryEnabled,
@@ -174,6 +179,7 @@ export function AppShell() {
   const [query, setQuery] = useState("");
   const [continuousQuran, setContinuousQuran] = useState(false);
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -724,11 +730,34 @@ export function AppShell() {
                 </div>
                 {library.playlists.length ? <div className="library-grid">
                   {library.playlists.map((playlist) => <div className="playlist-row" key={playlist.id}>
-                    <button type="button" onClick={() => setLibrarySection("bookmarks")}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
+                    <button type="button" onClick={() => setSelectedPlaylistId(playlist.id)}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
                     <button type="button" className="playlist-delete" aria-label={`Supprimer ${playlist.title}`} onClick={() => { if (window.confirm(`Supprimer la playlist « ${playlist.title} » ?`)) deletePlaylist(playlist.id); }}>×</button>
                   </div>)}
                 </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Aucune playlist</strong><p>Créez une collection personnelle pour organiser vos écoutes.</p></div>}
               </section>}
+
+              {librarySection === "playlists" && selectedPlaylistId && (() => {
+                const playlist = library.playlists.find((item) => item.id === selectedPlaylistId);
+                if (!playlist) return null;
+                return <section className="library-section playlist-detail">
+                  <div className="section-title-row">
+                    <div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div>
+                    <button type="button" className="text-action" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={15}/> Renommer</button>
+                  </div>
+                  {playlist.ayahKeys.length ? <div className="playlist-items">
+                    {playlist.ayahKeys.map((key, index) => {
+                      const [surahNumber, ayahNumber] = key.split(":").map(Number);
+                      const surah = surahs.find((item) => item.number === surahNumber);
+                      return <div className="playlist-item" key={key}>
+                        <button type="button" className="playlist-open" onClick={() => openSurah(surahNumber, ayahNumber)}><span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong></button>
+                        <button type="button" disabled={index === 0} aria-label="Monter" onClick={() => movePlaylistAyah(playlist.id,index,index-1)}><ArrowUp size={15}/></button>
+                        <button type="button" disabled={index === playlist.ayahKeys.length-1} aria-label="Descendre" onClick={() => movePlaylistAyah(playlist.id,index,index+1)}><ArrowDown size={15}/></button>
+                        <button type="button" aria-label="Retirer" onClick={() => toggleAyahInPlaylist(playlist.id,surahNumber,ayahNumber)}>×</button>
+                      </div>;
+                    })}
+                  </div> : <div className="empty-library compact"><ListMusic size={22}/><strong>Playlist vide</strong><p>Ajoutez des passages depuis le menu d’un verset.</p></div>}
+                </section>;
+              })()}
 
               {(librarySection === "all" || librarySection === "history") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
