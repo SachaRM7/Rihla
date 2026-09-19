@@ -7,19 +7,24 @@ import {
   COLOR_THEMES,
   READING_SIZES,
   READING_SIZE_LABELS,
+  TRANSLATION_SIZES,
+  TRANSLATION_SIZE_LABELS,
   type AppearanceMode,
   type ReadingSize,
   type ThemeId,
+  type TranslationSize,
 } from "@/lib/preferences";
 
 type Props = {
   theme: ThemeId;
   appearance: AppearanceMode;
   readingSize: ReadingSize;
+  translationSize: TranslationSize;
   autoScroll: boolean;
   onThemeChange: (theme: ThemeId) => void;
   onAppearanceChange: (appearance: AppearanceMode) => void;
   onReadingSizeChange: (size: ReadingSize) => void;
+  onTranslationSizeChange: (size: TranslationSize) => void;
   onAutoScrollChange: (enabled: boolean) => void;
 };
 
@@ -27,10 +32,12 @@ export function PreferencesPanel({
   theme,
   appearance,
   readingSize,
+  translationSize,
   autoScroll,
   onThemeChange,
   onAppearanceChange,
   onReadingSizeChange,
+  onTranslationSizeChange,
   onAutoScrollChange,
 }: Props) {
   return (
@@ -59,6 +66,24 @@ export function PreferencesPanel({
                   onClick={() => onReadingSizeChange(size)}
                 >
                   {READING_SIZE_LABELS[size]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="reading-size-setting">
+            <span className="setting-label">Taille de la traduction</span>
+            <div className="segmented-control" role="radiogroup" aria-label="Taille de la traduction">
+              {TRANSLATION_SIZES.map((size) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={translationSize === size}
+                  className={translationSize === size ? "selected" : ""}
+                  key={size}
+                  onClick={() => onTranslationSizeChange(size)}
+                >
+                  {TRANSLATION_SIZE_LABELS[size]}
                 </button>
               ))}
             </div>
