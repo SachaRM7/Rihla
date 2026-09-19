@@ -89,6 +89,8 @@ export type LocalLibrary = {
   readingGoalEnabled: boolean;
   readingGoalAyahsPerDay: number;
   readingDays: Record<string, string[]>;
+  readingGoalMode: "AYAT" | "KHATMA";
+  khatmaTargetDays: number;
   follows: FollowedTarget[];
   spokenPlaybackRate: PlaybackRate;
   spokenProgress: SpokenProgress[];
@@ -129,6 +131,8 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   readingGoalEnabled: false,
   readingGoalAyahsPerDay: 10,
   readingDays: {},
+  readingGoalMode: "AYAT",
+  khatmaTargetDays: 365,
   follows: [],
   spokenPlaybackRate: 1,
   spokenProgress: [],
@@ -272,6 +276,8 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     memorizationRevealDelay: [0, 3, 5, 10].includes(Number(candidate.memorizationRevealDelay)) ? Number(candidate.memorizationRevealDelay) : 0,
     readingGoalEnabled: typeof candidate.readingGoalEnabled === "boolean" ? candidate.readingGoalEnabled : false,
     readingGoalAyahsPerDay: Number.isInteger(candidate.readingGoalAyahsPerDay) ? Math.min(100, Math.max(1, Number(candidate.readingGoalAyahsPerDay))) : 10,
+    readingGoalMode: candidate.readingGoalMode === "KHATMA" ? "KHATMA" : "AYAT",
+    khatmaTargetDays: Number.isInteger(candidate.khatmaTargetDays) ? Math.min(730, Math.max(30, Number(candidate.khatmaTargetDays))) : 365,
     readingDays: candidate.readingDays && typeof candidate.readingDays === "object"
       ? Object.fromEntries(
           Object.entries(candidate.readingDays as Record<string, unknown>)
@@ -387,6 +393,10 @@ export function useLocalLibrary() {
   const setCrossFamilyAutoAdvance = useCallback((allowCrossFamilyAutoAdvance: boolean) => setLibrary((current) => ({ ...current, allowCrossFamilyAutoAdvance })), []);
 
   const setSpokenPlaybackRate = useCallback((spokenPlaybackRate: PlaybackRate) => setLibrary((current) => ({ ...current, spokenPlaybackRate })), []);
+
+  const setReadingGoalMode = useCallback((readingGoalMode: "AYAT" | "KHATMA", khatmaTargetDays?: number) => {
+    setLibrary((current) => ({ ...current, readingGoalMode, khatmaTargetDays: khatmaTargetDays ?? current.khatmaTargetDays }));
+  }, []);
 
   const setReadingGoal = useCallback((enabled: boolean, ayahsPerDay?: number) => {
     setLibrary((current) => ({ ...current, readingGoalEnabled: enabled, readingGoalAyahsPerDay: ayahsPerDay ?? current.readingGoalAyahsPerDay }));
@@ -637,6 +647,7 @@ export function useLocalLibrary() {
     setReminderPreferences,
     setMemorizationRevealDelay,
     setReadingGoal,
+    setReadingGoalMode,
     setSpokenPlaybackRate,
     setCrossFamilyAutoAdvance,
     saveSpokenProgress,
