@@ -288,4 +288,4 @@ html[data-appearance="light"] .ayah-word-base{color:rgba(28,33,27,.55)}
 
 .recent-searches{display:grid;gap:4px}
 .recent-search-chips{display:flex;flex-wrap:wrap;gap:8px}
-.recent-search-chips span{display:inline-flex;min-height:36px;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);padding:0 12px;font-size:.75rem}
+.recent-search-chips button{display:inline-flex;min-height:40px;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);padding:0 13px;font-size:.75rem;cursor:pointer}
