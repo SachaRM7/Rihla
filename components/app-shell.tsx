@@ -608,6 +608,15 @@ export function AppShell() {
                 </button>
               </section>
 
+              <section className="time-discovery">
+                <div className="section-title-row"><div><p className="eyebrow">Selon votre temps</p><h2>Choisir une écoute</h2></div></div>
+                <div className="time-discovery-grid">
+                  <button type="button" onClick={() => openSurah(112)}><span>Quelques minutes</span><strong>Al-Ikhlas</strong><small>Une récitation courte</small></button>
+                  <button type="button" onClick={() => openSurah(36)}><span>Un trajet</span><strong>Ya-Sin</strong><small>Prendre un peu plus de temps</small></button>
+                  <button type="button" onClick={() => openSurah(2)}><span>Écoute approfondie</span><strong>Al-Baqara</strong><small>Pour une écoute longue</small></button>
+                </div>
+              </section>
+
               <section className="featured-section">
                 <div className="section-title-row">
                   <div><p className="eyebrow">Accès rapide</p><h2>Sourates essentielles</h2></div>
