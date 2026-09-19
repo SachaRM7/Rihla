@@ -714,6 +714,7 @@ export function AppShell() {
                         favoriteAyahs={library.favoriteAyahs}
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
+                showTranslation={library.showTranslation}
                         continuousView={continuousQuran}
                         onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); }}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
@@ -953,6 +954,10 @@ export function AppShell() {
                 onTranslationSizeChange={(size) => {
                   setTranslationSize(size);
                   showShareMessage("Taille de traduction appliquée");
+                }}
+                onShowTranslationChange={(enabled) => {
+                  setShowTranslation(enabled);
+                  showShareMessage(enabled ? "Traduction affichée" : "Traduction masquée");
                 }}
                 onAutoScrollChange={(enabled) => {
                   setAutoScroll(enabled);
