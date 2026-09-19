@@ -75,6 +75,14 @@ export interface Creator {
   officialUrls: string[];
 }
 
+export interface MediaVariant {
+  id: string;
+  mediaAssetId: string;
+  kind: MediaKind;
+  url: string;
+  quality?: "DATA_SAVER" | "STANDARD" | "HIGH";
+}
+
 export interface MediaAsset {
   id: string;
   kind: MediaKind;
@@ -82,6 +90,7 @@ export interface MediaAsset {
   durationMs?: number;
   sourceId: string;
   rightsRecordId: string;
+  variantIds?: string[];
 }
 
 export interface ContentItem {
