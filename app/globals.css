@@ -375,3 +375,5 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .time-discovery-grid strong{font-size:.9rem}
 .time-discovery-grid small{color:var(--muted);font-size:.7rem}
 @media(max-width:620px){.time-discovery-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:3px}.time-discovery-grid button{min-width:72%;scroll-snap-align:start}}
+
+.tajwid-help{grid-column:1/-1;margin:0 0 4px;color:var(--muted);font-size:.7rem;line-height:1.45}
