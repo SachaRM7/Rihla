@@ -154,6 +154,7 @@ export function AppShell() {
     setMemorizationRevealDelay,
     setReadingGoal,
     setSpokenPlaybackRate,
+    setCrossFamilyAutoAdvance,
     saveSpokenProgress,
     toggleFollow,
     setFollowNotification,
@@ -1094,6 +1095,14 @@ export function AppShell() {
                 <p>Vous pouvez repartir de zéro sans toucher à vos favoris ou à votre historique.</p>
                 <button type="button" className="secondary-action" onClick={() => { restoreRecommendations(); showShareMessage("Recommandations restaurées"); }}>Tout réafficher</button>
               </section>}
+
+              <section className="data-settings" aria-labelledby="autoplay-settings-title">
+                <div className="section-title-row"><div><p className="eyebrow">Lecture automatique</p><h2 id="autoplay-settings-title">Enchaînement des contenus</h2></div></div>
+                <button type="button" role="switch" aria-checked={library.allowCrossFamilyAutoAdvance} className="setting-toggle" onClick={() => setCrossFamilyAutoAdvance(!library.allowCrossFamilyAutoAdvance)}>
+                  <span className="setting-copy"><strong>Autoriser Coran ↔ contenus parlés</strong><small>{library.allowCrossFamilyAutoAdvance ? "L’enchaînement entre familles de contenus est autorisé" : "Une récitation ne lancera pas automatiquement un podcast ou une conférence"}</small></span>
+                  <span className="switch-track" aria-hidden="true"><i /></span>
+                </button>
+              </section>
 
               <section className="data-settings" aria-labelledby="spoken-player-title">
                 <div className="section-title-row"><div><p className="eyebrow">Contenus parlés</p><h2 id="spoken-player-title">Vitesse d’écoute</h2></div></div>
