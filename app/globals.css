@@ -362,3 +362,8 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .quality-setting select{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 10px}
 
 .network-banner{position:fixed;top:0;left:50%;z-index:90;transform:translateX(-50%);width:min(560px,calc(100% - 24px));border:1px solid rgba(202,158,82,.25);border-top:0;border-radius:0 0 12px 12px;background:color-mix(in srgb,var(--surface) 96%,transparent);color:var(--cream);padding:8px 12px;text-align:center;font-size:.72rem;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.18);backdrop-filter:blur(14px)}
+
+.search-filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.search-filters::-webkit-scrollbar{display:none}
+.search-filters button{min-height:40px;flex:0 0 auto;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);padding:0 13px;font-size:.75rem;font-weight:700;cursor:pointer}
+.search-filters button.active{border-color:rgba(var(--accent-rgb),.42);background:rgba(var(--accent-rgb),.12);color:var(--olive-strong)}
