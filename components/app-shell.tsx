@@ -682,10 +682,11 @@ export function AppShell() {
                 <p>Vos sourates, ayat et position de reprise sont enregistrées localement.</p>
               </section>
 
-              <section className="library-summary">
-                <div><Heart size={20} /><strong>{library.favoriteSurahs.length}</strong><span>sourates favorites</span></div>
-                <div><BookOpenText size={20} /><strong>{library.favoriteAyahs.length}</strong><span>ayat sauvegardées</span></div>
-                <div><History size={20} /><strong>{formatPlaybackTime(library.lastPositionMs)}</strong><span>{library.lastSurah}:{library.lastAyah} · dernière position</span></div>
+              <section className="library-shortcuts" aria-label="Accès à votre bibliothèque">
+                <button type="button"><Heart size={19} /><span><strong>Favoris</strong><small>Sourates et contenus appréciés</small></span><ChevronRight size={17} /></button>
+                <button type="button"><BookOpenText size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button"><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button"><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
               </section>
 
               <section className="library-section">
@@ -755,7 +756,7 @@ export function AppShell() {
                     })}
                   </div>
                 ) : (
-                  <div className="empty-library compact"><BookOpenText size={22} /><strong>Aucune ayah sauvegardée</strong><p>Les ayat marquées apparaîtront ici.</p></div>
+                  <div className="empty-library compact"><BookOpenText size={22} /><strong>Aucune ayah sauvegardée</strong><p>Les marque-pages de versets apparaîtront ici.</p></div>
                 )}
               </section>
 
