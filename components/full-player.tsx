@@ -99,6 +99,7 @@ export function FullPlayer({
   const { dialogRef, onDialogKeyDown, requestClose } = useModalAccessibility({ onClose });
   const ayah = detail.ayahs[activeIndex];
   if (!ayah) return null;
+  const busy = status === "loading" || status === "buffering";
   const sleepTimerActive = sleepTimerRemaining > 0;
   const sleepTimerMinutes = Math.max(1, Math.ceil(sleepTimerRemaining / 60));
 
@@ -133,7 +134,7 @@ export function FullPlayer({
         <div className="player-track-copy">
           <div>
             <h3>Ayah {ayah.numberInSurah}</h3>
-            <p>{detail.reciterName}</p>
+            <p>{status === "buffering" ? "Mise en mémoire tampon…" : detail.reciterName}</p>
             {studyLoop ? (
               <span className="repeat-progress">
                 A–B {studyLoop.startAyah}–{studyLoop.endAyah} · {studyLoop.cycles === "continuous" ? `passage ${studyLoopIteration}` : `${studyLoopIteration}/${studyLoop.cycles}`}
@@ -187,7 +188,7 @@ export function FullPlayer({
             disabled={status === "loading"}
             aria-label={isPlaying ? "Mettre en pause" : "Lire"}
           >
-            {status === "loading" ? <LoaderCircle className="spin" size={28} /> : isPlaying ? <Pause size={29} fill="currentColor" /> : <Play size={29} fill="currentColor" />}
+            {busy ? <LoaderCircle className="spin" size={28} /> : isPlaying ? <Pause size={29} fill="currentColor" /> : <Play size={29} fill="currentColor" />}
           </button>
           <button type="button" onClick={onNext} disabled={!canNext} aria-label="Ayah suivante">
             <SkipForward size={24} fill="currentColor" />
