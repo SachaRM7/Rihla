@@ -120,6 +120,8 @@ export function AppShell() {
     setStudyLoop,
     saveAyahNote,
     createPlaylist,
+    toggleAyahInPlaylist,
+    deletePlaylist,
     exportData,
     clearHistory,
     setHistoryEnabled,
@@ -676,6 +678,12 @@ export function AppShell() {
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onShare={(ayah) => shareAyah(ayah)}
+                        onAddToPlaylist={(ayah) => {
+                          if (!library.playlists.length) { const title = window.prompt("Créez d’abord une playlist"); if (title) createPlaylist(title); return; }
+                          const choice = window.prompt(`Ajouter à quelle playlist ?\n${library.playlists.map((playlist, index) => `${index + 1}. ${playlist.title}`).join("\n")}`);
+                          const playlist = library.playlists[Number(choice) - 1];
+                          if (playlist) { toggleAyahInPlaylist(playlist.id, detail.surah.number, ayah); showShareMessage(`Ajouté à ${playlist.title}`); }
+                        }}
                         onEditNote={(ayah) => setNoteTarget({
                           surah: detail.surah.number,
                           ayah,
@@ -715,9 +723,10 @@ export function AppShell() {
                   }}><Plus size={16} /> Créer</button>
                 </div>
                 {library.playlists.length ? <div className="library-grid">
-                  {library.playlists.map((playlist) => <button type="button" key={playlist.id}>
-                    <ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} />
-                  </button>)}
+                  {library.playlists.map((playlist) => <div className="playlist-row" key={playlist.id}>
+                    <button type="button" onClick={() => setLibrarySection("bookmarks")}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
+                    <button type="button" className="playlist-delete" aria-label={`Supprimer ${playlist.title}`} onClick={() => { if (window.confirm(`Supprimer la playlist « ${playlist.title} » ?`)) deletePlaylist(playlist.id); }}>×</button>
+                  </div>)}
                 </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Aucune playlist</strong><p>Créez une collection personnelle pour organiser vos écoutes.</p></div>}
               </section>}
 
