@@ -34,6 +34,8 @@ import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
 import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
+import { publicContents } from "@/lib/catalog";
+import { SPOKEN_CATALOG } from "@/lib/spoken-catalog";
 import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
@@ -705,7 +707,8 @@ export function AppShell() {
                 searchPlaceholder="Sourate, mot ou référence 2:255…"
               />}
               {searchType !== "spoken" && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
-              {searchType === "spoken" && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
+              {searchType === "spoken" && !hasSpokenContents && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
+              {searchType === "spoken" && hasSpokenContents && <div className="library-grid">{spokenContents.map((item) => <button type="button" key={item.id}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_", " ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18} /></button>)}</div>}
             </div>
           )}
 
