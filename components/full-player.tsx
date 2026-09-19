@@ -2,7 +2,7 @@
 
 import {
   Gauge,
-  Heart,
+  Bookmark,
   LoaderCircle,
   Pause,
   Play,
@@ -161,7 +161,7 @@ export function FullPlayer({
               aria-pressed={isFavorite}
               onClick={onToggleFavorite}
             >
-              <Heart size={21} fill={isFavorite ? "currentColor" : "none"} />
+              <Bookmark size={21} fill={isFavorite ? "currentColor" : "none"} />
             </button>
           </div>
         </div>
