@@ -11,7 +11,7 @@ export function SourceDisclosure({ source }: Props) {
       <ShieldCheck size={18} aria-hidden="true" />
       <div>
         <strong>Source vérifiable</strong>
-        <p>Texte, traduction et audio diffusés depuis {source.name}. Le texte arabe reste séparé de la traduction.</p>
+        <p>Texte, traduction et audio diffusés depuis {source.name}. {source.translationAuthor ? `${source.translationName} · ${source.translationAuthor}. ` : ""}Le texte arabe reste séparé de la traduction.</p>
       </div>
       <a href={source.termsUrl} target="_blank" rel="noreferrer">
         Conditions <ExternalLink size={14} aria-hidden="true" />
