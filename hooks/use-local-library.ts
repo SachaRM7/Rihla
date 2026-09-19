@@ -551,15 +551,6 @@ export function useLocalLibrary() {
     }));
   }, []);
 
-  const renamePlaylist = useCallback((playlistId: string, title: string) => {
-    const normalized = title.trim().slice(0, 80);
-    if (!normalized) return;
-    setLibrary((current) => ({
-      ...current,
-      playlists: current.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, title: normalized, updatedAt: Date.now() } : playlist),
-    }));
-  }, []);
-
   const movePlaylistAyah = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
     setLibrary((current) => ({
       ...current,
@@ -568,19 +559,6 @@ export function useLocalLibrary() {
         const ayahKeys = [...playlist.ayahKeys];
         const [item] = ayahKeys.splice(fromIndex, 1);
         ayahKeys.splice(toIndex, 0, item);
-        return { ...playlist, ayahKeys, updatedAt: Date.now() };
-      }),
-    }));
-  }, []);
-
-  const movePlaylistAyah = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
-    setLibrary((current) => ({
-      ...current,
-      playlists: current.playlists.map((playlist) => {
-        if (playlist.id !== playlistId || fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= playlist.ayahKeys.length || toIndex >= playlist.ayahKeys.length) return playlist;
-        const ayahKeys = [...playlist.ayahKeys];
-        const [moved] = ayahKeys.splice(fromIndex, 1);
-        ayahKeys.splice(toIndex, 0, moved);
         return { ...playlist, ayahKeys, updatedAt: Date.now() };
       }),
     }));
@@ -627,8 +605,6 @@ export function useLocalLibrary() {
     movePlaylistAyah,
     renamePlaylist,
     removeAyahFromPlaylist,
-    renamePlaylist,
-    movePlaylistAyah,
     exportData: () => JSON.stringify(library, null, 2),
     importData,
     setHistoryEnabled,
