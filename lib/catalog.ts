@@ -1,4 +1,4 @@
-import type { ContentItem, Creator, EditorialCollection, MediaAsset, RightsRecord, Series, SourceRef } from "./domain";
+import type { ContentItem, Creator, EditorialCollection, MediaAsset, MediaChapter, MediaVariant, RightsRecord, Series, SourceRef, Transcript, TranscriptSegment } from "./domain";
 
 export interface CatalogBundle {
   sources: SourceRef[];
@@ -8,6 +8,10 @@ export interface CatalogBundle {
   media: MediaAsset[];
   contents: ContentItem[];
   collections?: EditorialCollection[];
+  transcripts?: Transcript[];
+  transcriptSegments?: TranscriptSegment[];
+  chapters?: MediaChapter[];
+  variants?: MediaVariant[];
 }
 
 export interface PublishabilityIssue {
