@@ -949,7 +949,7 @@ export function AppShell() {
                     ))}
                   </div>
                 ) : (
-                  <div className="empty-library"><Heart size={22} /><strong>Aucune sourate favorite</strong><p>Utilisez le cœur dans le catalogue pour construire votre bibliothèque.</p><button type="button" className="secondary-action" onClick={() => setActiveView("search")}>Parcourir les sourates</button></div>
+                  <div className="empty-library"><Heart size={22} /><strong>Aucune sourate favorite</strong><p>Utilisez le cœur d’une sourate dans le catalogue pour la retrouver ici.</p><button type="button" className="secondary-action" onClick={() => setActiveView("search")}>Parcourir les sourates</button></div>
                 )}
               </section>}
 
