@@ -13,6 +13,8 @@ type PlayerOptions = {
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
   studyLoop: StudyLoopPreference | null;
+  stopAtEnd?: "ayah" | "surah" | null;
+  onStopAtEndConsumed?: () => void;
 };
 
 function readableAudioError() {
@@ -26,6 +28,8 @@ export function useQuranPlayer({
   playbackRate,
   repeatMode,
   studyLoop,
+  stopAtEnd = null,
+  onStopAtEndConsumed,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
@@ -170,6 +174,13 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
+      if (stopAtEnd === "ayah" || (stopAtEnd === "surah" && indexRef.current >= (detailRef.current?.ayahs.length ?? 1) - 1)) {
+        playWhenLoadedRef.current = false;
+        setStatus("paused");
+        setCurrentTime(0);
+        onStopAtEndConsumed?.();
+        return;
+      }
       const currentDetail = detailRef.current;
       const currentIndex = indexRef.current;
 
@@ -280,7 +291,7 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, [resetRepeatProgress, resetStudyLoopProgress]);
+  }, [onStopAtEndConsumed, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
 
   useEffect(() => {
     const audio = audioRef.current;
