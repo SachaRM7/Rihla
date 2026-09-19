@@ -8,6 +8,7 @@ import {
   isReadingSize,
   isRepeatMode,
   isThemeId,
+  isTranslationSize,
   sanitizeStudyLoop,
   type AppearanceMode,
   type PlaybackRate,
@@ -15,6 +16,7 @@ import {
   type RepeatMode,
   type StudyLoopPreference,
   type ThemeId,
+  type TranslationSize,
 } from "@/lib/preferences";
 
 const STORAGE_KEY = "rihla.library.v1";
@@ -50,6 +52,7 @@ export type LocalLibrary = {
   theme: ThemeId;
   appearance: AppearanceMode;
   readingSize: ReadingSize;
+  translationSize: TranslationSize;
   autoScroll: boolean;
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
@@ -70,6 +73,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   theme: "olive",
   appearance: "system",
   readingSize: "comfortable",
+  translationSize: "comfortable",
   autoScroll: true,
   playbackRate: 1,
   repeatMode: "off",
@@ -187,6 +191,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     theme: isThemeId(candidate.theme) ? candidate.theme : "olive",
     appearance: isAppearanceMode(candidate.appearance) ? candidate.appearance : "system",
     readingSize: isReadingSize(candidate.readingSize) ? candidate.readingSize : "comfortable",
+    translationSize: isTranslationSize(candidate.translationSize) ? candidate.translationSize : "comfortable",
     autoScroll: typeof candidate.autoScroll === "boolean" ? candidate.autoScroll : true,
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
     repeatMode: isRepeatMode(candidate.repeatMode) ? candidate.repeatMode : "off",
@@ -321,6 +326,10 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, theme }));
   }, []);
 
+  const setTranslationSize = useCallback((translationSize: TranslationSize) => {
+    setLibrary((current) => ({ ...current, translationSize }));
+  }, []);
+
   const setReadingSize = useCallback((readingSize: ReadingSize) => {
     setLibrary((current) => ({ ...current, readingSize }));
   }, []);
@@ -368,6 +377,7 @@ export function useLocalLibrary() {
     setTheme,
     setAppearance,
     setReadingSize,
+    setTranslationSize,
     setAutoScroll,
     setPlaybackRate,
     setRepeatMode,
