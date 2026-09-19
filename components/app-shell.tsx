@@ -142,6 +142,7 @@ export function AppShell() {
     setWifiOnlyDownloads,
     setMemorizationMode,
     setMemorizationRevealDelay,
+    setReadingGoal,
     hideRecommendation,
     restoreRecommendations,
     setReminderPreferences,
@@ -1029,6 +1030,14 @@ export function AppShell() {
                   showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
                 }}
               />
+              <section className="data-settings" aria-labelledby="reading-goal-title">
+                <div className="section-title-row"><div><p className="eyebrow">Facultatif</p><h2 id="reading-goal-title">Objectif de lecture</h2></div></div>
+                <button type="button" role="switch" aria-checked={library.readingGoalEnabled} className="setting-toggle" onClick={() => setReadingGoal(!library.readingGoalEnabled)}>
+                  <span className="setting-icon"><BookOpenText size={18} /></span><span className="setting-copy"><strong>Suivre un rythme personnel</strong><small>Aucun classement, série ou pénalité si vous manquez un jour</small></span><span className="switch-track" aria-hidden="true"><i /></span>
+                </button>
+                {library.readingGoalEnabled && <label className="quality-setting"><span>Ayat par jour</span><input type="number" min={1} max={100} value={library.readingGoalAyahsPerDay} onChange={(event) => setReadingGoal(true, Math.min(100, Math.max(1, Number(event.target.value))))} /></label>}
+              </section>
+
               <section className="data-settings" aria-labelledby="reminder-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Facultatif</p><h2 id="reminder-settings-title">Rappel de lecture</h2></div></div>
                 <button type="button" role="switch" aria-checked={library.remindersEnabled} className="setting-toggle" onClick={() => setReminderPreferences(!library.remindersEnabled)}>
