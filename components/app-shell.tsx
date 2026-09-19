@@ -237,7 +237,25 @@ export function AppShell() {
 
   useEffect(() => () => {
     if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
-  }, []);
+  }, [])
+
+  useEffect(() => {
+    if (!library.remindersEnabled || typeof Notification === "undefined") return;
+    if (Notification.permission === "default") void Notification.requestPermission();
+    const tick = () => {
+      if (Notification.permission !== "granted") return;
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      const key = `rihla.reminder.${now.toISOString().slice(0, 10)}`;
+      if (hhmm === library.reminderTime && localStorage.getItem(key) !== "sent") {
+        new Notification("RIHLA", { body: "Votre lecture vous attend quand vous le souhaitez." });
+        localStorage.setItem(key, "sent");
+      }
+    };
+    tick();
+    const timer = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(timer);
+  }, [library.reminderTime, library.remindersEnabled]);;
 
   useEffect(() => {
     const controller = new AbortController();
