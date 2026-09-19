@@ -9,11 +9,21 @@ export type SurahSummary = {
   numberOfAyahs: number;
 };
 
+export type AyahTranslation = {
+  id: string;
+  language: "fr";
+  name: string;
+  author: string;
+  text: string;
+  sourceUrl?: string;
+};
+
 export type AyahPlayback = {
   number: number;
   numberInSurah: number;
   arabicText: string;
   frenchText: string;
+  translations?: AyahTranslation[];
   audioUrl: string;
   words: AyahWordTiming[];
 };
