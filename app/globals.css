@@ -2,7 +2,7 @@
 
 :root {
   --ink:#0a0c0a;--ink-soft:#101410;--surface:#171c17;--surface-2:#202620;
-  --ivory:#f4f0e5;--cream:#ded8c8;--muted:#a9ad9f;--faint:#777e72;
+  --ivory:#f4f0e5;--cream:#ded8c8;--muted:#b7bbaf;--faint:#93998e;
   --accent:#b5c987;--accent-strong:#d3e6a4;--secondary:#d7b978;--danger:#e7a09a;
   --olive:var(--accent);--olive-strong:var(--accent-strong);--gold:var(--secondary);
   --accent-rgb:181,201,135;--gold-rgb:215,185,120;
@@ -231,3 +231,26 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:clip}
 
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
+
+
+/* Phase 7 — content-first shell */
+.view-home .quran-hero{grid-template-columns:112px minmax(0,1fr);border-radius:18px;box-shadow:none}
+.view-home .hero-art{min-height:164px;border-right:1px solid rgba(var(--gold-rgb),.13);border-bottom:0}
+.view-home .hero-art:after{inset:10px;border-radius:18px}
+.view-home .hero-orbit{width:120px;height:120px}
+.view-home .hero-number{top:14px;left:14px}
+.view-home .hero-arabic{font-size:1.75rem}
+.view-home .hero-copy{padding:18px 16px}
+.view-home .hero-copy h2{font-family:inherit;font-size:1.45rem;font-weight:760;letter-spacing:-.025em}
+.view-home .hero-actions{margin-top:14px}
+.view-home .hero-actions .primary-action,.view-home .hero-actions .secondary-action{min-height:44px}
+.view-search{padding-top:14px}
+@media(max-width:430px){
+  .view-home .quran-hero{grid-template-columns:94px minmax(0,1fr)}
+  .view-home .hero-art{min-height:178px}
+  .view-home .hero-copy{padding:15px 13px}
+  .view-home .hero-copy h2{font-size:1.25rem}
+  .view-home .hero-copy>p:not(.eyebrow){font-size:.78rem}
+  .view-home .resume-line{font-size:.7rem}
+  .view-home .hero-actions{gap:7px}
+}
