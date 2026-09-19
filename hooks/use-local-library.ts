@@ -403,6 +403,17 @@ export function useLocalLibrary() {
     }));
   }, []);
 
+  const importData = useCallback((raw: string) => {
+    try {
+      const parsed = JSON.parse(raw);
+      const restored = sanitizeLibrary(parsed);
+      setLibrary(restored);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const removeAyahFromPlaylist = useCallback((playlistId: string, key: string) => {
     setLibrary((current) => ({
       ...current,
@@ -501,6 +512,7 @@ export function useLocalLibrary() {
     renamePlaylist,
     movePlaylistAyah,
     exportData: () => JSON.stringify(library, null, 2),
+    importData,
     setHistoryEnabled,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
