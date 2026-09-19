@@ -69,6 +69,7 @@ export function SurahBrowser({
 }: Props) {
   const queryForms = searchForms(query);
   const estimateMinutes = (ayahs: number) => Math.max(1, Math.round(ayahs * 0.55));
+  const formatEstimate = (minutes: number) => minutes < 60 ? `~${minutes} min` : `~${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")}`;
   const normalizedQuery = normalize(query);
   const filtered = normalizedQuery
     ? surahs.filter((surah) => {
