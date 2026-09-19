@@ -434,11 +434,18 @@ export function useQuranPlayer({
     navigator.mediaSession.setActionHandler("pause", pause);
     navigator.mediaSession.setActionHandler("previoustrack", previous);
     navigator.mediaSession.setActionHandler("nexttrack", next);
+    navigator.mediaSession.setActionHandler("seekto", (details) => {
+      const audio = audioRef.current;
+      if (!audio || details.seekTime === undefined || !Number.isFinite(audio.duration)) return;
+      audio.currentTime = Math.min(Math.max(details.seekTime, 0), audio.duration);
+      setCurrentTime(audio.currentTime);
+    });
     return () => {
       navigator.mediaSession.setActionHandler("play", null);
       navigator.mediaSession.setActionHandler("pause", null);
       navigator.mediaSession.setActionHandler("previoustrack", null);
       navigator.mediaSession.setActionHandler("nexttrack", null);
+      navigator.mediaSession.setActionHandler("seekto", null);
     };
   }, [activeIndex, detail, next, pause, play, previous]);
 
