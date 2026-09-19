@@ -394,6 +394,10 @@ export function useLocalLibrary() {
   const setWifiOnlyDownloads = useCallback((wifiOnlyDownloads: boolean) => setLibrary((current) => ({ ...current, wifiOnlyDownloads })), []);
   const setAudioQuality = useCallback((audioQuality: AudioQuality) => setLibrary((current) => ({ ...current, audioQuality })), []);
 
+  const removeHistoryItem = useCallback((surah: number, ayah: number) => {
+    setLibrary((current) => ({ ...current, listeningHistory: current.listeningHistory.filter((item) => item.surah !== surah || item.ayah !== ayah) }));
+  }, []);
+
   const setHistoryEnabled = useCallback((historyEnabled: boolean) => {
     setLibrary((current) => ({ ...current, historyEnabled }));
   }, []);
@@ -608,6 +612,7 @@ export function useLocalLibrary() {
     exportData: () => JSON.stringify(library, null, 2),
     importData,
     setHistoryEnabled,
+    removeHistoryItem,
     setWifiOnlyDownloads,
     setMemorizationMode,
     hideRecommendation,
