@@ -309,6 +309,10 @@ export function useLocalLibrary() {
     });
   }, []);
 
+  const restoreRecommendations = useCallback(() => {
+    setLibrary((current) => ({ ...current, hiddenRecommendations: [] }));
+  }, []);
+
   const hideRecommendation = useCallback((id: string) => {
     setLibrary((current) => ({ ...current, hiddenRecommendations: [...new Set([...current.hiddenRecommendations, id])] }));
   }, []);
@@ -559,6 +563,7 @@ export function useLocalLibrary() {
     setWifiOnlyDownloads,
     setMemorizationMode,
     hideRecommendation,
+    restoreRecommendations,
     setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
