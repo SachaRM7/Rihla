@@ -36,6 +36,7 @@ import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
 import { publicContents } from "@/lib/catalog";
 import { SPOKEN_CATALOG } from "@/lib/spoken-catalog";
+import { TafsirDialog } from "@/components/tafsir-dialog";
 import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
@@ -1207,15 +1208,7 @@ export function AppShell() {
 
       {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
 
-      {tafsirTarget && detail && (
-        <div className="note-modal-backdrop" role="presentation" onMouseDown={() => setTafsirTarget(null)}>
-          <section className="note-modal tafsir-modal" role="dialog" aria-modal="true" aria-labelledby="tafsir-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="section-title-row"><div><p className="eyebrow">Sourate {detail.surah.number} · Ayah {tafsirTarget}</p><h2 id="tafsir-title">Tafsir & sources</h2></div><button type="button" className="icon-button" aria-label="Fermer le tafsir et les sources" onClick={() => setTafsirTarget(null)}>×</button></div>
-            <p>Le texte coranique, sa traduction et le commentaire restent séparés. Aucun commentaire n’est affiché tant qu’une source de tafsir autorisée et clairement attribuée n’est pas connectée.</p>
-            <SourceDisclosure source={detail.source} compact />
-          </section>
-        </div>
-      )}
+      {tafsirTarget && detail && <TafsirDialog surahNumber={detail.surah.number} ayahNumber={tafsirTarget} source={detail.source} onClose={() => setTafsirTarget(null)} />}
 
       {noteTarget && (
         <AyahNoteDialog
