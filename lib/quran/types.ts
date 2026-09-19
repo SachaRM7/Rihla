@@ -35,6 +35,8 @@ export type SourceAttribution = {
   name: string;
   url: string;
   termsUrl: string;
+  translationName?: string;
+  translationAuthor?: string;
 };
 
 export type SurahDetail = {
