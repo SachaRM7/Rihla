@@ -384,5 +384,14 @@ export function useLocalLibrary() {
     setShowTranslation,
     setStudyLoop,
     saveAyahNote,
+    exportData: () => JSON.stringify(library, null, 2),
+    clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
+    clearPersonalData: () => setLibrary((current) => ({
+      ...DEFAULT_LIBRARY,
+      theme: current.theme,
+      appearance: current.appearance,
+      readingSize: current.readingSize,
+      translationSize: current.translationSize,
+    })),
   };
 }
