@@ -408,3 +408,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 
 .reading-goal-progress{display:block;width:min(240px,100%);height:4px;overflow:hidden;border-radius:999px;background:var(--line);margin-top:5px}
 .reading-goal-progress i{display:block;height:100%;border-radius:inherit;background:var(--olive)}
+
+.reading-week{display:flex;gap:4px;margin-top:5px}
+.reading-week i{width:7px;height:7px;border-radius:999px;background:var(--line-strong)}
+.reading-week i.partial{background:rgba(var(--accent-rgb),.45)}
+.reading-week i.complete{background:var(--olive)}
