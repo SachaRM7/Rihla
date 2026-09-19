@@ -30,10 +30,11 @@ export function SpokenPlayer({ content, asset, playbackRate, initialPositionMs=0
   const seek=(seconds:number)=>{const audio=audioRef.current;if(!audio)return;audio.currentTime=Math.min(Math.max(seconds,0),audio.duration||seconds);setPosition(audio.currentTime);};
   return <section className="spoken-player" aria-label="Lecteur de contenu parlé">
     <audio ref={audioRef} src={asset.url} preload="metadata" onLoadedMetadata={(e)=>{const a=e.currentTarget;a.currentTime=Math.min(initialPositionMs/1000,a.duration||0);setDuration(a.duration||0);setLoading(false);}} onTimeUpdate={(e)=>{
+      if(typeof navigator!=="undefined" && "mediaSession" in navigator) navigator.mediaSession.playbackState="playing";
       const positionMs=e.currentTarget.currentTime*1000; const durationMs=(e.currentTarget.duration||0)*1000;
       setPosition(e.currentTarget.currentTime);
       if(Math.abs(positionMs-lastSavedRef.current)>=5000){lastSavedRef.current=positionMs;onProgress?.(positionMs,durationMs);}
-    }} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onWaiting={()=>setLoading(true)} onCanPlay={()=>{setLoading(false);setError(null);}} onError={()=>{setLoading(false);setPlaying(false);setError("Impossible de charger cet audio.");}} onEnded={()=>{setPlaying(false);onProgress?.(duration*1000,duration*1000);}}/>
+    }} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);if(typeof navigator!=="undefined"&&"mediaSession" in navigator)navigator.mediaSession.playbackState="paused";}} onWaiting={()=>setLoading(true)} onCanPlay={()=>{setLoading(false);setError(null);}} onError={()=>{setLoading(false);setPlaying(false);setError("Impossible de charger cet audio.");}} onEnded={()=>{setPlaying(false);onProgress?.(duration*1000,duration*1000);}}/>
     <header><div><p className="eyebrow">En cours</p><h2>{content.title}</h2></div><button type="button" className="icon-button" aria-label="Fermer le lecteur" onClick={()=>{onProgress?.(position*1000,duration*1000);onClose();}}><X size={18}/></button></header>
     <input type="range" min={0} max={duration||0} step={1} value={Math.min(position,duration||0)} onChange={(e)=>seek(Number(e.target.value))} aria-label="Position dans le contenu"/>
     {error && <div className="audio-error" role="alert"><span>{error}</span><button type="button" onClick={()=>{setError(null);audioRef.current?.load();}}><RotateCcw size={14}/>Réessayer</button></div>}
