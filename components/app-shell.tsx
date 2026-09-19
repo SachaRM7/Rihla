@@ -595,7 +595,7 @@ export function AppShell() {
                 onRetry={() => setCatalogAttempt((value) => value + 1)}
                 searchPlaceholder="Sourate, mot ou référence 2:255…"
               />
-              <QuranSearchResults query={query} onOpen={(surah, ayah) => openSurah(surah, ayah)} />
+              <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />
             </div>
           )}
 
