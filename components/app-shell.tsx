@@ -166,6 +166,7 @@ export function AppShell() {
   const [detailAttempt, setDetailAttempt] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
+  const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -687,13 +688,14 @@ export function AppShell() {
               </section>
 
               <section className="library-shortcuts" aria-label="Accès à votre bibliothèque">
-                <button type="button"><Heart size={19} /><span><strong>Favoris</strong><small>Sourates et contenus appréciés</small></span><ChevronRight size={17} /></button>
-                <button type="button"><BookOpenText size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
-                <button type="button"><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
-                <button type="button"><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => setLibrarySection("favorites")}><Heart size={19} /><span><strong>Favoris</strong><small>Sourates et contenus appréciés</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => setLibrarySection("bookmarks")}><BookOpenText size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => setLibrarySection("notes")}><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => setLibrarySection("history")}><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
               </section>
 
-              <section className="library-section">
+              {librarySection !== "all" && <button type="button" className="text-action library-back" onClick={() => setLibrarySection("all")}>← Toute la bibliothèque</button>}
+              {(librarySection === "all" || librarySection === "history") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
                 {recentHistory.length ? (
                   <div className="history-list">
@@ -726,9 +728,9 @@ export function AppShell() {
                 ) : (
                   <div className="empty-library compact"><History size={22} /><strong>Aucune écoute récente</strong><p>Lancez une ayah pour la retrouver ici avec sa progression.</p></div>
                 )}
-              </section>
+              </section>}
 
-              <section className="library-section">
+              {(librarySection === "all" || librarySection === "favorites") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Favoris</p><h2>Sourates sauvegardées</h2></div></div>
                 {favoriteSurahItems.length ? (
                   <div className="library-grid">
@@ -743,9 +745,9 @@ export function AppShell() {
                 ) : (
                   <div className="empty-library"><Heart size={22} /><strong>Aucune sourate favorite</strong><p>Utilisez le cœur dans le catalogue pour construire votre bibliothèque.</p><button type="button" className="secondary-action" onClick={() => setActiveView("search")}>Parcourir les sourates</button></div>
                 )}
-              </section>
+              </section>}
 
-              <section className="library-section">
+              {(librarySection === "all" || librarySection === "bookmarks") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Passages</p><h2>Ayat sauvegardées</h2></div></div>
                 {library.favoriteAyahs.length ? (
                   <div className="saved-ayah-grid">
@@ -762,9 +764,9 @@ export function AppShell() {
                 ) : (
                   <div className="empty-library compact"><BookOpenText size={22} /><strong>Aucune ayah sauvegardée</strong><p>Les marque-pages de versets apparaîtront ici.</p></div>
                 )}
-              </section>
+              </section>}
 
-              <section className="library-section">
+              {(librarySection === "all" || librarySection === "notes") && <section className="library-section">
                 <div className="section-title-row">
                   <div><p className="eyebrow">Réflexions</p><h2>Notes personnelles</h2></div>
                   <span className="section-count">{library.ayahNotes.length}</span>
@@ -798,7 +800,7 @@ export function AppShell() {
                     <p>Ajoutez une réflexion depuis l’icône note d’une ayah.</p>
                   </div>
                 )}
-              </section>
+              </section>}
             </div>
           )}
           {activeView === "settings" && (
