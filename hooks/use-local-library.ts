@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
 import {
   isAppearanceMode,
+  isAudioQuality,
   isPlaybackRate,
   isReadingSize,
   isRepeatMode,
@@ -11,6 +12,7 @@ import {
   isTranslationSize,
   sanitizeStudyLoop,
   type AppearanceMode,
+  type AudioQuality,
   type PlaybackRate,
   type ReadingSize,
   type RepeatMode,
@@ -73,6 +75,8 @@ export type LocalLibrary = {
   quranReadingSurah: number;
   quranReadingAyah: number;
   quranReadingUpdatedAt: number;
+  wifiOnlyDownloads: boolean;
+  audioQuality: AudioQuality;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -99,6 +103,8 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   quranReadingSurah: 1,
   quranReadingAyah: 1,
   quranReadingUpdatedAt: 0,
+  wifiOnlyDownloads: true,
+  audioQuality: "standard",
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -222,6 +228,8 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     quranReadingSurah: Number.isInteger(candidate.quranReadingSurah) && candidate.quranReadingSurah! >= 1 && candidate.quranReadingSurah! <= 114 ? candidate.quranReadingSurah! : 1,
     quranReadingAyah: Number.isInteger(candidate.quranReadingAyah) && candidate.quranReadingAyah! >= 1 ? candidate.quranReadingAyah! : 1,
     quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
+    wifiOnlyDownloads: typeof candidate.wifiOnlyDownloads === "boolean" ? candidate.wifiOnlyDownloads : true,
+    audioQuality: isAudioQuality(candidate.audioQuality) ? candidate.audioQuality : "standard",
   };
 }
 
@@ -294,6 +302,9 @@ export function useLocalLibrary() {
       };
     });
   }, []);
+
+  const setWifiOnlyDownloads = useCallback((wifiOnlyDownloads: boolean) => setLibrary((current) => ({ ...current, wifiOnlyDownloads })), []);
+  const setAudioQuality = useCallback((audioQuality: AudioQuality) => setLibrary((current) => ({ ...current, audioQuality })), []);
 
   const setHistoryEnabled = useCallback((historyEnabled: boolean) => {
     setLibrary((current) => ({ ...current, historyEnabled }));
@@ -533,6 +544,8 @@ export function useLocalLibrary() {
     exportData: () => JSON.stringify(library, null, 2),
     importData,
     setHistoryEnabled,
+    setWifiOnlyDownloads,
+    setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
       ...DEFAULT_LIBRARY,
