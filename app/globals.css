@@ -342,3 +342,11 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 
 .import-data-action{position:relative;display:inline-flex;align-items:center;cursor:pointer}
 .import-data-action input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.progress-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.progress-choices button{display:grid;grid-template-columns:34px minmax(0,1fr) 18px;align-items:center;gap:8px;min-height:62px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--cream);padding:9px 11px;text-align:left;cursor:pointer}
+.progress-choices button>svg:first-child{color:var(--olive)}
+.progress-choices span{display:grid;min-width:0;gap:2px}
+.progress-choices strong{font-size:.78rem}
+.progress-choices small{overflow:hidden;color:var(--muted);font-size:.7rem;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:520px){.progress-choices{grid-template-columns:1fr}}
