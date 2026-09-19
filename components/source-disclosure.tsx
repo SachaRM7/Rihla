@@ -3,14 +3,15 @@ import type { SourceAttribution } from "@/lib/quran/types";
 
 type Props = {
   source: SourceAttribution;
+  compact?: boolean;
 };
 
-export function SourceDisclosure({ source }: Props) {
+export function SourceDisclosure({ source, compact = false }: Props) {
   return (
-    <aside className="source-disclosure" aria-label="Provenance du contenu">
+    <aside className={`source-disclosure ${compact ? "compact" : ""}`} aria-label="Provenance du contenu">
       <ShieldCheck size={18} aria-hidden="true" />
       <div>
-        <strong>Source vérifiable</strong>
+        <strong>{compact ? "Provenance" : "Source vérifiable"}</strong>
         <p>Texte, traduction et audio diffusés depuis {source.name}. {source.translationAuthor ? `${source.translationName} · ${source.translationAuthor}. ` : ""}Le texte arabe reste séparé de la traduction.</p>
       </div>
       <a href={source.termsUrl} target="_blank" rel="noreferrer">
