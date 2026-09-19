@@ -106,6 +106,7 @@ export function FullPlayer({
   const busy = status === "loading" || status === "buffering";
   const sleepTimerActive = sleepTimerRemaining > 0;
   const sleepTimerMinutes = Math.max(1, Math.ceil(sleepTimerRemaining / 60));
+  const surahProgress = detail.ayahs.length > 0 ? ((activeIndex + (duration > 0 ? currentTime / duration : 0)) / detail.ayahs.length) * 100 : 0;
 
   return (
     <div className="player-backdrop" role="presentation" onMouseDown={requestClose}>
@@ -156,7 +157,7 @@ export function FullPlayer({
             <button
               type="button"
               className={`favorite-button ${isFavorite ? "active" : ""}`}
-              aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
+              aria-label={isFavorite ? "Retirer le marque-page de cette ayah" : "Ajouter un marque-page à cette ayah"}
               aria-pressed={isFavorite}
               onClick={onToggleFavorite}
             >
@@ -179,6 +180,11 @@ export function FullPlayer({
             style={{ "--played": `${duration ? (currentTime / duration) * 100 : 0}%` } as React.CSSProperties}
           />
           <div><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
+        </div>
+
+        <div className="surah-progress" aria-label={`Progression dans la sourate : ayah ${ayah.numberInSurah} sur ${detail.ayahs.length}`}>
+          <div><span>Sourate</span><span>Ayah {ayah.numberInSurah} / {detail.ayahs.length}</span></div>
+          <span className="surah-progress-track"><i style={{ width: `${Math.min(100, surahProgress)}%` }} /></span>
         </div>
 
         <div className="full-controls">
