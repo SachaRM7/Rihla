@@ -14,6 +14,7 @@ type Props = {
   showTranslation: boolean;
   autoScroll: boolean;
   continuousView?: boolean;
+  memorizationMode?: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
   onEditNote: (ayahNumber: number) => void;
@@ -48,6 +49,7 @@ export function AyahList({
   showTranslation,
   autoScroll,
   continuousView = false,
+  memorizationMode = false,
   onSelect,
   onToggleFavorite,
   onEditNote,
@@ -182,6 +184,7 @@ export function AyahList({
                   </span>
                 )}
               </button>
+              {memorizationMode && <button type="button" className="reveal-ayah" onClick={(event) => { const article = event.currentTarget.closest("article"); article?.classList.toggle("revealed"); }}>Masquer / révéler le texte</button>}
             </article>
           );
         })}
