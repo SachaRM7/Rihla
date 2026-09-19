@@ -60,6 +60,7 @@ export type LocalLibrary = {
   studyLoop: StudyLoopPreference | null;
   listeningHistory: ListeningHistoryItem[];
   ayahNotes: AyahNote[];
+  historyEnabled: boolean;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -81,6 +82,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   studyLoop: null,
   listeningHistory: [],
   ayahNotes: [],
+  historyEnabled: true,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -199,6 +201,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     studyLoop: sanitizeStudyLoop(candidate.studyLoop),
     listeningHistory,
     ayahNotes,
+    historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
   };
 }
 
@@ -263,6 +266,10 @@ export function useLocalLibrary() {
     });
   }, []);
 
+  const setHistoryEnabled = useCallback((historyEnabled: boolean) => {
+    setLibrary((current) => ({ ...current, historyEnabled }));
+  }, []);
+
   const savePlaybackProgress = useCallback((
     surah: number,
     ayah: number,
@@ -275,6 +282,15 @@ export function useLocalLibrary() {
     const safeDuration = Math.max(0, Math.round(durationMs));
 
     setLibrary((current) => {
+      if (!current.historyEnabled) {
+        return {
+          ...current,
+          lastSurah: surah,
+          lastAyah: ayah,
+          lastPositionMs: safePosition,
+          reciterId,
+        };
+      }
       const existing = current.listeningHistory.find(
         (item) => item.surah === surah && item.ayah === ayah,
       );
@@ -385,6 +401,7 @@ export function useLocalLibrary() {
     setStudyLoop,
     saveAyahNote,
     exportData: () => JSON.stringify(library, null, 2),
+    setHistoryEnabled,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
       ...DEFAULT_LIBRARY,
