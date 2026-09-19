@@ -396,3 +396,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 .quality-setting input[type="time"]{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 10px}
 
 .permission-warning{margin:0;border-left:3px solid #c99a55;background:rgba(201,154,85,.07);color:var(--muted);padding:9px 11px;font-size:.75rem;line-height:1.45}
+
+.memorization-delay{display:flex;min-height:44px;align-items:center;gap:7px;color:var(--muted);font-size:.7rem}
+.memorization-delay select{min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 8px}
