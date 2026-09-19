@@ -672,6 +672,7 @@ export function AppShell() {
                         continuousView={continuousQuran}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
+                        onShare={(ayah) => shareAyah(ayah)}
                         onEditNote={(ayah) => setNoteTarget({
                           surah: detail.surah.number,
                           ayah,
