@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
 import type { SurahDetail } from "@/lib/quran/types";
 
-export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
+export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "buffering" | "error";
 
 type PlayerOptions = {
   detail: SurahDetail | null;
@@ -143,6 +143,13 @@ export function useQuranPlayer({
       }
     };
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onWaiting = () => {
+      if (!audio.paused) setStatus("buffering");
+    };
+    const onCanPlay = () => {
+      if (!audio.paused) setStatus("playing");
+      else if (audio.src) setStatus("ready");
+    };
     const onPlay = () => {
       playWhenLoadedRef.current = true;
       setStatus("playing");
@@ -249,6 +256,9 @@ export function useQuranPlayer({
     audio.addEventListener("durationchange", onLoadedMetadata);
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("play", onPlay);
+    audio.addEventListener("waiting", onWaiting);
+    audio.addEventListener("stalled", onWaiting);
+    audio.addEventListener("canplay", onCanPlay);
     audio.addEventListener("pause", onPause);
     audio.addEventListener("error", onError);
     audio.addEventListener("ended", onEnded);
@@ -262,6 +272,9 @@ export function useQuranPlayer({
       audio.removeEventListener("durationchange", onLoadedMetadata);
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("waiting", onWaiting);
+      audio.removeEventListener("stalled", onWaiting);
+      audio.removeEventListener("canplay", onCanPlay);
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("error", onError);
       audio.removeEventListener("ended", onEnded);
