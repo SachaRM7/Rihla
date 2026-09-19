@@ -266,3 +266,16 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:clip}
 .library-shortcuts strong{font-size:.82rem}
 .library-shortcuts small{overflow:hidden;color:var(--muted);font-size:.74rem;text-overflow:ellipsis;white-space:nowrap}
 @media(min-width:760px){.library-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+html[data-appearance="light"]{
+  --ink:#f4f1e8;--ink-soft:#ece8dd;--surface:#fffdf7;--surface-2:#e5e0d3;
+  --ivory:#1c211b;--cream:#30372e;--muted:#5f685c;--faint:#70796c;
+  --line:rgba(28,33,27,.11);--line-strong:rgba(28,33,27,.19);
+  --shadow:0 18px 54px rgba(45,49,41,.12);
+  color-scheme:light;
+  --art-start:#dfe5cf;--art-end:#c9d2b7;--mini-art-start:#d9dfc8;--mini-art-end:#bec9aa;--player-art-start:#e1e7d4;--player-art-end:#c6d0b4;
+}
+html[data-appearance="light"] body{background:radial-gradient(circle at 90% -10%,rgba(var(--accent-rgb),.1),transparent 28rem),var(--ink)}
+html[data-appearance="light"] .ayah-word-base{color:rgba(28,33,27,.55)}
+.appearance-control{margin-top:16px}
+.accent-label{display:block;margin:18px 0 8px}
