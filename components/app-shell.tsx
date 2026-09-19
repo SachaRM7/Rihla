@@ -2,21 +2,16 @@
 
 import {
   BookOpenText,
-  CheckCircle2,
   ChevronRight,
-  Cloud,
-  Headphones,
   Heart,
   History,
   Library,
   LoaderCircle,
   Play,
-  Radio,
   Search,
   Settings,
   Sparkles,
   StickyNote,
-  Video,
   WifiOff,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
