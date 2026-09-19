@@ -150,7 +150,7 @@ export function PreferencesPanel({
             </button>
           ))}
         </div>
-        <p className="setting-label accent-label">Couleur d’accent</p>
+        <p className="setting-label accent-label">Couleur d’accent <small>Interface uniquement · jamais les couleurs de tajwid</small></p>
         <div className="theme-options" role="radiogroup" aria-label="Thème de couleur">
           {COLOR_THEMES.map((item) => {
             const selected = item.id === theme;
