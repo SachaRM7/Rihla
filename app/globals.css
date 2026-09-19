@@ -470,3 +470,5 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .notes-search{display:flex;min-height:42px;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--muted);padding:0 10px}.notes-search input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:var(--ivory);font-size:.76rem}
 
 .spoken-profile-back{justify-self:start}
+
+.spoken-player{position:fixed;right:18px;bottom:92px;z-index:75;display:grid;width:min(440px,calc(100% - 24px));gap:12px;border:1px solid var(--line-strong);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);padding:14px}.spoken-player header{display:flex;align-items:start;justify-content:space-between;gap:10px}.spoken-player h2{margin:2px 0 0;color:var(--cream);font-size:1rem}.spoken-player input[type="range"]{width:100%;accent-color:var(--olive)}.spoken-player-controls{display:flex;align-items:center;justify-content:center;gap:18px}.spoken-player-controls>.main-player-button{width:48px;height:48px}@media(max-width:620px){.spoken-player{right:12px;bottom:104px;width:calc(100% - 24px)}}
