@@ -15,6 +15,13 @@ export const COLOR_THEMES: readonly { id: ThemeId; label: string }[] = [
 ] as const;
 
 export const READING_SIZES = ["compact", "comfortable", "large"] as const;
+export const TRANSLATION_SIZES = ["small", "comfortable", "large"] as const;
+export type TranslationSize = (typeof TRANSLATION_SIZES)[number];
+export const TRANSLATION_SIZE_LABELS: Record<TranslationSize, string> = {
+  small: "Petit",
+  comfortable: "Confort",
+  large: "Grand",
+};
 export type ReadingSize = (typeof READING_SIZES)[number];
 
 export const READING_SIZE_LABELS: Record<ReadingSize, string> = {
@@ -45,6 +52,10 @@ export function isAppearanceMode(value: unknown): value is AppearanceMode {
 
 export function isThemeId(value: unknown): value is ThemeId {
   return COLOR_THEMES.some((theme) => theme.id === value);
+}
+
+export function isTranslationSize(value: unknown): value is TranslationSize {
+  return TRANSLATION_SIZES.some((size) => size === value);
 }
 
 export function isReadingSize(value: unknown): value is ReadingSize {
