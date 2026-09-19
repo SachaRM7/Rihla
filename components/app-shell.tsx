@@ -166,6 +166,7 @@ export function AppShell() {
   const [detailAttempt, setDetailAttempt] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
+  const [continuousQuran, setContinuousQuran] = useState(false);
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -633,6 +634,9 @@ export function AppShell() {
                       </select>
                     </label>
                     <div className="reading-actions">
+                      <button type="button" className={`secondary-action ${continuousQuran ? "active" : ""}`} onClick={() => setContinuousQuran((value) => !value)} aria-pressed={continuousQuran}>
+                        {continuousQuran ? "Vue continue" : "Vue par verset"}
+                      </button>
                       <button
                         type="button"
                         className={`secondary-action ${library.favoriteSurahs.includes(selectedNumber) ? "active" : ""}`}
@@ -664,6 +668,7 @@ export function AppShell() {
                         favoriteAyahs={library.favoriteAyahs}
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
+                        continuousView={continuousQuran}
                         onSelect={(index) => player.selectAyah(index, true)}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onEditNote={(ayah) => setNoteTarget({
