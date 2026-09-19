@@ -288,6 +288,27 @@ export function useQuranPlayer({
   }, [playbackRate]);
 
   useEffect(() => {
+    if (!detail || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const ayah = detail.ayahs[activeIndex];
+    if (!ayah) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}`,
+      artist: detail.reciterName,
+      album: "RIHLA · Le Coran",
+    });
+    navigator.mediaSession.setActionHandler("play", play);
+    navigator.mediaSession.setActionHandler("pause", pause);
+    navigator.mediaSession.setActionHandler("previoustrack", previous);
+    navigator.mediaSession.setActionHandler("nexttrack", next);
+    return () => {
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+      navigator.mediaSession.setActionHandler("previoustrack", null);
+      navigator.mediaSession.setActionHandler("nexttrack", null);
+    };
+  }, [activeIndex, detail, next, pause, play, previous]);
+
+  useEffect(() => {
     if (!detail?.ayahs[activeIndex]) {
       const audio = audioRef.current;
       if (!detail && audio?.src) {
