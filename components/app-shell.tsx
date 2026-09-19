@@ -195,6 +195,7 @@ export function AppShell() {
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
   const [sleepTimerRemaining, setSleepTimerRemaining] = useState(0);
+  const [sleepAtEnd, setSleepAtEnd] = useState<"ayah" | "surah" | null>(null);
   const [noteTarget, setNoteTarget] = useState<{
     surah: number;
     ayah: number;
@@ -1067,6 +1068,7 @@ export function AppShell() {
             showShareMessage("Boucle d’étude arrêtée");
           }}
           onSetSleepTimer={setSleepTimer}
+          onSetSleepAtEnd={setSleepAtEnd}
           onShare={() => currentAyah && shareAyah(currentAyah.numberInSurah, player.currentTime * 1000)}
         />
       )}
