@@ -308,3 +308,10 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .ayah-card.continuous .ayah-meta{padding-inline:4px}
 .ayah-card.continuous .ayah-select{padding-inline:4px}
 .ayah-card.continuous.active{background:linear-gradient(90deg,rgba(var(--accent-rgb),.055),transparent)}
+
+.ayah-more{position:relative}
+.ayah-more summary{display:grid;place-items:center;list-style:none;cursor:pointer}
+.ayah-more summary::-webkit-details-marker{display:none}
+.ayah-more-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:20;display:grid;min-width:170px;overflow:hidden;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+.ayah-more-menu button{display:flex;min-height:44px;align-items:center;gap:9px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--cream);padding:0 12px;text-align:left;cursor:pointer}
+.ayah-more-menu button:last-child{border-bottom:0}
