@@ -75,8 +75,12 @@ export function skipTarget(item: PlaybackItem, positionMs: number, direction: "b
 }
 
 export function canAutoAdvance(from: PlaybackItem, to: PlaybackItem, preferences: PlaybackPreferences) {
-  if (from.family !== to.family) return preferences.allowCrossFamilyAutoAdvance;
+  if (from.family !== to.family) return preferences.allowCrossFamilyAutoAdvance === true;
   return preferences.autoAdvanceWithinFamily;
+}
+
+export function requiresAutoAdvanceConsent(from: PlaybackItem, to: PlaybackItem) {
+  return from.family !== to.family;
 }
 
 export function progressStorageKey(item: PlaybackItem) {
