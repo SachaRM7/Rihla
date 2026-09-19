@@ -140,6 +140,7 @@ export function AppShell() {
     setHistoryEnabled,
     setWifiOnlyDownloads,
     setMemorizationMode,
+    hideRecommendation,
     setAudioQuality,
     clearPersonalData,
   } = useLocalLibrary();
@@ -625,13 +626,16 @@ export function AppShell() {
                   <button type="button" className="text-action" onClick={() => setActiveView("quran")}>Tout parcourir <ChevronRight size={16} /></button>
                 </div>
                 <div className="featured-grid">
-                  {featuredSurahs.map((surah) => (
-                    <button type="button" className="featured-surah" key={surah.number} onClick={() => openSurah(surah.number)}>
-                      <span>{String(surah.number).padStart(3, "0")}</span>
-                      <strong>{surah.englishName}</strong>
-                      <small>{surah.frenchName} · {surah.numberOfAyahs} ayat</small>
-                      <i lang="ar" dir="rtl" translate="no">{surah.name}</i>
-                    </button>
+                  {featuredSurahs.filter((surah) => !library.hiddenRecommendations.includes(`surah:${surah.number}`)).map((surah) => (
+                    <div className="featured-surah-wrap" key={surah.number}>
+                      <button type="button" className="featured-surah" onClick={() => openSurah(surah.number)}>
+                        <span>{String(surah.number).padStart(3, "0")}</span>
+                        <strong>{surah.englishName}</strong>
+                        <small>{surah.frenchName} · {surah.numberOfAyahs} ayat</small>
+                        <i lang="ar" dir="rtl" translate="no">{surah.name}</i>
+                      </button>
+                      <button type="button" className="hide-recommendation" aria-label={`Masquer ${surah.englishName}`} onClick={() => hideRecommendation(`surah:${surah.number}`)}>×</button>
+                    </div>
                   ))}
                 </div>
               </section>
