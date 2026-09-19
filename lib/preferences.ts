@@ -44,6 +44,7 @@ export type StudyLoopPreference = {
   startAyah: number;
   endAyah: number;
   cycles: StudyLoopCycles;
+  pauseSeconds?: number;
 };
 
 export function isAppearanceMode(value: unknown): value is AppearanceMode {
@@ -95,5 +96,6 @@ export function sanitizeStudyLoop(value: unknown): StudyLoopPreference | null {
     startAyah: loop.startAyah!,
     endAyah: loop.endAyah!,
     cycles: loop.cycles,
+    pauseSeconds: Number.isFinite(loop.pauseSeconds) ? Math.min(30, Math.max(0, Number(loop.pauseSeconds))) : 0,
   };
 }
