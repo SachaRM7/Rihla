@@ -21,6 +21,7 @@ import {
   Play,
   Search,
   Settings,
+  Wifi,
   StickyNote,
   WifiOff,
 } from "lucide-react";
@@ -137,6 +138,8 @@ export function AppShell() {
     importData,
     clearHistory,
     setHistoryEnabled,
+    setWifiOnlyDownloads,
+    setAudioQuality,
     clearPersonalData,
   } = useLocalLibrary();
 
@@ -961,6 +964,14 @@ export function AppShell() {
                   showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
                 }}
               />
+              <section className="data-settings" aria-labelledby="network-settings-title">
+                <div className="section-title-row"><div><p className="eyebrow">Réseau</p><h2 id="network-settings-title">Économie de données</h2></div></div>
+                <button type="button" role="switch" aria-checked={library.wifiOnlyDownloads} className="setting-toggle" onClick={() => setWifiOnlyDownloads(!library.wifiOnlyDownloads)}>
+                  <span className="setting-icon"><Wifi size={18} /></span><span className="setting-copy"><strong>Téléchargements en Wi-Fi uniquement</strong><small>Préférence prête pour les contenus autorisés hors connexion</small></span><span className="switch-track" aria-hidden="true"><i /></span>
+                </button>
+                <label className="quality-setting"><span>Qualité audio préférée</span><select value={library.audioQuality} onChange={(event) => setAudioQuality(event.target.value as "data-saver" | "standard" | "high")}><option value="data-saver">Économie</option><option value="standard">Standard</option><option value="high">Haute</option></select></label>
+              </section>
+
               <section className="data-settings" aria-labelledby="data-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Données</p><h2 id="data-settings-title">Vos données locales</h2></div></div>
                 <p>Vos notes, favoris, playlists et historique sont privés par défaut. Un futur compte servira uniquement à les synchroniser si vous le choisissez.</p>
