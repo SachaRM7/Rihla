@@ -154,6 +154,7 @@ export function AppShell() {
     setMemorizationRevealDelay,
     setReadingGoal,
     setSpokenPlaybackRate,
+    saveSpokenProgress,
     toggleFollow,
     setFollowNotification,
     hideRecommendation,
@@ -1228,7 +1229,7 @@ export function AppShell() {
         />
       )}
 
-      {spokenNowPlaying && <SpokenPlayer content={spokenNowPlaying.content} asset={spokenNowPlaying.asset} playbackRate={library.spokenPlaybackRate} onClose={() => setSpokenNowPlaying(null)} />}
+      {spokenNowPlaying && <SpokenPlayer content={spokenNowPlaying.content} asset={spokenNowPlaying.asset} playbackRate={library.spokenPlaybackRate} initialPositionMs={library.spokenProgress.find((item) => item.contentId === spokenNowPlaying.content.id)?.positionMs ?? 0} onProgress={(positionMs, durationMs) => saveSpokenProgress(spokenNowPlaying.content.id, positionMs, durationMs)} onClose={() => setSpokenNowPlaying(null)} />}
       
             {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
 
