@@ -78,6 +78,7 @@ export type LocalLibrary = {
   wifiOnlyDownloads: boolean;
   audioQuality: AudioQuality;
   memorizationMode: boolean;
+  hiddenRecommendations: string[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -107,6 +108,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   wifiOnlyDownloads: true,
   audioQuality: "standard",
   memorizationMode: false,
+  hiddenRecommendations: [],
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -233,6 +235,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     wifiOnlyDownloads: typeof candidate.wifiOnlyDownloads === "boolean" ? candidate.wifiOnlyDownloads : true,
     audioQuality: isAudioQuality(candidate.audioQuality) ? candidate.audioQuality : "standard",
     memorizationMode: typeof candidate.memorizationMode === "boolean" ? candidate.memorizationMode : false,
+    hiddenRecommendations: Array.isArray(candidate.hiddenRecommendations) ? candidate.hiddenRecommendations.filter((item): item is string => typeof item === "string").slice(0, 100) : [],
   };
 }
 
@@ -304,6 +307,10 @@ export function useLocalLibrary() {
         reciterId,
       };
     });
+  }, []);
+
+  const hideRecommendation = useCallback((id: string) => {
+    setLibrary((current) => ({ ...current, hiddenRecommendations: [...new Set([...current.hiddenRecommendations, id])] }));
   }, []);
 
   const setMemorizationMode = useCallback((memorizationMode: boolean) => setLibrary((current) => ({ ...current, memorizationMode })), []);
@@ -551,6 +558,7 @@ export function useLocalLibrary() {
     setHistoryEnabled,
     setWifiOnlyDownloads,
     setMemorizationMode,
+    hideRecommendation,
     setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
