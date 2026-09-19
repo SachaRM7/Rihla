@@ -13,6 +13,7 @@ import {
   ListMusic,
   Plus,
   Pencil,
+  Trash2,
   Pencil,
   ArrowUp,
   ArrowDown,
@@ -130,6 +131,7 @@ export function AppShell() {
     deletePlaylist,
     movePlaylistAyah,
     renamePlaylist,
+    removeAyahFromPlaylist,
     renamePlaylist,
     movePlaylistAyah,
     exportData,
@@ -749,6 +751,7 @@ export function AppShell() {
                             <span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong><small>Ouvrir le passage</small>
                           </button>
                           <span className="playlist-order">
+                            <button type="button" aria-label="Retirer ce passage de la playlist" onClick={() => removeAyahFromPlaylist(playlist.id, key)}><Trash2 size={15} /></button>
                             <button type="button" aria-label="Monter ce passage" disabled={index === 0} onClick={() => movePlaylistAyah(playlist.id, index, index - 1)}><ChevronUp size={16} /></button>
                             <button type="button" aria-label="Descendre ce passage" disabled={index === playlist.ayahKeys.length - 1} onClick={() => movePlaylistAyah(playlist.id, index, index + 1)}><ChevronDown size={16} /></button>
                           </span>
