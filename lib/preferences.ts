@@ -1,4 +1,11 @@
 export type ThemeId = "olive" | "rose" | "orange" | "violet";
+export const APPEARANCE_MODES = ["system", "dark", "light"] as const;
+export type AppearanceMode = (typeof APPEARANCE_MODES)[number];
+export const APPEARANCE_LABELS: Record<AppearanceMode, string> = {
+  system: "Automatique",
+  dark: "Sombre",
+  light: "Clair",
+};
 
 export const COLOR_THEMES: readonly { id: ThemeId; label: string }[] = [
   { id: "olive", label: "Olive" },
@@ -31,6 +38,10 @@ export type StudyLoopPreference = {
   endAyah: number;
   cycles: StudyLoopCycles;
 };
+
+export function isAppearanceMode(value: unknown): value is AppearanceMode {
+  return APPEARANCE_MODES.some((mode) => mode === value);
+}
 
 export function isThemeId(value: unknown): value is ThemeId {
   return COLOR_THEMES.some((theme) => theme.id === value);
