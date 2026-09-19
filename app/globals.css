@@ -360,3 +360,5 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 
 .quality-setting{display:flex;min-height:52px;align-items:center;justify-content:space-between;gap:12px;color:var(--cream);font-size:.8rem}
 .quality-setting select{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 10px}
+
+.network-banner{position:fixed;top:0;left:50%;z-index:90;transform:translateX(-50%);width:min(560px,calc(100% - 24px));border:1px solid rgba(202,158,82,.25);border-top:0;border-radius:0 0 12px 12px;background:color-mix(in srgb,var(--surface) 96%,transparent);color:var(--cream);padding:8px 12px;text-align:center;font-size:.72rem;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.18);backdrop-filter:blur(14px)}
