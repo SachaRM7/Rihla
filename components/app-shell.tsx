@@ -198,6 +198,7 @@ export function AppShell() {
   const [quranJump, setQuranJump] = useState("");
   const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -240,8 +241,12 @@ export function AppShell() {
   }, [])
 
   useEffect(() => {
+    setNotificationPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
+  }, []);
+
+  useEffect(() => {
     if (!library.remindersEnabled || typeof Notification === "undefined") return;
-    if (Notification.permission === "default") void Notification.requestPermission();
+    if (Notification.permission === "default") void Notification.requestPermission().then(setNotificationPermission);
     const tick = () => {
       if (Notification.permission !== "granted") return;
       const now = new Date();
@@ -1026,6 +1031,8 @@ export function AppShell() {
                 <button type="button" role="switch" aria-checked={library.remindersEnabled} className="setting-toggle" onClick={() => setReminderPreferences(!library.remindersEnabled)}>
                   <span className="setting-icon"><Bell size={18} /></span><span className="setting-copy"><strong>Me rappeler de reprendre</strong><small>Sans série, classement ni culpabilisation</small></span><span className="switch-track" aria-hidden="true"><i /></span>
                 </button>
+                {library.remindersEnabled && notificationPermission === "denied" && <p className="permission-warning">Les notifications sont bloquées dans le navigateur. Autorisez-les pour recevoir ce rappel.</p>}
+                {library.remindersEnabled && notificationPermission === "unsupported" && <p className="permission-warning">Les notifications ne sont pas disponibles dans cet environnement.</p>}
                 {library.remindersEnabled && <label className="quality-setting"><span>Horaire souhaité</span><input type="time" value={library.reminderTime} onChange={(event) => setReminderPreferences(true, event.target.value)} /></label>}
               </section>
 
