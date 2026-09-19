@@ -45,6 +45,7 @@ type Props = {
   studyLoop: StudyLoopPreference | null;
   studyLoopIteration: number;
   sleepTimerRemaining: number;
+  sleepAtEnd: "ayah" | "surah" | null;
   onClose: () => void;
   onToggle: () => void;
   onSeek: (value: number) => void;
@@ -81,6 +82,7 @@ export function FullPlayer({
   studyLoop,
   studyLoopIteration,
   sleepTimerRemaining,
+  sleepAtEnd,
   onClose,
   onToggle,
   onSeek,
@@ -225,6 +227,8 @@ export function FullPlayer({
               onChange={(event) => onRepeatModeChange(event.target.value as RepeatMode)}
             >
               <option value="off">Off</option>
+              {sleepAtEnd === "ayah" && <option value="end-ayah">Fin du verset</option>}
+              {sleepAtEnd === "surah" && <option value="end-surah">Fin de la sourate</option>}
               <option value="3">3 fois</option>
               <option value="5">5 fois</option>
               <option value="10">10 fois</option>
@@ -236,7 +240,7 @@ export function FullPlayer({
             <select
               name="sleep-timer"
               autoComplete="off"
-              value={sleepTimerActive ? "active" : "off"}
+              value={sleepAtEnd === "ayah" ? "end-ayah" : sleepAtEnd === "surah" ? "end-surah" : sleepTimerActive ? "active" : "off"}
               onChange={(event) => {
                 const value = event.target.value;
                 if (value === "end-ayah" || value === "end-surah") onSetSleepAtEnd(value === "end-ayah" ? "ayah" : "surah");
@@ -249,8 +253,8 @@ export function FullPlayer({
               <option value="10">10 min</option>
               <option value="20">20 min</option>
               <option value="30">30 min</option>
-              <option value="end-ayah">Fin du verset</option>
-              <option value="end-surah">Fin de la sourate</option>
+              {sleepAtEnd !== "ayah" && <option value="end-ayah">Fin du verset</option>}
+              {sleepAtEnd !== "surah" && <option value="end-surah">Fin de la sourate</option>}
             </select>
           </label>
         </div>
