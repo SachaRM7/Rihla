@@ -745,8 +745,8 @@ export function AppShell() {
                 event.preventDefault();
                 const target = parseQuranJump(quranJump);
                 if (!target) { showShareMessage("Exemples : 2:255, Juz 30 ou Hizb 60"); return; }
-                if (target.kind === "SURAH") { openSurah(target.surah, target.ayah); return; }
-                showShareMessage(target.kind === "JUZ" ? `Navigation Juz ${target.juz} prête · index de correspondance à connecter` : `Navigation Hizb ${target.hizb} prête · index de correspondance à connecter`);
+                if (target.surah < 1 || target.surah > 114 || target.ayah < 1) { showShareMessage("Référence invalide"); return; }
+                openSurah(target.surah, target.ayah);
               }}>
                 <label><span>Accès direct</span><input value={quranJump} onChange={(event) => setQuranJump(event.target.value)} placeholder="2:255 · Juz 30 · Hizb 60" inputMode="text" /></label>
                 <button type="submit" className="secondary-action">Ouvrir</button>
