@@ -13,6 +13,7 @@ type Props = {
   favoriteAyahs: string[];
   showTranslation: boolean;
   autoScroll: boolean;
+  continuousView?: boolean;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
   onEditNote: (ayahNumber: number) => void;
@@ -43,6 +44,7 @@ export function AyahList({
   favoriteAyahs,
   showTranslation,
   autoScroll,
+  continuousView = false,
   onSelect,
   onToggleFavorite,
   onEditNote,
@@ -106,7 +108,7 @@ export function AyahList({
             <article
               key={ayah.number}
               ref={isActive ? activeRef : undefined}
-              className={`ayah-card ${isActive ? "active" : ""}`}
+              className={`ayah-card ${isActive ? "active" : ""} ${continuousView ? "continuous" : ""}`}
               aria-current={isActive ? "true" : undefined}
             >
               <div className="ayah-meta">
