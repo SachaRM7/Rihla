@@ -387,3 +387,8 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .featured-surah-wrap{position:relative;min-width:0}
 .featured-surah-wrap>.featured-surah{width:100%;height:100%}
 .hide-recommendation{position:absolute;top:7px;right:7px;z-index:2;display:grid;width:30px;height:30px;place-items:center;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--surface) 90%,transparent);color:var(--muted);font-size:1rem;cursor:pointer}
+
+.skip-link{position:fixed;top:8px;left:8px;z-index:200;transform:translateY(-160%);border-radius:10px;background:var(--ivory);color:var(--ink);padding:10px 14px;font-weight:800;text-decoration:none}
+.skip-link:focus{transform:none}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--olive-strong);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
