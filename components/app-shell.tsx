@@ -145,6 +145,7 @@ export function AppShell() {
     importData,
     clearHistory,
     setHistoryEnabled,
+    removeHistoryItem,
     setWifiOnlyDownloads,
     setMemorizationMode,
     setMemorizationRevealDelay,
@@ -910,10 +911,10 @@ export function AppShell() {
                         ? `Ayah ${toAyah}`
                         : `Ayat ${fromAyah} à ${toAyah}`;
                       return (
+                        <div className="history-row" key={latest.surah}>
                         <button
                           type="button"
                           className="history-item"
-                          key={latest.surah}
                           onClick={() => openSurah(latest.surah, latest.ayah, latest.positionMs, true)}
                         >
                           <span className="history-reference">{String(latest.surah).padStart(3, "0")}</span>
@@ -924,6 +925,8 @@ export function AppShell() {
                           </span>
                           <ChevronRight size={18} />
                         </button>
+                        <button type="button" className="history-remove" aria-label={`Retirer ${surah?.englishName ?? "cette écoute"} de l’historique`} onClick={() => removeHistoryItem(latest.surah, latest.ayah)}><Trash2 size={15} /></button>
+                        </div>
                       );
                     })}
                   </div>
