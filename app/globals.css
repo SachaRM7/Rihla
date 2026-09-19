@@ -350,3 +350,10 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .progress-choices strong{font-size:.78rem}
 .progress-choices small{overflow:hidden;color:var(--muted);font-size:.7rem;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:520px){.progress-choices{grid-template-columns:1fr}}
+
+.quran-jump{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:8px}
+.quran-jump label{display:grid;gap:5px}
+.quran-jump label>span{color:var(--muted);font-size:.7rem;font-weight:700}
+.quran-jump input{min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ivory);padding:0 12px;outline:none}
+.quran-jump input:focus{border-color:rgba(var(--accent-rgb),.55)}
+@media(max-width:520px){.quran-jump{grid-template-columns:1fr auto}}
