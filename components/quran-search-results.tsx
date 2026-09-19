@@ -11,9 +11,10 @@ import type {
 type Props = {
   query: string;
   onOpen: (surah: number, ayah: number) => void;
+  onQueryChange?: (value: string) => void;
 };
 
-export function QuranSearchResults({ query, onOpen }: Props) {
+export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
   const normalizedQuery = query.trim();
   const [results, setResults] = useState<QuranSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,7 +76,7 @@ export function QuranSearchResults({ query, onOpen }: Props) {
       <section className="recent-searches" aria-labelledby="recent-search-title">
         <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2 id="recent-search-title">Recherches récentes</h2></div></div>
         <div className="recent-search-chips">
-          {recent.map((item) => <span key={item}>{item}</span>)}
+          {recent.map((item) => <button type="button" key={item} onClick={() => onQueryChange?.(item)}>{item}</button>)}
         </div>
       </section>
     );
