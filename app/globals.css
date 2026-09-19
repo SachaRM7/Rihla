@@ -441,3 +441,8 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .media-mode-switch{display:inline-flex;gap:3px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:3px}
 .media-mode-switch button{display:flex;min-height:38px;align-items:center;gap:6px;border:0;border-radius:9px;background:transparent;color:var(--muted);padding:0 10px;font-size:.75rem;font-weight:700;cursor:pointer}
 .media-mode-switch button.active{background:rgba(var(--accent-rgb),.13);color:var(--olive-strong)}
+
+.report-trigger{justify-self:start;font-size:.7rem}
+.issue-report{display:grid;gap:9px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px}
+.issue-report label{display:grid;gap:4px;color:var(--muted);font-size:.7rem}.issue-report select,.issue-report textarea{border:1px solid var(--line);border-radius:9px;background:var(--ink-soft);color:var(--ivory);padding:8px}.issue-report textarea{min-height:72px;resize:vertical}
+.issue-report>div{display:flex;justify-content:flex-end;gap:7px}
