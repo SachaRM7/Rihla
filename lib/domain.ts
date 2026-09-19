@@ -119,6 +119,15 @@ export interface TranscriptSegment {
   position: number;
 }
 
+export interface MediaChapter {
+  id: string;
+  contentId: string;
+  title: string;
+  startMs: number;
+  endMs?: number;
+  position: number;
+}
+
 export interface Transcript {
   id: string;
   contentId: string;
