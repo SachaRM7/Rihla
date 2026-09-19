@@ -407,6 +407,21 @@ export function useQuranPlayer({
   const retry = useCallback(() => loadAtIndex(indexRef.current, true), [loadAtIndex]);
 
   useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if ("setPositionState" in navigator.mediaSession && Number.isFinite(audio.duration) && audio.duration > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: Math.min(audio.currentTime, audio.duration),
+        });
+      } catch {}
+    }
+    navigator.mediaSession.playbackState = status === "playing" ? "playing" : status === "paused" || status === "ready" ? "paused" : "none";
+  }, [currentTime, duration, playbackRate, status]);
+
+  useEffect(() => {
     if (!detail || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     const ayah = detail.ayahs[activeIndex];
     if (!ayah) return;
