@@ -420,3 +420,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 html[data-translation-size="small"] .reading-preview span{font-size:.78rem}
 html[data-translation-size="comfortable"] .reading-preview span{font-size:.9rem}
 html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
+
+.accent-label small{display:block;margin-top:3px;color:var(--faint);font-size:.66rem;font-weight:500}
