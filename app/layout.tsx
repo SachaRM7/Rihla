@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem("rihla.library.v1")||"{}");if(["olive","rose","orange","violet"].includes(value.theme))document.documentElement.dataset.theme=value.theme;const appearance=value.appearance==="light"?"light":value.appearance==="dark"?"dark":matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.appearance=appearance;if(["compact","comfortable","large"].includes(value.readingSize))document.documentElement.dataset.readingSize=value.readingSize}catch{}`;
+const themeBootstrap = `try{const value=JSON.parse(localStorage.getItem("rihla.library.v1")||"{}");if(["olive","rose","orange","violet"].includes(value.theme))document.documentElement.dataset.theme=value.theme;const appearance=value.appearance==="light"?"light":value.appearance==="dark"?"dark":matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.appearance=appearance;if(["compact","comfortable","large"].includes(value.readingSize))document.documentElement.dataset.readingSize=value.readingSize;if(["small","comfortable","large"].includes(value.translationSize))document.documentElement.dataset.translationSize=value.translationSize}catch{}`;
 
 export const metadata: Metadata = {
   title: "RIHLA — Coran audio et texte synchronisé",
