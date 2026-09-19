@@ -1044,6 +1044,7 @@ export function AppShell() {
           studyLoop={activeStudyLoop}
           studyLoopIteration={player.studyLoopIteration}
           sleepTimerRemaining={sleepTimerRemaining}
+          sleepAtEnd={sleepAtEnd}
           onClose={() => setPlayerOpen(false)}
           onToggle={player.toggle}
           onSeek={player.seek}
@@ -1070,7 +1071,10 @@ export function AppShell() {
             showShareMessage("Boucle d’étude arrêtée");
           }}
           onSetSleepTimer={setSleepTimer}
-          onSetSleepAtEnd={setSleepAtEnd}
+          onSetSleepAtEnd={(mode) => {
+            setSleepAtEnd(mode);
+            if (mode) setSleepTimer(null);
+          }}
           onShare={() => currentAyah && shareAyah(currentAyah.numberInSurah, player.currentTime * 1000)}
         />
       )}
