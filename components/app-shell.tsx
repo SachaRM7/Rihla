@@ -209,6 +209,7 @@ export function AppShell() {
   const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [noteQuery, setNoteQuery] = useState("");
   const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -976,9 +977,10 @@ export function AppShell() {
                   <div><p className="eyebrow">Réflexions</p><h2>Notes personnelles</h2></div>
                   <span className="section-count">{library.ayahNotes.length}</span>
                 </div>
+                {library.ayahNotes.length > 0 && <label className="notes-search"><Search size={16}/><input value={noteQuery} onChange={(event) => setNoteQuery(event.target.value)} placeholder="Rechercher dans vos notes" /></label>}
                 {library.ayahNotes.length ? (
                   <div className="notes-list">
-                    {library.ayahNotes.map((note) => {
+                    {library.ayahNotes.filter((note) => { const q = noteQuery.trim().toLocaleLowerCase("fr"); return !q || note.text.toLocaleLowerCase("fr").includes(q) || `${note.surah}:${note.ayah}`.includes(q); }).map((note) => {
                       const surah = surahs.find((item) => item.number === note.surah);
                       return (
                         <button
