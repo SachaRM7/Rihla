@@ -682,7 +682,7 @@ export function AppShell() {
             <div className="content-stack">
               <section className="library-heading">
                 <div><p className="eyebrow">Bibliothèque</p><h1>Vos contenus</h1></div>
-                <small>Enregistrés sur cet appareil</small>
+                <small>Privés · sur cet appareil</small>
               </section>
 
               <section className="library-shortcuts" aria-label="Accès à votre bibliothèque">
@@ -837,7 +837,7 @@ export function AppShell() {
               />
               <section className="data-settings" aria-labelledby="data-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Données</p><h2 id="data-settings-title">Vos données locales</h2></div></div>
-                <p>Vos notes, favoris et historique restent privés sur cet appareil tant qu’aucun compte n’est utilisé.</p>
+                <p>Vos notes, favoris, playlists et historique sont privés par défaut. Un futur compte servira uniquement à les synchroniser si vous le choisissez.</p>
                 <div className="data-settings-actions">
                   <button type="button" className="secondary-action" onClick={() => {
                     const blob = new Blob([exportData()], { type: "application/json" });
