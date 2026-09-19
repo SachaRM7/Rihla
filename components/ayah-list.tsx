@@ -73,7 +73,7 @@ export function AyahList({
           <h2 id="ayah-list-title">{detail.surah.englishName}</h2>
           <p>{detail.surah.frenchName} · {detail.surah.numberOfAyahs} ayat</p>
         </div>
-        <span className="arabic-heading" lang="ar" dir="rtl" translate="no">{detail.surah.name}</span>
+        <span className="arabic-heading" lang="ar" dir="rtl" translate="no" aria-label={`Nom arabe de ${detail.surah.englishName}`}>{detail.surah.name}</span>
         <details className="tajwid-legend">
           <summary>Couleurs de tajwid</summary>
           <div><p className="tajwid-help">Ces couleurs indiquent des règles de tajwid. La surbrillance olive du verset indique uniquement le suivi audio.</p>
