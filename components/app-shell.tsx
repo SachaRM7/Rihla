@@ -4,6 +4,7 @@ import {
   BookOpenText,
   ChevronRight,
   Heart,
+  Home,
   History,
   Library,
   LoaderCircle,
@@ -68,7 +69,7 @@ function DesktopNavigation({
   onChange: (view: AppView) => void;
 }) {
   const items = [
-    { id: "home" as const, label: "Accueil", icon: Sparkles },
+    { id: "home" as const, label: "Accueil", icon: Home },
     { id: "search" as const, label: "Recherche", icon: Search },
     { id: "quran" as const, label: "Le Coran", icon: BookOpenText },
     { id: "library" as const, label: "Bibliothèque", icon: Library },
