@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, MoreHorizontal, Navigation } from "lucide-react";
+import { Bookmark, MoreHorizontal, Navigation } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -127,10 +127,10 @@ export function AyahList({
                     type="button"
                     className={`favorite-button ${isFavorite ? "active" : ""}`}
                     onClick={() => onToggleFavorite(ayah.numberInSurah)}
-                    aria-label={isFavorite ? "Retirer cette ayah des favoris" : "Ajouter cette ayah aux favoris"}
+                    aria-label={isFavorite ? "Retirer le marque-page" : "Ajouter un marque-page"}
                     aria-pressed={isFavorite}
                   >
-                    <Heart size={17} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
+                    <Bookmark size={17} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
                   </button>
                 </div>
               </div>
