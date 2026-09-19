@@ -2,13 +2,15 @@
 
 import { LoaderCircle, Pause, Play, RotateCcw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { ContentItem, MediaAsset } from "@/lib/domain";
+import type { ContentItem, MediaAsset, MediaChapter, Transcript, TranscriptSegment } from "@/lib/domain";
 import type { PlaybackRate } from "@/lib/preferences";
+import { MediaChapters } from "@/components/media-chapters";
+import { TimedTranscript } from "@/components/timed-transcript";
 import { SpokenSkipControls } from "@/components/spoken-skip-controls";
 
-type Props = { content: ContentItem; asset: MediaAsset; playbackRate: PlaybackRate; initialPositionMs?: number; onProgress?:(positionMs:number,durationMs:number)=>void; onClose:()=>void };
+type Props = { content: ContentItem; asset: MediaAsset; playbackRate: PlaybackRate; transcript?: Transcript; transcriptSegments?: TranscriptSegment[]; chapters?: MediaChapter[]; initialPositionMs?: number; onProgress?:(positionMs:number,durationMs:number)=>void; onReportIssue?:(kind:"TEXT"|"TIMING"|"SOURCE"|"UNAVAILABLE",note?:string)=>void; onClose:()=>void };
 
-export function SpokenPlayer({ content, asset, playbackRate, initialPositionMs=0, onProgress, onClose }: Props) {
+export function SpokenPlayer({ content, asset, playbackRate, transcript, transcriptSegments=[], chapters=[], initialPositionMs=0, onProgress, onReportIssue, onClose }: Props) {
   const audioRef = useRef<HTMLAudioElement|null>(null);
   const [playing,setPlaying]=useState(false);
   const [loading,setLoading]=useState(true);
@@ -39,5 +41,7 @@ export function SpokenPlayer({ content, asset, playbackRate, initialPositionMs=0
     <input type="range" min={0} max={duration||0} step={1} value={Math.min(position,duration||0)} onChange={(e)=>seek(Number(e.target.value))} aria-label="Position dans le contenu"/>
     {error && <div className="audio-error" role="alert"><span>{error}</span><button type="button" onClick={()=>{setError(null);audioRef.current?.load();}}><RotateCcw size={14}/>Réessayer</button></div>}
     <div className="spoken-player-controls"><SpokenSkipControls onBack={()=>seek(position-15)} onForward={()=>seek(position+15)}/><button type="button" className="main-player-button" onClick={()=>{const a=audioRef.current;if(!a)return;if(a.paused)void a.play();else a.pause();}}>{loading?<LoaderCircle className="spin" size={24}/>:playing?<Pause size={24}/>:<Play size={24}/>}</button></div>
+    {chapters.length > 0 && <MediaChapters chapters={chapters} positionMs={position*1000} onSeek={(ms)=>seek(ms/1000)} />}
+    {transcript && transcriptSegments.length > 0 && <TimedTranscript transcript={transcript} segments={transcriptSegments} positionMs={position*1000} onSeek={(ms)=>seek(ms/1000)} onReportIssue={onReportIssue} />}
   </section>;
 }
