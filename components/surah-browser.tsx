@@ -129,8 +129,8 @@ export function SurahBrowser({
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="status-card">
-          <div><strong>Aucune sourate trouvée</strong><p>Essayez un autre nom ou un numéro entre 1 et 114.</p></div>
+        <div className="status-card" role="status">
+          <div><strong>Aucune sourate trouvée</strong><p>Essayez un autre nom, une autre écriture ou un numéro entre 1 et 114.</p></div>
         </div>
       )}
 
