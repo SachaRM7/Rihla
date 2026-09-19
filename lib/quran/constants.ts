@@ -12,6 +12,8 @@ export const QURAN_SOURCE: SourceAttribution = {
   name: "Quran Foundation · traduction Al Quran Cloud",
   url: "https://quran.foundation",
   termsUrl: "https://api-docs.quran.com/legal/developer-terms/",
+  translationName: "Traduction française Hamidullah",
+  translationAuthor: "Muhammad Hamidullah",
 };
 
 export const FRENCH_SURAH_NAMES: readonly string[] = [
