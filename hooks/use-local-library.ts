@@ -81,6 +81,7 @@ export type LocalLibrary = {
   hiddenRecommendations: string[];
   remindersEnabled: boolean;
   reminderTime: string;
+  memorizationRevealDelay: number;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -113,6 +114,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   hiddenRecommendations: [],
   remindersEnabled: false,
   reminderTime: "19:00",
+  memorizationRevealDelay: 0,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -242,6 +244,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     hiddenRecommendations: Array.isArray(candidate.hiddenRecommendations) ? candidate.hiddenRecommendations.filter((item): item is string => typeof item === "string").slice(0, 100) : [],
     remindersEnabled: typeof candidate.remindersEnabled === "boolean" ? candidate.remindersEnabled : false,
     reminderTime: typeof candidate.reminderTime === "string" && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(candidate.reminderTime) ? candidate.reminderTime : "19:00",
+    memorizationRevealDelay: [0, 3, 5, 10].includes(Number(candidate.memorizationRevealDelay)) ? Number(candidate.memorizationRevealDelay) : 0,
   };
 }
 
@@ -314,6 +317,8 @@ export function useLocalLibrary() {
       };
     });
   }, []);
+
+  const setMemorizationRevealDelay = useCallback((memorizationRevealDelay: number) => setLibrary((current) => ({ ...current, memorizationRevealDelay })), []);
 
   const setReminderPreferences = useCallback((enabled: boolean, time?: string) => {
     setLibrary((current) => ({ ...current, remindersEnabled: enabled, reminderTime: time ?? current.reminderTime }));
@@ -575,6 +580,7 @@ export function useLocalLibrary() {
     hideRecommendation,
     restoreRecommendations,
     setReminderPreferences,
+    setMemorizationRevealDelay,
     setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
