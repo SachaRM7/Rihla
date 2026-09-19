@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
 import {
+  isAppearanceMode,
   isPlaybackRate,
   isReadingSize,
   isRepeatMode,
   isThemeId,
   sanitizeStudyLoop,
+  type AppearanceMode,
   type PlaybackRate,
   type ReadingSize,
   type RepeatMode,
@@ -46,6 +48,7 @@ export type LocalLibrary = {
   lastPositionMs: number;
   reciterId: string;
   theme: ThemeId;
+  appearance: AppearanceMode;
   readingSize: ReadingSize;
   autoScroll: boolean;
   playbackRate: PlaybackRate;
@@ -65,6 +68,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   lastPositionMs: 0,
   reciterId: DEFAULT_RECITER_ID,
   theme: "olive",
+  appearance: "system",
   readingSize: "comfortable",
   autoScroll: true,
   playbackRate: 1,
@@ -181,6 +185,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
         : 0,
     reciterId: typeof candidate.reciterId === "string" ? candidate.reciterId : DEFAULT_RECITER_ID,
     theme: isThemeId(candidate.theme) ? candidate.theme : "olive",
+    appearance: isAppearanceMode(candidate.appearance) ? candidate.appearance : "system",
     readingSize: isReadingSize(candidate.readingSize) ? candidate.readingSize : "comfortable",
     autoScroll: typeof candidate.autoScroll === "boolean" ? candidate.autoScroll : true,
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
@@ -308,6 +313,10 @@ export function useLocalLibrary() {
     });
   }, []);
 
+  const setAppearance = useCallback((appearance: AppearanceMode) => {
+    setLibrary((current) => ({ ...current, appearance }));
+  }, []);
+
   const setTheme = useCallback((theme: ThemeId) => {
     setLibrary((current) => ({ ...current, theme }));
   }, []);
@@ -357,6 +366,7 @@ export function useLocalLibrary() {
     saveResume,
     savePlaybackProgress,
     setTheme,
+    setAppearance,
     setReadingSize,
     setAutoScroll,
     setPlaybackRate,
