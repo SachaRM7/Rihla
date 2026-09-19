@@ -84,6 +84,7 @@ export type LocalLibrary = {
   memorizationRevealDelay: number;
   readingGoalEnabled: boolean;
   readingGoalAyahsPerDay: number;
+  readingDays: Record<string, string[]>;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -119,6 +120,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   memorizationRevealDelay: 0,
   readingGoalEnabled: false,
   readingGoalAyahsPerDay: 10,
+  readingDays: {},
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -251,6 +253,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     memorizationRevealDelay: [0, 3, 5, 10].includes(Number(candidate.memorizationRevealDelay)) ? Number(candidate.memorizationRevealDelay) : 0,
     readingGoalEnabled: typeof candidate.readingGoalEnabled === "boolean" ? candidate.readingGoalEnabled : false,
     readingGoalAyahsPerDay: Number.isInteger(candidate.readingGoalAyahsPerDay) ? Math.min(100, Math.max(1, Number(candidate.readingGoalAyahsPerDay))) : 10,
+    readingDays: {},
   };
 }
 
