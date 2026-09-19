@@ -152,6 +152,7 @@ export function AppShell() {
     setMemorizationMode,
     setMemorizationRevealDelay,
     setReadingGoal,
+    setSpokenPlaybackRate,
     hideRecommendation,
     restoreRecommendations,
     setReminderPreferences,
@@ -1069,6 +1070,12 @@ export function AppShell() {
                 <p>Vous pouvez repartir de zéro sans toucher à vos favoris ou à votre historique.</p>
                 <button type="button" className="secondary-action" onClick={() => { restoreRecommendations(); showShareMessage("Recommandations restaurées"); }}>Tout réafficher</button>
               </section>}
+
+              <section className="data-settings" aria-labelledby="spoken-player-title">
+                <div className="section-title-row"><div><p className="eyebrow">Contenus parlés</p><h2 id="spoken-player-title">Vitesse d’écoute</h2></div></div>
+                <p>Ce réglage est indépendant de la vitesse utilisée pour les récitations du Coran.</p>
+                <label className="quality-setting"><span>Podcasts, cours et conférences</span><select value={library.spokenPlaybackRate} onChange={(event) => setSpokenPlaybackRate(Number(event.target.value) as 0.75 | 1 | 1.25 | 1.5)}><option value={0.75}>0,75×</option><option value={1}>1×</option><option value={1.25}>1,25×</option><option value={1.5}>1,5×</option></select></label>
+              </section>
 
               <section className="data-settings" aria-labelledby="network-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Réseau</p><h2 id="network-settings-title">Économie de données</h2></div></div>
