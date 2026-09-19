@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpenText, ChevronRight, LoaderCircle, SearchX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ApiErrorResponse,
   QuranSearchHit,
@@ -19,6 +19,14 @@ export function QuranSearchResults({ query, onOpen }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [recent, setRecent] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("rihla.search.recent") ?? "[]");
+      if (Array.isArray(stored)) setRecent(stored.filter((item): item is string => typeof item === "string").slice(0, 6));
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (normalizedQuery.length < 2) return;
@@ -37,6 +45,11 @@ export function QuranSearchResults({ query, onOpen }: Props) {
           throw new Error("error" in payload ? payload.error : "Réponse invalide.");
         }
         setResults(payload.data);
+        setRecent((current) => {
+          const next = [normalizedQuery, ...current.filter((item) => item.toLocaleLowerCase("fr") !== normalizedQuery.toLocaleLowerCase("fr"))].slice(0, 6);
+          try { localStorage.setItem("rihla.search.recent", JSON.stringify(next)); } catch {}
+          return next;
+        });
       } catch (searchError) {
         if (controller.signal.aborted) return;
         setResults([]);
@@ -56,7 +69,17 @@ export function QuranSearchResults({ query, onOpen }: Props) {
     };
   }, [attempt, normalizedQuery]);
 
-  if (normalizedQuery.length < 2) return null;
+  if (normalizedQuery.length < 2) {
+    if (recent.length === 0) return null;
+    return (
+      <section className="recent-searches" aria-labelledby="recent-search-title">
+        <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2 id="recent-search-title">Recherches récentes</h2></div></div>
+        <div className="recent-search-chips">
+          {recent.map((item) => <span key={item}>{item}</span>)}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="quran-search-results" aria-labelledby="ayah-search-title">
