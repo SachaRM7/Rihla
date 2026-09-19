@@ -21,6 +21,7 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [recent, setRecent] = useState<string[]>([]);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -36,6 +37,7 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
       setLoading(true);
       setResults([]);
       setError(null);
+      setSuggestion(null);
       try {
         const response = await fetch(
           `/api/quran/search?q=${encodeURIComponent(normalizedQuery)}`,
@@ -46,6 +48,10 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
           throw new Error("error" in payload ? payload.error : "Réponse invalide.");
         }
         setResults(payload.data);
+        if (payload.data.length === 0) {
+          const simplified = normalizedQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/s$/i, "");
+          if (simplified !== normalizedQuery.toLocaleLowerCase("fr") && simplified.length >= 2) setSuggestion(simplified);
+        }
         setRecent((current) => {
           const next = [normalizedQuery, ...current.filter((item) => item.toLocaleLowerCase("fr") !== normalizedQuery.toLocaleLowerCase("fr"))].slice(0, 6);
           try { localStorage.setItem("rihla.search.recent", JSON.stringify(next)); } catch {}
@@ -116,6 +122,7 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
           <SearchX size={22} />
           <strong>Aucune ayah trouvée</strong>
           <p>Essayez un autre mot ou une référence comme 2:255.</p>
+          {suggestion && <button type="button" className="text-action" onClick={() => onQueryChange?.(suggestion)}>Essayer « {suggestion} »</button>}
         </div>
       )}
 
