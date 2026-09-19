@@ -135,6 +135,7 @@ export function AppShell() {
     renamePlaylist,
     movePlaylistAyah,
     exportData,
+    importData,
     clearHistory,
     setHistoryEnabled,
     clearPersonalData,
@@ -954,6 +955,16 @@ export function AppShell() {
                     URL.revokeObjectURL(url);
                     showShareMessage("Export préparé");
                   }}>Exporter mes données</button>
+                  <label className="secondary-action import-data-action">
+                    Restaurer une sauvegarde
+                    <input type="file" accept="application/json,.json" onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      const ok = importData(await file.text());
+                      showShareMessage(ok ? "Sauvegarde restaurée" : "Sauvegarde invalide");
+                      event.target.value = "";
+                    }} />
+                  </label>
                   <button type="button" className="secondary-action" onClick={() => {
                     if (window.confirm("Effacer tout l’historique d’écoute sur cet appareil ?")) {
                       clearHistory();
