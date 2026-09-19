@@ -399,3 +399,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 
 .memorization-delay{display:flex;min-height:44px;align-items:center;gap:7px;color:var(--muted);font-size:.7rem}
 .memorization-delay select{min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 8px}
+
+.quality-setting input[type="number"]{width:88px;min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 10px}
+.reading-goal-card{display:flex;align-items:center;justify-content:space-between;gap:14px;border-left:3px solid var(--olive);padding:8px 4px 8px 13px}
+.reading-goal-card>div{display:grid;gap:2px}
+.reading-goal-card strong{color:var(--cream);font-size:.88rem}
+.reading-goal-card small{color:var(--muted);font-size:.72rem}
