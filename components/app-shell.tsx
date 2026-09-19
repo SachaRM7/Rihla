@@ -192,6 +192,7 @@ export function AppShell() {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [quranJump, setQuranJump] = useState("");
   const [isOnline, setIsOnline] = useState(true);
+  const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -628,7 +629,12 @@ export function AppShell() {
 
           {activeView === "search" && (
             <div className="content-stack">
-              <SurahBrowser
+              <div className="search-filters" role="group" aria-label="Type de contenu">
+                <button type="button" className={searchType === "all" ? "active" : ""} onClick={() => setSearchType("all")}>Tout</button>
+                <button type="button" className={searchType === "quran" ? "active" : ""} onClick={() => setSearchType("quran")}>Coran</button>
+                <button type="button" className={searchType === "spoken" ? "active" : ""} onClick={() => setSearchType("spoken")}>Cours & rappels</button>
+              </div>
+              {searchType !== "spoken" && <SurahBrowser
                 surahs={surahs}
                 selectedNumber={selectedNumber}
                 query={query}
@@ -640,8 +646,9 @@ export function AppShell() {
                 error={catalogError}
                 onRetry={() => setCatalogAttempt((value) => value + 1)}
                 searchPlaceholder="Sourate, mot ou référence 2:255…"
-              />
-              <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />
+              />}
+              {searchType !== "spoken" && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
+              {searchType === "spoken" && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
             </div>
           )}
 
