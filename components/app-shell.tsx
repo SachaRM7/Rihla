@@ -558,7 +558,7 @@ export function AppShell() {
 
     const shareData = {
       title: `${detail.surah.englishName} · Ayah ${ayahNumber}`,
-      text: `${ayah.arabicText}\n\n${ayah.frenchText}\n\n${detail.surah.englishName} ${detail.surah.number}:${ayahNumber}\nTraduction française · source indiquée dans RIHLA`,
+      text: `${ayah.arabicText}\n\n${ayah.frenchText}\n\n${detail.surah.englishName} ${detail.surah.number}:${ayahNumber}\n${detail.source.translationAuthor ? `Traduction : ${detail.source.translationAuthor}` : "Traduction française"} · ${detail.source.name}`,
       url: url.toString(),
     };
 
