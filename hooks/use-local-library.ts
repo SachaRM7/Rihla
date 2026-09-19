@@ -82,6 +82,8 @@ export type LocalLibrary = {
   remindersEnabled: boolean;
   reminderTime: string;
   memorizationRevealDelay: number;
+  readingGoalEnabled: boolean;
+  readingGoalAyahsPerDay: number;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -115,6 +117,8 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   remindersEnabled: false,
   reminderTime: "19:00",
   memorizationRevealDelay: 0,
+  readingGoalEnabled: false,
+  readingGoalAyahsPerDay: 10,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -245,6 +249,8 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     remindersEnabled: typeof candidate.remindersEnabled === "boolean" ? candidate.remindersEnabled : false,
     reminderTime: typeof candidate.reminderTime === "string" && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(candidate.reminderTime) ? candidate.reminderTime : "19:00",
     memorizationRevealDelay: [0, 3, 5, 10].includes(Number(candidate.memorizationRevealDelay)) ? Number(candidate.memorizationRevealDelay) : 0,
+    readingGoalEnabled: typeof candidate.readingGoalEnabled === "boolean" ? candidate.readingGoalEnabled : false,
+    readingGoalAyahsPerDay: Number.isInteger(candidate.readingGoalAyahsPerDay) ? Math.min(100, Math.max(1, Number(candidate.readingGoalAyahsPerDay))) : 10,
   };
 }
 
@@ -316,6 +322,10 @@ export function useLocalLibrary() {
         reciterId,
       };
     });
+  }, []);
+
+  const setReadingGoal = useCallback((enabled: boolean, ayahsPerDay?: number) => {
+    setLibrary((current) => ({ ...current, readingGoalEnabled: enabled, readingGoalAyahsPerDay: ayahsPerDay ?? current.readingGoalAyahsPerDay }));
   }, []);
 
   const setMemorizationRevealDelay = useCallback((memorizationRevealDelay: number) => setLibrary((current) => ({ ...current, memorizationRevealDelay })), []);
@@ -581,6 +591,7 @@ export function useLocalLibrary() {
     restoreRecommendations,
     setReminderPreferences,
     setMemorizationRevealDelay,
+    setReadingGoal,
     setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
