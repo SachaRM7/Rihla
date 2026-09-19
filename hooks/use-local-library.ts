@@ -391,6 +391,22 @@ export function useLocalLibrary() {
     }));
   }, []);
 
+  const toggleAyahInPlaylist = useCallback((playlistId: string, surah: number, ayah: number) => {
+    const key = `${surah}:${ayah}`;
+    setLibrary((current) => ({
+      ...current,
+      playlists: current.playlists.map((playlist) => playlist.id !== playlistId ? playlist : {
+        ...playlist,
+        ayahKeys: playlist.ayahKeys.includes(key) ? playlist.ayahKeys.filter((item) => item !== key) : [...playlist.ayahKeys, key],
+        updatedAt: Date.now(),
+      }),
+    }));
+  }, []);
+
+  const deletePlaylist = useCallback((playlistId: string) => {
+    setLibrary((current) => ({ ...current, playlists: current.playlists.filter((playlist) => playlist.id !== playlistId) }));
+  }, []);
+
   const saveAyahNote = useCallback((surah: number, ayah: number, text: string) => {
     const normalizedText = text.trim().slice(0, MAX_NOTE_LENGTH);
     setLibrary((current) => ({
@@ -422,6 +438,8 @@ export function useLocalLibrary() {
     setStudyLoop,
     saveAyahNote,
     createPlaylist,
+    toggleAyahInPlaylist,
+    deletePlaylist,
     exportData: () => JSON.stringify(library, null, 2),
     setHistoryEnabled,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
