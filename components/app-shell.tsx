@@ -189,6 +189,7 @@ export function AppShell() {
   const [continuousQuran, setContinuousQuran] = useState(false);
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [quranJump, setQuranJump] = useState("");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -641,6 +642,17 @@ export function AppShell() {
 
           {activeView === "quran" && (
             <div className="content-stack quran-view-stack">
+              <form className="quran-jump" onSubmit={(event) => {
+                event.preventDefault();
+                const match = quranJump.trim().match(/^(\d{1,3})(?::(\d{1,3}))?$/);
+                if (!match) { showShareMessage("Utilisez par exemple 2 ou 2:255"); return; }
+                const surah = Number(match[1]); const ayah = Number(match[2] ?? 1);
+                if (surah < 1 || surah > 114 || ayah < 1) { showShareMessage("Référence invalide"); return; }
+                openSurah(surah, ayah);
+              }}>
+                <label><span>Accès direct</span><input value={quranJump} onChange={(event) => setQuranJump(event.target.value)} placeholder="Sourate ou référence · ex. 2:255" inputMode="text" /></label>
+                <button type="submit" className="secondary-action">Ouvrir</button>
+              </form>
               <div className="quran-workspace">
                 <div className="quran-catalog-column">
                   <SurahBrowser
