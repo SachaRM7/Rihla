@@ -331,3 +331,9 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 
 .playlist-detail{display:grid;gap:14px}
 .playlist-detail>.text-action{justify-self:start}
+
+.playlist-passage{display:grid;grid-template-columns:minmax(0,1fr) 38px;gap:6px}
+.playlist-passage-main{display:grid;min-width:0}
+.playlist-order{display:grid;gap:4px}
+.playlist-order button{display:grid;min-height:32px;place-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);cursor:pointer}
+.playlist-order button:disabled{opacity:.3;cursor:default}
