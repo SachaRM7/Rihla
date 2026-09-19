@@ -139,6 +139,7 @@ export function AppShell() {
     clearHistory,
     setHistoryEnabled,
     setWifiOnlyDownloads,
+    setMemorizationMode,
     setAudioQuality,
     clearPersonalData,
   } = useLocalLibrary();
@@ -705,6 +706,9 @@ export function AppShell() {
                       </select>
                     </label>
                     <div className="reading-actions">
+                      <button type="button" className={`secondary-action ${library.memorizationMode ? "active" : ""}`} onClick={() => setMemorizationMode(!library.memorizationMode)} aria-pressed={library.memorizationMode}>
+                        {library.memorizationMode ? "Mémorisation active" : "Mémoriser"}
+                      </button>
                       <button type="button" className={`secondary-action ${continuousQuran ? "active" : ""}`} onClick={() => setContinuousQuran((value) => !value)} aria-pressed={continuousQuran}>
                         {continuousQuran ? "Vue continue" : "Vue par verset"}
                       </button>
@@ -741,6 +745,7 @@ export function AppShell() {
                         autoScroll={library.autoScroll}
                 showTranslation={library.showTranslation}
                         continuousView={continuousQuran}
+                        memorizationMode={library.memorizationMode}
                         onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); }}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onShare={(ayah) => shareAyah(ayah)}
