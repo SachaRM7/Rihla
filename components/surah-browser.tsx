@@ -18,12 +18,39 @@ type Props = {
   searchPlaceholder?: string;
 };
 
+const LATIN_ALIASES: Record<string, string[]> = {
+  fatiha: ["fatiha", "fatihah", "al fatiha", "alfatiha"],
+  baqara: ["baqara", "bakara", "al baqara", "albaqara"],
+  kahf: ["kahf", "kahf", "al kahf", "alkahf"],
+  yaseen: ["yaseen", "yasin", "ya sin", "yasine"],
+  rahman: ["rahman", "rahmane", "ar rahman", "arrahman"],
+  mulk: ["mulk", "moulk", "al mulk", "almulk"],
+};
+
 function normalize(value: string) {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("fr")
+    .replace(/[-_'’]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
+}
+
+function searchForms(value: string) {
+  const normalized = normalize(value);
+  const compact = normalized.replace(/\s/g, "");
+  const forms = new Set([normalized, compact]);
+  for (const [canonical, aliases] of Object.entries(LATIN_ALIASES)) {
+    if (aliases.some((alias) => normalize(alias) === normalized || normalize(alias).replace(/\s/g, "") === compact)) {
+      forms.add(canonical);
+      aliases.forEach((alias) => {
+        forms.add(normalize(alias));
+        forms.add(normalize(alias).replace(/\s/g, ""));
+      });
+    }
+  }
+  return [...forms];
 }
 
 export function SurahBrowser({
@@ -40,16 +67,18 @@ export function SurahBrowser({
   showSearch = true,
   searchPlaceholder = "Nom ou numéro d’une sourate…",
 }: Props) {
+  const queryForms = searchForms(query);
   const normalizedQuery = normalize(query);
   const filtered = normalizedQuery
-    ? surahs.filter((surah) =>
-        [
+    ? surahs.filter((surah) => {
+        const values = [
           String(surah.number),
           surah.name,
           surah.englishName,
           surah.frenchName,
-        ].some((value) => normalize(value).includes(normalizedQuery)),
-      )
+        ].flatMap(searchForms);
+        return queryForms.some((form) => values.some((value) => value.includes(form) || form.includes(value)));
+      })
     : surahs;
 
   return (
