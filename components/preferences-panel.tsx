@@ -21,11 +21,13 @@ type Props = {
   readingSize: ReadingSize;
   translationSize: TranslationSize;
   autoScroll: boolean;
+  showTranslation: boolean;
   onThemeChange: (theme: ThemeId) => void;
   onAppearanceChange: (appearance: AppearanceMode) => void;
   onReadingSizeChange: (size: ReadingSize) => void;
   onTranslationSizeChange: (size: TranslationSize) => void;
   onAutoScrollChange: (enabled: boolean) => void;
+  onShowTranslationChange: (enabled: boolean) => void;
 };
 
 export function PreferencesPanel({
@@ -34,11 +36,13 @@ export function PreferencesPanel({
   readingSize,
   translationSize,
   autoScroll,
+  showTranslation,
   onThemeChange,
   onAppearanceChange,
   onReadingSizeChange,
   onTranslationSizeChange,
   onAutoScrollChange,
+  onShowTranslationChange,
 }: Props) {
   return (
     <div className="preferences-stack">
@@ -88,6 +92,18 @@ export function PreferencesPanel({
               ))}
             </div>
           </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showTranslation}
+            className="setting-toggle"
+            onClick={() => onShowTranslationChange(!showTranslation)}
+          >
+            <span className="setting-icon" aria-hidden="true"><Type size={18} /></span>
+            <span className="setting-copy"><strong>Afficher la traduction</strong><small>Afficher le français sous chaque verset</small></span>
+            <span className="switch-track" aria-hidden="true"><i /></span>
+          </button>
 
           <button
             type="button"
