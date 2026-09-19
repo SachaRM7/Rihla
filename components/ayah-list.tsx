@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, MoreHorizontal, Navigation } from "lucide-react";
+import { Bookmark, MoreHorizontal, Navigation, Share2, StickyNote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -17,6 +17,7 @@ type Props = {
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
   onEditNote: (ayahNumber: number) => void;
+  onShare: (ayahNumber: number) => void;
 };
 
 type KaraokeStyle = CSSProperties & { "--word-progress": string };
@@ -48,6 +49,7 @@ export function AyahList({
   onSelect,
   onToggleFavorite,
   onEditNote,
+  onShare,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
   const [followSuspended, setFollowSuspended] = useState(false);
@@ -114,15 +116,15 @@ export function AyahList({
               <div className="ayah-meta">
                 <span>{detail.surah.number}:{ayah.numberInSurah}</span>
                 <div className="ayah-meta-actions">
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`Options de l’ayah ${ayah.numberInSurah}`}
-                    title="Options"
-                    onClick={() => onEditNote(ayah.numberInSurah)}
-                  >
-                    <MoreHorizontal size={18} aria-hidden="true" />
-                  </button>
+                  <details className="ayah-more">
+                    <summary className="icon-button" aria-label={`Options de l’ayah ${ayah.numberInSurah}`} title="Options">
+                      <MoreHorizontal size={18} aria-hidden="true" />
+                    </summary>
+                    <div className="ayah-more-menu">
+                      <button type="button" onClick={() => onEditNote(ayah.numberInSurah)}><StickyNote size={16} /> Ajouter une note</button>
+                      <button type="button" onClick={() => onShare(ayah.numberInSurah)}><Share2 size={16} /> Partager</button>
+                    </div>
+                  </details>
                   <button
                     type="button"
                     className={`favorite-button ${isFavorite ? "active" : ""}`}
