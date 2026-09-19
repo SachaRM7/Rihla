@@ -106,7 +106,6 @@ export function AyahList({
         {detail.ayahs.map((ayah, index) => {
           const key = `${detail.surah.number}:${ayah.numberInSurah}`;
           const isFavorite = favoriteAyahs.includes(key);
-          const hasNote = notedAyahs.includes(key);
           const isActive = activeIndex === index;
           const isPast = index < activeIndex;
           const elapsedMs = currentTime * 1000;
