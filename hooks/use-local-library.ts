@@ -425,6 +425,19 @@ export function useLocalLibrary() {
     }));
   }, []);
 
+  const movePlaylistAyah = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
+    setLibrary((current) => ({
+      ...current,
+      playlists: current.playlists.map((playlist) => {
+        if (playlist.id !== playlistId || fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= playlist.ayahKeys.length || toIndex >= playlist.ayahKeys.length) return playlist;
+        const ayahKeys = [...playlist.ayahKeys];
+        const [moved] = ayahKeys.splice(fromIndex, 1);
+        ayahKeys.splice(toIndex, 0, moved);
+        return { ...playlist, ayahKeys, updatedAt: Date.now() };
+      }),
+    }));
+  }, []);
+
   const deletePlaylist = useCallback((playlistId: string) => {
     setLibrary((current) => ({ ...current, playlists: current.playlists.filter((playlist) => playlist.id !== playlistId) }));
   }, []);
@@ -462,6 +475,7 @@ export function useLocalLibrary() {
     createPlaylist,
     toggleAyahInPlaylist,
     deletePlaylist,
+    movePlaylistAyah,
     renamePlaylist,
     movePlaylistAyah,
     exportData: () => JSON.stringify(library, null, 2),
