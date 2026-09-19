@@ -601,11 +601,6 @@ export function AppShell() {
 
           {activeView === "quran" && (
             <div className="content-stack quran-view-stack">
-              <section className="page-intro compact">
-                <p className="eyebrow">Lecture et écoute</p>
-                <h1>Le Coran</h1>
-                <p>Parcourez les sourates et reprenez votre lecture ou votre écoute.</p>
-              </section>
               <div className="quran-workspace">
                 <div className="quran-catalog-column">
                   <SurahBrowser
@@ -679,10 +674,9 @@ export function AppShell() {
 
           {activeView === "library" && (
             <div className="content-stack">
-              <section className="page-intro">
-                <p className="eyebrow">Sur cet appareil</p>
-                <h1>Votre bibliothèque.</h1>
-                <p>Vos sourates, ayat et position de reprise sont enregistrées localement.</p>
+              <section className="library-heading">
+                <div><p className="eyebrow">Bibliothèque</p><h1>Vos contenus</h1></div>
+                <small>Enregistrés sur cet appareil</small>
               </section>
 
               <section className="library-shortcuts" aria-label="Accès à votre bibliothèque">
