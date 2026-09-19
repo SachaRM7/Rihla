@@ -254,8 +254,11 @@ export function AppShell() {
     setReciterId(isValidReciter(library.reciterId) ? library.reciterId : DEFAULT_RECITER_ID);
     requestedAyahRef.current = hasValidLink ? linkedAyah : null;
     requestedPositionRef.current = hasValidLink ? linkedTime * 1000 : library.lastPositionMs;
-    if (hasValidLink) window.requestAnimationFrame(() => setActiveView("quran"));
-  }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
+    if (hasValidLink) {
+      saveReadingProgress(linkedSurah, linkedAyah);
+      window.requestAnimationFrame(() => setActiveView("quran"));
+    }
+  }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId, saveReadingProgress]);
 
   useEffect(() => () => {
     if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
