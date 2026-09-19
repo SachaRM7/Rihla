@@ -109,6 +109,7 @@ export function AppShell() {
     setTheme,
     setAppearance,
     setReadingSize,
+    setTranslationSize,
     setAutoScroll,
     setPlaybackRate,
     setRepeatMode,
@@ -130,7 +131,8 @@ export function AppShell() {
 
   useEffect(() => {
     document.documentElement.dataset.readingSize = library.readingSize;
-  }, [library.readingSize]);
+    document.documentElement.dataset.translationSize = library.translationSize;
+  }, [library.readingSize, library.translationSize]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -807,6 +809,7 @@ export function AppShell() {
                 theme={library.theme}
                 appearance={library.appearance}
                 readingSize={library.readingSize}
+                translationSize={library.translationSize}
                 autoScroll={library.autoScroll}
                 onThemeChange={(theme) => {
                   setTheme(theme);
@@ -818,7 +821,11 @@ export function AppShell() {
                 }}
                 onReadingSizeChange={(size) => {
                   setReadingSize(size);
-                  showShareMessage("Taille de lecture appliquée");
+                  showShareMessage("Taille du Coran appliquée");
+                }}
+                onTranslationSizeChange={(size) => {
+                  setTranslationSize(size);
+                  showShareMessage("Taille de traduction appliquée");
                 }}
                 onAutoScrollChange={(enabled) => {
                   setAutoScroll(enabled);
