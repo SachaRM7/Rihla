@@ -3,7 +3,9 @@
 import {
   BookOpenText,
   Bookmark,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Heart,
   Home,
   History,
@@ -125,6 +127,7 @@ export function AppShell() {
     createPlaylist,
     toggleAyahInPlaylist,
     deletePlaylist,
+    movePlaylistAyah,
     renamePlaylist,
     movePlaylistAyah,
     exportData,
@@ -736,12 +739,18 @@ export function AppShell() {
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
                     <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><span className="section-count">{playlist.ayahKeys.length}</span></div>
                     {playlist.ayahKeys.length ? <div className="saved-ayah-grid">
-                      {playlist.ayahKeys.map((key) => {
+                      {playlist.ayahKeys.map((key, index) => {
                         const [surahNumber, ayahNumber] = key.split(":").map(Number);
                         const surah = surahs.find((item) => item.number === surahNumber);
-                        return <button type="button" key={key} onClick={() => openSurah(surahNumber, ayahNumber)}>
-                          <span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong><small>Ouvrir le passage</small>
-                        </button>;
+                        return <div className="playlist-passage" key={key}>
+                          <button type="button" className="playlist-passage-main" onClick={() => openSurah(surahNumber, ayahNumber)}>
+                            <span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong><small>Ouvrir le passage</small>
+                          </button>
+                          <span className="playlist-order">
+                            <button type="button" aria-label="Monter ce passage" disabled={index === 0} onClick={() => movePlaylistAyah(playlist.id, index, index - 1)}><ChevronUp size={16} /></button>
+                            <button type="button" aria-label="Descendre ce passage" disabled={index === playlist.ayahKeys.length - 1} onClick={() => movePlaylistAyah(playlist.id, index, index + 1)}><ChevronDown size={16} /></button>
+                          </span>
+                        </div>;
                       })}
                     </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Playlist vide</strong><p>Ajoutez des passages depuis le menu d’un verset.</p></div>}
                   </div>;
