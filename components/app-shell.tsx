@@ -22,6 +22,7 @@ import {
   Search,
   Settings,
   Wifi,
+  Bell,
   StickyNote,
   WifiOff,
 } from "lucide-react";
@@ -142,6 +143,7 @@ export function AppShell() {
     setMemorizationMode,
     hideRecommendation,
     restoreRecommendations,
+    setReminderPreferences,
     setAudioQuality,
     clearPersonalData,
   } = useLocalLibrary();
@@ -1001,6 +1003,14 @@ export function AppShell() {
                   showShareMessage(enabled ? "Suivi automatique activé" : "Suivi automatique désactivé");
                 }}
               />
+              <section className="data-settings" aria-labelledby="reminder-settings-title">
+                <div className="section-title-row"><div><p className="eyebrow">Facultatif</p><h2 id="reminder-settings-title">Rappel de lecture</h2></div></div>
+                <button type="button" role="switch" aria-checked={library.remindersEnabled} className="setting-toggle" onClick={() => setReminderPreferences(!library.remindersEnabled)}>
+                  <span className="setting-icon"><Bell size={18} /></span><span className="setting-copy"><strong>Me rappeler de reprendre</strong><small>Sans série, classement ni culpabilisation</small></span><span className="switch-track" aria-hidden="true"><i /></span>
+                </button>
+                {library.remindersEnabled && <label className="quality-setting"><span>Horaire souhaité</span><input type="time" value={library.reminderTime} onChange={(event) => setReminderPreferences(true, event.target.value)} /></label>}
+              </section>
+
               {library.hiddenRecommendations.length > 0 && <section className="data-settings" aria-labelledby="recommendation-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Accueil</p><h2 id="recommendation-settings-title">Recommandations masquées</h2></div><span className="section-count">{library.hiddenRecommendations.length}</span></div>
                 <p>Vous pouvez repartir de zéro sans toucher à vos favoris ou à votre historique.</p>
