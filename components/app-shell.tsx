@@ -2,6 +2,7 @@
 
 import {
   BookOpenText,
+  Bookmark,
   ChevronRight,
   Heart,
   Home,
@@ -694,7 +695,7 @@ export function AppShell() {
 
               <section className="library-shortcuts" aria-label="Accès à votre bibliothèque">
                 <button type="button" onClick={() => setLibrarySection("favorites")}><Heart size={19} /><span><strong>Favoris</strong><small>Sourates et contenus appréciés</small></span><ChevronRight size={17} /></button>
-                <button type="button" onClick={() => setLibrarySection("bookmarks")}><BookOpenText size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => setLibrarySection("bookmarks")}><Bookmark size={19} /><span><strong>Marque-pages</strong><small>{library.favoriteAyahs.length} passage{library.favoriteAyahs.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("notes")}><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("history")}><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
               </section>
@@ -767,7 +768,7 @@ export function AppShell() {
                     })}
                   </div>
                 ) : (
-                  <div className="empty-library compact"><BookOpenText size={22} /><strong>Aucune ayah sauvegardée</strong><p>Les marque-pages de versets apparaîtront ici.</p></div>
+                  <div className="empty-library compact"><Bookmark size={22} /><strong>Aucun marque-page</strong><p>Enregistrez un passage précis depuis le lecteur du Coran.</p></div>
                 )}
               </section>}
 
