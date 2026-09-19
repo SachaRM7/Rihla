@@ -392,3 +392,5 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .skip-link:focus{transform:none}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--olive-strong);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+.quality-setting input[type="time"]{min-height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ivory);padding:0 10px}
