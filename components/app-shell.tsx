@@ -191,6 +191,7 @@ export function AppShell() {
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [quranJump, setQuranJump] = useState("");
+  const [isOnline, setIsOnline] = useState(true);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -536,6 +537,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      {!isOnline && <div className="network-banner" role="status">Hors connexion · les contenus déjà chargés restent accessibles</div>}
       <a className="skip-link" href="#main-content">Aller au contenu principal</a>
       <DesktopNavigation activeView={activeView} onChange={setActiveView} />
 
