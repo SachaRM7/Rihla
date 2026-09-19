@@ -3,6 +3,7 @@
 import { BookOpenText, Bookmark, ListPlus, MoreHorizontal, Navigation, Share2, StickyNote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { TranslationCompare } from "@/components/translation-compare";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
 
 type Props = {
@@ -190,9 +191,10 @@ export function AyahList({
                   })}
                 </span>
                 {showTranslation && (
-                  <span className={`ayah-translation ${karaokeActive ? "active-translation" : ""}`} lang="fr">
-                    {ayah.frenchText}
-                  </span>
+                  <>
+                    <span className={`ayah-translation ${karaokeActive ? "active-translation" : ""}`} lang="fr">{ayah.frenchText}</span>
+                    {detail.source.translationAuthor && <TranslationCompare primary={{ id: "primary", language: "fr", name: detail.source.translationName ?? "Traduction française", author: detail.source.translationAuthor, text: ayah.frenchText, sourceUrl: detail.source.url }} alternatives={ayah.translations ?? []} />}
+                  </>
                 )}
               </button>
               {memorizationMode && <button type="button" className="reveal-ayah" onClick={() => setRevealedAyahs((current) => current.includes(ayah.numberInSurah) ? current.filter((item) => item !== ayah.numberInSurah) : [...current, ayah.numberInSurah])}>Masquer / révéler le texte</button>}
