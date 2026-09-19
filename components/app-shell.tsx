@@ -191,6 +191,7 @@ export function AppShell() {
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [quranJump, setQuranJump] = useState("");
+  const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">("all");
   const [playerOpen, setPlayerOpen] = useState(false);
@@ -743,6 +744,7 @@ export function AppShell() {
                         onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); }}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onShare={(ayah) => shareAyah(ayah)}
+                        onOpenTafsir={(ayah) => setTafsirTarget(ayah)}
                         onAddToPlaylist={(ayah) => {
                           if (!library.playlists.length) { const title = window.prompt("Créez d’abord une playlist"); if (title) createPlaylist(title); return; }
                           const choice = window.prompt(`Ajouter à quelle playlist ?\n${library.playlists.map((playlist, index) => `${index + 1}. ${playlist.title}`).join("\n")}`);
@@ -1117,6 +1119,16 @@ export function AppShell() {
       )}
 
       {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
+
+      {tafsirTarget && detail && (
+        <div className="note-modal-backdrop" role="presentation" onMouseDown={() => setTafsirTarget(null)}>
+          <section className="note-modal tafsir-modal" role="dialog" aria-modal="true" aria-labelledby="tafsir-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="section-title-row"><div><p className="eyebrow">Sourate {detail.surah.number} · Ayah {tafsirTarget}</p><h2 id="tafsir-title">Tafsir & sources</h2></div><button type="button" className="icon-button" onClick={() => setTafsirTarget(null)}>×</button></div>
+            <p>Le texte coranique, sa traduction et le commentaire restent séparés. Aucun commentaire n’est affiché tant qu’une source de tafsir autorisée et clairement attribuée n’est pas connectée.</p>
+            <SourceDisclosure source={detail.source} compact />
+          </section>
+        </div>
+      )}
 
       {noteTarget && (
         <AyahNoteDialog
