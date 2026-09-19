@@ -300,3 +300,5 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .danger-action{min-height:44px;border:1px solid rgba(202,92,82,.32);border-radius:12px;background:rgba(202,92,82,.08);color:#d77d73;padding:0 14px;font-weight:700;cursor:pointer}
 
 .history-toggle{width:100%;max-width:520px}
+
+.library-back{justify-self:start;margin-top:-2px}
