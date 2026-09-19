@@ -110,6 +110,23 @@ export interface ContentItem {
   publishedAt?: string;
 }
 
+export interface EditorialCollection {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string;
+  curatorName: string;
+  topicIds: string[];
+  contentIds: string[];
+}
+
+export interface FollowPreference {
+  id: string;
+  targetType: "CREATOR" | "SERIES";
+  targetId: string;
+  notifyNewPublications: boolean;
+}
+
 export interface Series {
   id: string;
   slug: string;
