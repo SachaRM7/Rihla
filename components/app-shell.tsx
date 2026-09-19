@@ -925,7 +925,7 @@ export function AppShell() {
                           </span>
                           <ChevronRight size={18} />
                         </button>
-                        <button type="button" className="history-remove" aria-label={`Retirer ${surah?.englishName ?? "cette écoute"} de l’historique`} onClick={() => removeHistoryItem(latest.surah, latest.ayah)}><Trash2 size={15} /></button>
+                        <button type="button" className="history-remove" aria-label={`Retirer ${surah?.englishName ?? "cette écoute"} de l’historique`} onClick={() => removeHistoryItem(latest.surah)}><Trash2 size={15} /></button>
                         </div>
                       );
                     })}
