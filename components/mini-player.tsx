@@ -45,6 +45,7 @@ export function MiniPlayer({
   if (!ayah) return null;
 
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const busy = status === "loading" || status === "buffering";
 
   return (
     <aside className="mini-player" aria-label="Lecteur en cours">
@@ -58,7 +59,7 @@ export function MiniPlayer({
             <strong>{detail.surah.englishName} · Ayah {ayah.numberInSurah}</strong>
             <time>{formatTime(currentTime)}</time>
           </span>
-          <small>{detail.reciterName}</small>
+          <small>{status === "buffering" ? "Connexion en cours…" : status === "error" ? "Lecture indisponible" : detail.reciterName}</small>
         </span>
         <ChevronUp className="mini-chevron" size={18} aria-hidden="true" />
       </button>
@@ -78,7 +79,7 @@ export function MiniPlayer({
         aria-label={isPlaying ? "Mettre en pause" : "Lire"}
         disabled={status === "loading"}
       >
-        {status === "loading" ? <LoaderCircle className="spin" size={19} aria-hidden="true" /> : isPlaying ? <Pause size={19} fill="currentColor" aria-hidden="true" /> : <Play size={19} fill="currentColor" aria-hidden="true" />}
+        {busy ? <LoaderCircle className="spin" size={19} aria-hidden="true" /> : isPlaying ? <Pause size={19} fill="currentColor" aria-hidden="true" /> : <Play size={19} fill="currentColor" aria-hidden="true" />}
       </button>
       <button
         type="button"
