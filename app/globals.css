@@ -413,3 +413,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,su
 .reading-week i{width:7px;height:7px;border-radius:999px;background:var(--line-strong)}
 .reading-week i.partial{background:rgba(var(--accent-rgb),.45)}
 .reading-week i.complete{background:var(--olive)}
+
+.reading-preview{display:grid;gap:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px}
+.reading-preview p{margin:0;color:var(--ivory);font-family:var(--font-arabic,serif);font-size:var(--quran-size,1.8rem);line-height:1.8;text-align:right}
+.reading-preview span{color:var(--muted);font-size:.9rem;line-height:1.6}
+html[data-translation-size="small"] .reading-preview span{font-size:.78rem}
+html[data-translation-size="comfortable"] .reading-preview span{font-size:.9rem}
+html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
