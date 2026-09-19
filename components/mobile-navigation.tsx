@@ -1,14 +1,14 @@
 "use client";
 
-import { BookOpenText, Heart, Home, Search } from "lucide-react";
+import { BookOpenText, Home, Library, Search } from "lucide-react";
 
-export type AppView = "home" | "search" | "quran" | "library";
+export type AppView = "home" | "search" | "quran" | "library" | "settings";
 
 const items = [
   { id: "home" as const, label: "Accueil", icon: Home },
   { id: "search" as const, label: "Recherche", icon: Search },
   { id: "quran" as const, label: "Coran", icon: BookOpenText },
-  { id: "library" as const, label: "Bibliothèque", icon: Heart },
+  { id: "library" as const, label: "Bibliothèque", icon: Library },
 ];
 
 type Props = {
