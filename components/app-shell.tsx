@@ -517,12 +517,6 @@ export function AppShell() {
         <main id="main-content" tabIndex={-1} className={`page-content view-${activeView}`}>
           {activeView === "home" && (
             <div className="content-stack">
-              <section className="home-intro">
-                <p className="eyebrow">Assalamu alaykum</p>
-                <h1>Le Coran, à écouter et à suivre.</h1>
-                <p>Choisissez une sourate, lancez une récitation réelle et suivez chaque ayah avec sa traduction française.</p>
-              </section>
-
               <section className="quran-hero">
                 <div className="hero-art" aria-hidden="true">
                   <span className="hero-orbit one" />
@@ -531,9 +525,9 @@ export function AppShell() {
                   <span className="hero-arabic" lang="ar" dir="rtl" translate="no">{detail?.surah.name ?? selectedSummary?.name ?? "القرآن"}</span>
                 </div>
                 <div className="hero-copy">
-                  <p className="eyebrow">{library.lastSurah === selectedNumber ? "Reprendre ma lecture" : "Prêt à écouter"}</p>
+                  <p className="eyebrow">{library.lastSurah === selectedNumber ? "Reprendre" : "À écouter"}</p>
                   <h2>{detail?.surah.englishName ?? selectedSummary?.englishName ?? "Le Coran"}</h2>
-                  <p>{detail?.surah.frenchName ?? selectedSummary?.frenchName ?? "Chargement de la sourate…"}</p>
+                  <p>{detail?.reciterName ?? "Choisissez un récitant"}</p>
                   {detail && currentAyah && (
                     <span className="resume-line">
                       Ayah {currentAyah.numberInSurah} · {formatPlaybackTime(library.lastPositionMs)} · {detail.reciterName}
@@ -554,11 +548,6 @@ export function AppShell() {
                       </button>
                     </div>
                   )}
-                </div>
-                <div className="hero-proof">
-                  <div><strong>114</strong><span>sourates réelles</span></div>
-                  <div><strong>{RECITERS.length}</strong><span>récitateurs</span></div>
-                  <div><History size={19} /><span>reprise locale</span></div>
                 </div>
               </section>
 
@@ -583,11 +572,6 @@ export function AppShell() {
 
           {activeView === "search" && (
             <div className="content-stack">
-              <section className="page-intro">
-                <p className="eyebrow">Recherche réelle</p>
-                <h1>Trouvez une sourate ou une ayah.</h1>
-                <p>Recherchez un nom, un mot dans la traduction française ou une référence comme 2:255.</p>
-              </section>
               <SurahBrowser
                 surahs={surahs}
                 selectedNumber={selectedNumber}
@@ -610,7 +594,7 @@ export function AppShell() {
               <section className="page-intro compact">
                 <p className="eyebrow">Lecture et écoute</p>
                 <h1>Le Coran</h1>
-                <p>Sélectionnez une sourate ou une ayah. Le player suit le média réel.</p>
+                <p>Parcourez les sourates et reprenez votre lecture ou votre écoute.</p>
               </section>
               <div className="quran-workspace">
                 <div className="quran-catalog-column">
