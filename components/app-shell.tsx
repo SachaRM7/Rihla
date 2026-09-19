@@ -631,6 +631,11 @@ export function AppShell() {
                 </div>
               </section>
 
+              {library.readingGoalEnabled && <section className="reading-goal-card">
+                <div><p className="eyebrow">Votre rythme</p><strong>{library.readingGoalAyahsPerDay} ayat par jour</strong><small>Objectif indicatif · reprenez simplement où vous en êtes.</small></div>
+                <button type="button" className="secondary-action" onClick={() => openSurah(library.quranReadingSurah, library.quranReadingAyah)}>Continuer</button>
+              </section>}
+
               <section className="progress-choices">
                 <button type="button" onClick={() => openSurah(library.lastSurah, library.lastAyah, library.lastPositionMs, false)}>
                   <Play size={17} /><span><strong>Continuer l’écoute</strong><small>Sourate {library.lastSurah} · Ayah {library.lastAyah}</small></span><ChevronRight size={16} />
