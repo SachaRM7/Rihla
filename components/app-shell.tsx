@@ -26,6 +26,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
 import { AyahNoteDialog } from "@/components/ayah-note-dialog";
 import { CreatorProfile } from "@/components/creator-profile";
+import { SpokenPlayer } from "@/components/spoken-player";
 import { SeriesProfile } from "@/components/series-profile";
 import { FullPlayer } from "@/components/full-player";
 import { MiniPlayer } from "@/components/mini-player";
@@ -40,6 +41,7 @@ import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
 import { useQuranPlayer } from "@/hooks/use-quran-player";
 import { DEFAULT_RECITER_ID, RECITERS } from "@/lib/quran/constants";
+import type { ContentItem, MediaAsset } from "@/lib/domain";
 import type {
   ApiErrorResponse,
   SurahCatalogResponse,
@@ -213,6 +215,7 @@ export function AppShell() {
   const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
   const [noteQuery, setNoteQuery] = useState("");
@@ -716,8 +719,8 @@ export function AppShell() {
               {searchType === "spoken" && !hasSpokenContents && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
               {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="library-grid">{spokenContents.map((item) => <button type="button" key={item.id} onClick={() => { const creatorId = item.creatorIds[0]; if (creatorId) setSelectedCreatorId(creatorId); else if (item.seriesId) setSelectedSeriesId(item.seriesId); }}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_", " ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18} /></button>)}</div>}
               {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
-              {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
-              {searchType === "spoken" && selectedSeries && <SeriesProfile series={selectedSeries} contents={spokenContents} followed={library.follows.some((item)=>item.id===selectedSeries.id&&item.type==="SERIES")} notifications={library.follows.find((item)=>item.id===selectedSeries.id&&item.type==="SERIES")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedSeries.id,"SERIES")} onToggleNotifications={(enabled)=>setFollowNotification(selectedSeries.id,"SERIES",enabled)} onOpen={()=>{}} />}
+              {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.mediaAssetIds.length) playSpokenContent(content); else if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
+              {searchType === "spoken" && selectedSeries && <SeriesProfile series={selectedSeries} contents={spokenContents} followed={library.follows.some((item)=>item.id===selectedSeries.id&&item.type==="SERIES")} notifications={library.follows.find((item)=>item.id===selectedSeries.id&&item.type==="SERIES")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedSeries.id,"SERIES")} onToggleNotifications={(enabled)=>setFollowNotification(selectedSeries.id,"SERIES",enabled)} onOpen={(content)=>playSpokenContent(content)} />}
             </div>
           )}
 
@@ -1216,7 +1219,9 @@ export function AppShell() {
         />
       )}
 
-      {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
+      {spokenNowPlaying && <SpokenPlayer content={spokenNowPlaying.content} asset={spokenNowPlaying.asset} playbackRate={library.spokenPlaybackRate} onClose={() => setSpokenNowPlaying(null)} />}
+      
+            {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
 
       {tafsirTarget && detail && <TafsirDialog surahNumber={detail.surah.number} ayahNumber={tafsirTarget} source={detail.source} onClose={() => setTafsirTarget(null)} />}
 
