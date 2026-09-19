@@ -107,6 +107,7 @@ export function AppShell() {
     saveResume,
     savePlaybackProgress,
     setTheme,
+    setAppearance,
     setReadingSize,
     setAutoScroll,
     setPlaybackRate,
@@ -130,6 +131,20 @@ export function AppShell() {
   useEffect(() => {
     document.documentElement.dataset.readingSize = library.readingSize;
   }, [library.readingSize]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const applyAppearance = () => {
+      const resolved = library.appearance === "system"
+        ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+        : library.appearance;
+      root.dataset.appearance = resolved;
+    };
+    applyAppearance();
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    media.addEventListener("change", applyAppearance);
+    return () => media.removeEventListener("change", applyAppearance);
+  }, [library.appearance]);
 
   const [activeView, setActiveView] = useState<AppView>("home");
   const [surahs, setSurahs] = useState<SurahSummary[]>([]);
@@ -807,11 +822,16 @@ export function AppShell() {
 
               <PreferencesPanel
                 theme={library.theme}
+                appearance={library.appearance}
                 readingSize={library.readingSize}
                 autoScroll={library.autoScroll}
                 onThemeChange={(theme) => {
                   setTheme(theme);
-                  showShareMessage("Thème appliqué");
+                  showShareMessage("Couleur d’accent appliquée");
+                }}
+                onAppearanceChange={(appearance) => {
+                  setAppearance(appearance);
+                  showShareMessage("Apparence appliquée");
                 }}
                 onReadingSizeChange={(size) => {
                   setReadingSize(size);
