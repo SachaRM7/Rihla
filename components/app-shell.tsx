@@ -13,6 +13,7 @@ import {
   ListMusic,
   Plus,
   Pencil,
+  Pencil,
   ArrowUp,
   ArrowDown,
   LoaderCircle,
@@ -128,6 +129,7 @@ export function AppShell() {
     toggleAyahInPlaylist,
     deletePlaylist,
     movePlaylistAyah,
+    renamePlaylist,
     renamePlaylist,
     movePlaylistAyah,
     exportData,
@@ -737,7 +739,7 @@ export function AppShell() {
                   if (!playlist) return null;
                   return <div className="playlist-detail">
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
-                    <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><span className="section-count">{playlist.ayahKeys.length}</span></div>
+                    <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button></div></div>
                     {playlist.ayahKeys.length ? <div className="saved-ayah-grid">
                       {playlist.ayahKeys.map((key, index) => {
                         const [surahNumber, ayahNumber] = key.split(":").map(Number);
