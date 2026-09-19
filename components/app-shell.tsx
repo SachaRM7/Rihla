@@ -1,4 +1,9 @@
 "use client";
+  const playSpokenContent = (content: ContentItem) => {
+    const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
+    if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
+    setSpokenNowPlaying({ content, asset });
+  };
 
 import {
   BookOpenText,
