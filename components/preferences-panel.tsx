@@ -56,6 +56,11 @@ export function PreferencesPanel({
         </div>
         <p className="preferences-copy">Ajustez uniquement le Coran et sa traduction. Le reste de l’interface conserve sa taille.</p>
 
+        <div className="reading-preview" aria-label="Aperçu de lecture">
+          <p lang="ar" dir="rtl">إِنَّ مَعَ الْعُسْرِ يُسْرًا</p>
+          {showTranslation && <span>Avec la difficulté vient certes la facilité.</span>}
+        </div>
+
         <div className="reading-preferences">
           <div className="reading-size-setting">
             <span className="setting-label">Taille du texte</span>
