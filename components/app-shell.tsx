@@ -39,6 +39,7 @@ import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
 import { useQuranPlayer } from "@/hooks/use-quran-player";
+import { parseQuranJump } from "@/lib/quran/jump";
 import { DEFAULT_RECITER_ID, RECITERS } from "@/lib/quran/constants";
 import type { ContentItem, MediaAsset } from "@/lib/domain";
 import type {
@@ -742,13 +743,12 @@ export function AppShell() {
             <div className="content-stack quran-view-stack">
               <form className="quran-jump" onSubmit={(event) => {
                 event.preventDefault();
-                const match = quranJump.trim().match(/^(\d{1,3})(?::(\d{1,3}))?$/);
-                if (!match) { showShareMessage("Utilisez par exemple 2 ou 2:255"); return; }
-                const surah = Number(match[1]); const ayah = Number(match[2] ?? 1);
-                if (surah < 1 || surah > 114 || ayah < 1) { showShareMessage("Référence invalide"); return; }
-                openSurah(surah, ayah);
+                const target = parseQuranJump(quranJump);
+                if (!target) { showShareMessage("Exemples : 2:255, Juz 30 ou Hizb 60"); return; }
+                if (target.kind === "SURAH") { openSurah(target.surah, target.ayah); return; }
+                showShareMessage(target.kind === "JUZ" ? `Navigation Juz ${target.juz} prête · index de correspondance à connecter` : `Navigation Hizb ${target.hizb} prête · index de correspondance à connecter`);
               }}>
-                <label><span>Accès direct</span><input value={quranJump} onChange={(event) => setQuranJump(event.target.value)} placeholder="Sourate ou référence · ex. 2:255" inputMode="text" /></label>
+                <label><span>Accès direct</span><input value={quranJump} onChange={(event) => setQuranJump(event.target.value)} placeholder="2:255 · Juz 30 · Hizb 60" inputMode="text" /></label>
                 <button type="submit" className="secondary-action">Ouvrir</button>
               </form>
               <div className="quran-workspace">
