@@ -113,6 +113,7 @@ export function AppShell() {
     library,
     hydrated,
     toggleFavoriteSurah,
+    saveReadingProgress,
     toggleFavoriteAyah,
     saveResume,
     savePlaybackProgress,
@@ -591,6 +592,15 @@ export function AppShell() {
                 </div>
               </section>
 
+              <section className="progress-choices">
+                <button type="button" onClick={() => openSurah(library.lastSurah, library.lastAyah, library.lastPositionMs, false)}>
+                  <Play size={17} /><span><strong>Continuer l’écoute</strong><small>Sourate {library.lastSurah} · Ayah {library.lastAyah}</small></span><ChevronRight size={16} />
+                </button>
+                <button type="button" onClick={() => openSurah(library.quranReadingSurah, library.quranReadingAyah)}>
+                  <BookOpenText size={17} /><span><strong>Continuer la lecture</strong><small>Sourate {library.quranReadingSurah} · Ayah {library.quranReadingAyah}</small></span><ChevronRight size={16} />
+                </button>
+              </section>
+
               <section className="featured-section">
                 <div className="section-title-row">
                   <div><p className="eyebrow">Accès rapide</p><h2>Sourates essentielles</h2></div>
@@ -690,7 +700,7 @@ export function AppShell() {
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
                         continuousView={continuousQuran}
-                        onSelect={(index) => player.selectAyah(index, true)}
+                        onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); }}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onShare={(ayah) => shareAyah(ayah)}
                         onAddToPlaylist={(ayah) => {
