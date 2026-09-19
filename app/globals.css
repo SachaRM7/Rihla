@@ -302,3 +302,9 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .history-toggle{width:100%;max-width:520px}
 
 .library-back{justify-self:start;margin-top:-2px}
+
+.ayah-card.continuous{border-left:0;border-right:0;border-radius:0;background:transparent;box-shadow:none}
+.ayah-card.continuous+.ayah-card.continuous{border-top-color:var(--line)}
+.ayah-card.continuous .ayah-meta{padding-inline:4px}
+.ayah-card.continuous .ayah-select{padding-inline:4px}
+.ayah-card.continuous.active{background:linear-gradient(90deg,rgba(var(--accent-rgb),.055),transparent)}
