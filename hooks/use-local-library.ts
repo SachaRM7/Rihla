@@ -77,6 +77,7 @@ export type LocalLibrary = {
   quranReadingUpdatedAt: number;
   wifiOnlyDownloads: boolean;
   audioQuality: AudioQuality;
+  memorizationMode: boolean;
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -105,6 +106,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   quranReadingUpdatedAt: 0,
   wifiOnlyDownloads: true,
   audioQuality: "standard",
+  memorizationMode: false,
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -230,6 +232,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
     wifiOnlyDownloads: typeof candidate.wifiOnlyDownloads === "boolean" ? candidate.wifiOnlyDownloads : true,
     audioQuality: isAudioQuality(candidate.audioQuality) ? candidate.audioQuality : "standard",
+    memorizationMode: typeof candidate.memorizationMode === "boolean" ? candidate.memorizationMode : false,
   };
 }
 
@@ -302,6 +305,8 @@ export function useLocalLibrary() {
       };
     });
   }, []);
+
+  const setMemorizationMode = useCallback((memorizationMode: boolean) => setLibrary((current) => ({ ...current, memorizationMode })), []);
 
   const setWifiOnlyDownloads = useCallback((wifiOnlyDownloads: boolean) => setLibrary((current) => ({ ...current, wifiOnlyDownloads })), []);
   const setAudioQuality = useCallback((audioQuality: AudioQuality) => setLibrary((current) => ({ ...current, audioQuality })), []);
@@ -545,6 +550,7 @@ export function useLocalLibrary() {
     importData,
     setHistoryEnabled,
     setWifiOnlyDownloads,
+    setMemorizationMode,
     setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
