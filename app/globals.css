@@ -328,3 +328,6 @@ html[data-translation-size="large"] .ayah-translation{font-size:1.05rem;line-hei
 .playlist-open{display:flex;align-items:center;gap:10px;padding:0 11px;text-align:left}
 .playlist-open span{color:var(--olive);font-size:.72rem}
 .playlist-open strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.playlist-detail{display:grid;gap:14px}
+.playlist-detail>.text-action{justify-self:start}
