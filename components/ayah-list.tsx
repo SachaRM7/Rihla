@@ -15,6 +15,7 @@ type Props = {
   autoScroll: boolean;
   continuousView?: boolean;
   memorizationMode?: boolean;
+  memorizationRevealDelay?: number;
   onSelect: (index: number) => void;
   onToggleFavorite: (ayahNumber: number) => void;
   onEditNote: (ayahNumber: number) => void;
@@ -50,6 +51,7 @@ export function AyahList({
   autoScroll,
   continuousView = false,
   memorizationMode = false,
+  memorizationRevealDelay = 0,
   onSelect,
   onToggleFavorite,
   onEditNote,
@@ -59,6 +61,15 @@ export function AyahList({
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
   const [followSuspended, setFollowSuspended] = useState(false);
+  const [revealedAyahs, setRevealedAyahs] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!memorizationMode || memorizationRevealDelay <= 0) return;
+    const ayah = detail.ayahs[activeIndex];
+    if (!ayah) return;
+    const timer = window.setTimeout(() => setRevealedAyahs((current) => current.includes(ayah.numberInSurah) ? current : [...current, ayah.numberInSurah]), memorizationRevealDelay * 1000);
+    return () => window.clearTimeout(timer);
+  }, [activeIndex, detail.ayahs, memorizationMode, memorizationRevealDelay]);
 
   useEffect(() => {
     if (!autoScroll || followSuspended) return;
@@ -116,7 +127,7 @@ export function AyahList({
             <article
               key={ayah.number}
               ref={isActive ? activeRef : undefined}
-              className={`ayah-card ${isActive ? "active" : ""} ${continuousView ? "continuous" : ""}`}
+              className={`ayah-card ${isActive ? "active" : ""} ${continuousView ? "continuous" : ""} ${revealedAyahs.includes(ayah.numberInSurah) ? "revealed" : ""}`}
               aria-current={isActive ? "true" : undefined}
             >
               <div className="ayah-meta">
@@ -184,7 +195,7 @@ export function AyahList({
                   </span>
                 )}
               </button>
-              {memorizationMode && <button type="button" className="reveal-ayah" onClick={(event) => { const article = event.currentTarget.closest("article"); article?.classList.toggle("revealed"); }}>Masquer / révéler le texte</button>}
+              {memorizationMode && <button type="button" className="reveal-ayah" onClick={() => setRevealedAyahs((current) => current.includes(ayah.numberInSurah) ? current.filter((item) => item !== ayah.numberInSurah) : [...current, ayah.numberInSurah])}>Masquer / révéler le texte</button>}
             </article>
           );
         })}
