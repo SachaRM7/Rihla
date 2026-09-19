@@ -253,7 +253,17 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     memorizationRevealDelay: [0, 3, 5, 10].includes(Number(candidate.memorizationRevealDelay)) ? Number(candidate.memorizationRevealDelay) : 0,
     readingGoalEnabled: typeof candidate.readingGoalEnabled === "boolean" ? candidate.readingGoalEnabled : false,
     readingGoalAyahsPerDay: Number.isInteger(candidate.readingGoalAyahsPerDay) ? Math.min(100, Math.max(1, Number(candidate.readingGoalAyahsPerDay))) : 10,
-    readingDays: {},
+    readingDays: candidate.readingDays && typeof candidate.readingDays === "object"
+      ? Object.fromEntries(
+          Object.entries(candidate.readingDays as Record<string, unknown>)
+            .filter(([day, entries]) => /^\d{4}-\d{2}-\d{2}$/.test(day) && Array.isArray(entries))
+            .slice(-120)
+            .map(([day, entries]) => [
+              day,
+              [...new Set((entries as unknown[]).filter((item): item is string => typeof item === "string" && /^\d{1,3}:\d{1,3}$/.test(item)))].slice(0, 200),
+            ]),
+        )
+      : {},
   };
 }
 
