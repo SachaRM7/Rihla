@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, ListPlus, MoreHorizontal, Navigation, Share2, StickyNote } from "lucide-react";
+import { BookOpenText, Bookmark, ListPlus, MoreHorizontal, Navigation, Share2, StickyNote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { SurahDetail, TajwidTextRun } from "@/lib/quran/types";
@@ -19,6 +19,7 @@ type Props = {
   onEditNote: (ayahNumber: number) => void;
   onShare: (ayahNumber: number) => void;
   onAddToPlaylist: (ayahNumber: number) => void;
+  onOpenTafsir: (ayahNumber: number) => void;
 };
 
 type KaraokeStyle = CSSProperties & { "--word-progress": string };
@@ -52,6 +53,7 @@ export function AyahList({
   onEditNote,
   onShare,
   onAddToPlaylist,
+  onOpenTafsir,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
   const [followSuspended, setFollowSuspended] = useState(false);
@@ -124,6 +126,7 @@ export function AyahList({
                     </summary>
                     <div className="ayah-more-menu">
                       <button type="button" onClick={() => onEditNote(ayah.numberInSurah)}><StickyNote size={16} /> Ajouter une note</button>
+                      <button type="button" onClick={() => onOpenTafsir(ayah.numberInSurah)}><BookOpenText size={16} /> Tafsir & sources</button>
                       <button type="button" onClick={() => onAddToPlaylist(ayah.numberInSurah)}><ListPlus size={16} /> Ajouter à une playlist</button>
                       <button type="button" onClick={() => onShare(ayah.numberInSurah)}><Share2 size={16} /> Partager</button>
                     </div>
