@@ -304,6 +304,8 @@ export function AppShell() {
     playbackRate: library.playbackRate,
     repeatMode: library.repeatMode,
     studyLoop: library.studyLoop,
+    stopAtEnd: sleepAtEnd,
+    onStopAtEndConsumed: () => setSleepAtEnd(null),
   });
   const {
     loadedSourceUrl,
