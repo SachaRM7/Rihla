@@ -44,6 +44,8 @@ export type PersonalPlaylist = {
   updatedAt: number;
 };
 
+export type FollowedTarget = { id: string; type: "CREATOR" | "SERIES"; notify: boolean };
+
 export type AyahNote = {
   surah: number;
   ayah: number;
@@ -85,6 +87,7 @@ export type LocalLibrary = {
   readingGoalEnabled: boolean;
   readingGoalAyahsPerDay: number;
   readingDays: Record<string, string[]>;
+  follows: FollowedTarget[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -121,6 +124,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   readingGoalEnabled: false,
   readingGoalAyahsPerDay: 10,
   readingDays: {},
+  follows: [],
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -271,6 +275,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
             ]),
         )
       : {},
+    follows: Array.isArray(candidate.follows) ? candidate.follows.filter((item): item is FollowedTarget => Boolean(item && typeof item === "object" && typeof (item as FollowedTarget).id === "string" && ((item as FollowedTarget).type === "CREATOR" || (item as FollowedTarget).type === "SERIES"))).slice(0, 200) : [],
   };
 }
 
@@ -348,6 +353,17 @@ export function useLocalLibrary() {
         reciterId,
       };
     });
+  }, []);
+
+  const toggleFollow = useCallback((id: string, type: "CREATOR" | "SERIES") => {
+    setLibrary((current) => {
+      const exists = current.follows.some((item) => item.id === id && item.type === type);
+      return { ...current, follows: exists ? current.follows.filter((item) => !(item.id === id && item.type === type)) : [...current.follows, { id, type, notify: false }] };
+    });
+  }, []);
+
+  const setFollowNotification = useCallback((id: string, type: "CREATOR" | "SERIES", notify: boolean) => {
+    setLibrary((current) => ({ ...current, follows: current.follows.map((item) => item.id === id && item.type === type ? { ...item, notify } : item) }));
   }, []);
 
   const setReadingGoal = useCallback((enabled: boolean, ayahsPerDay?: number) => {
@@ -618,6 +634,8 @@ export function useLocalLibrary() {
     setReminderPreferences,
     setMemorizationRevealDelay,
     setReadingGoal,
+    toggleFollow,
+    setFollowNotification,
     setAudioQuality,
     clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
