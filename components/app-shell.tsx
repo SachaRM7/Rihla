@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
 import { AyahNoteDialog } from "@/components/ayah-note-dialog";
 import { CreatorProfile } from "@/components/creator-profile";
+import { OfflineDownloadControl } from "@/components/offline-download-control";
 import { SpokenPlayer } from "@/components/spoken-player";
 import { SeriesProfile } from "@/components/series-profile";
 import { FullPlayer } from "@/components/full-player";
@@ -32,6 +33,7 @@ import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
 import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
+import { canDownloadOffline } from "@/lib/offline";
 import { publicContents } from "@/lib/catalog";
 import { SPOKEN_CATALOG } from "@/lib/spoken-catalog";
 import { TafsirDialog } from "@/components/tafsir-dialog";
@@ -218,6 +220,7 @@ export function AppShell() {
   const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [downloadStates, setDownloadStates] = useState<Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">>({});
   const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
@@ -743,7 +746,11 @@ export function AppShell() {
               />}
               {searchType !== "spoken" && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
               {searchType === "spoken" && !hasSpokenContents && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
-              {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="library-grid">{spokenContents.map((item) => <button type="button" key={item.id} onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_", " ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18} /></button>)}</div>}
+              {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="spoken-catalog-list">{spokenContents.map((item) => {
+                const asset = item.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
+                const allowed = Boolean(asset && canDownloadOffline(asset,SPOKEN_CATALOG.rights));
+                return <div className="spoken-catalog-row" key={item.id}><button type="button" onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_"," ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18}/></button>{asset && <OfflineDownloadControl allowed={allowed} status={downloadStates[item.id]} onDownload={()=>{ if(library.wifiOnlyDownloads && navigator.connection && "type" in navigator.connection && (navigator.connection as {type?:string}).type!=="wifi"){setShareMessage("Téléchargement réservé au Wi-Fi");return;} setDownloadStates((current)=>({...current,[item.id]:"QUEUED"})); setShareMessage("Téléchargement prêt · stockage hors connexion à connecter"); }} />}</div>;
+              })}</div>}
               {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.mediaAssetIds.length) playSpokenContent(content); else if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
               {searchType === "spoken" && selectedSeries && <SeriesProfile series={selectedSeries} contents={spokenContents} followed={library.follows.some((item)=>item.id===selectedSeries.id&&item.type==="SERIES")} notifications={library.follows.find((item)=>item.id===selectedSeries.id&&item.type==="SERIES")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedSeries.id,"SERIES")} onToggleNotifications={(enabled)=>setFollowNotification(selectedSeries.id,"SERIES",enabled)} onOpen={(content)=>playSpokenContent(content)} />}
