@@ -82,6 +82,7 @@ export type LocalLibrary = {
   wifiOnlyDownloads: boolean;
   audioQuality: AudioQuality;
   memorizationMode: boolean;
+  continuousQuran: boolean;
   hiddenRecommendations: string[];
   remindersEnabled: boolean;
   reminderTime: string;
@@ -124,6 +125,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   wifiOnlyDownloads: true,
   audioQuality: "standard",
   memorizationMode: false,
+  continuousQuran: false,
   hiddenRecommendations: [],
   remindersEnabled: false,
   reminderTime: "19:00",
@@ -270,6 +272,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     wifiOnlyDownloads: typeof candidate.wifiOnlyDownloads === "boolean" ? candidate.wifiOnlyDownloads : true,
     audioQuality: isAudioQuality(candidate.audioQuality) ? candidate.audioQuality : "standard",
     memorizationMode: typeof candidate.memorizationMode === "boolean" ? candidate.memorizationMode : false,
+    continuousQuran: typeof candidate.continuousQuran === "boolean" ? candidate.continuousQuran : false,
     hiddenRecommendations: Array.isArray(candidate.hiddenRecommendations) ? candidate.hiddenRecommendations.filter((item): item is string => typeof item === "string").slice(0, 100) : [],
     remindersEnabled: typeof candidate.remindersEnabled === "boolean" ? candidate.remindersEnabled : false,
     reminderTime: typeof candidate.reminderTime === "string" && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(candidate.reminderTime) ? candidate.reminderTime : "19:00",
@@ -415,6 +418,8 @@ export function useLocalLibrary() {
   const hideRecommendation = useCallback((id: string) => {
     setLibrary((current) => ({ ...current, hiddenRecommendations: [...new Set([...current.hiddenRecommendations, id])] }));
   }, []);
+
+  const setContinuousQuran = useCallback((continuousQuran: boolean) => setLibrary((current) => ({ ...current, continuousQuran })), []);
 
   const setMemorizationMode = useCallback((memorizationMode: boolean) => setLibrary((current) => ({ ...current, memorizationMode })), []);
 
@@ -642,6 +647,7 @@ export function useLocalLibrary() {
     removeHistoryItem,
     setWifiOnlyDownloads,
     setMemorizationMode,
+    setContinuousQuran,
     hideRecommendation,
     restoreRecommendations,
     setReminderPreferences,
