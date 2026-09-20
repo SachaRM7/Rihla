@@ -493,6 +493,13 @@ export function AppShell() {
     [selectedNumber, surahs],
   );
 
+  const todayReadingKey = localDayKey();
+  const todayReadCount = library.readingDays[todayReadingKey]?.length ?? 0;
+  const khatmaDailyTarget = Math.max(1, Math.ceil(6236 / library.khatmaTargetDays));
+  const effectiveDailyTarget = library.readingGoalMode === "KHATMA" ? khatmaDailyTarget : library.readingGoalAyahsPerDay;
+  const effectiveReadingProgress = library.readingGoalEnabled ? Math.min(100, Math.round((todayReadCount / effectiveDailyTarget) * 100)) : 0;
+  const recentReadingDays = Object.entries(library.readingDays).sort(([a],[b]) => b.localeCompare(a)).slice(0,7);
+
   const spokenContents = publicContents(SPOKEN_CATALOG);
   const hasSpokenContents = spokenContents.length > 0;
   const selectedCreator = SPOKEN_CATALOG.creators.find((item) => item.id === selectedCreatorId) ?? null;
@@ -669,8 +676,8 @@ export function AppShell() {
               </section>
 
               {library.readingGoalEnabled && <section className="reading-goal-card">
-                <div><p className="eyebrow">Votre rythme</p><strong>{todayReadCount} / {effectiveDailyTarget} ayat aujourd’hui</strong><small>Objectif indicatif · reprenez simplement où vous en êtes.</small><span className="reading-goal-progress"><i style={{ width: `${effectiveReadingProgress}%` }} /></span>
-                  {recentReadingDays.length > 0 && <span className="reading-week" aria-label="Lecture des derniers jours">{recentReadingDays.map(([day, entries]) => <i key={day} title={`${day} · ${entries.length} ayat`} className={entries.length >= library.readingGoalAyahsPerDay ? "complete" : entries.length > 0 ? "partial" : ""} />)}</span>}</div>
+                <div><p className="eyebrow">Votre rythme</p><strong>{todayReadCount} / {effectiveDailyTarget} ayat aujourd’hui</strong><small>{library.readingGoalMode === "KHATMA" ? `Rythme indicatif pour une lecture complète en ${library.khatmaTargetDays} jours` : "Objectif indicatif"} · reprenez simplement où vous en êtes.</small><span className="reading-goal-progress"><i style={{ width: `${effectiveReadingProgress}%` }} /></span>
+                  {recentReadingDays.length > 0 && <span className="reading-week" aria-label="Lecture des derniers jours">{recentReadingDays.map(([day, entries]) => <i key={day} title={`${day} · ${entries.length} ayat`} className={entries.length >= effectiveDailyTarget ? "complete" : entries.length > 0 ? "partial" : ""} />)}</span>}</div>
                 <button type="button" className="secondary-action" onClick={() => openSurah(library.quranReadingSurah, library.quranReadingAyah)}>Continuer</button>
               </section>}
 
