@@ -41,6 +41,8 @@ export type PersonalPlaylist = {
   id: string;
   title: string;
   ayahKeys: string[];
+  spokenContentIds: string[];
+  allowMixedContent: boolean;
   createdAt: number;
   updatedAt: number;
 };
@@ -553,8 +555,20 @@ export function useLocalLibrary() {
     const now = Date.now();
     setLibrary((current) => ({
       ...current,
-      playlists: [{ id: crypto.randomUUID(), title: normalized, ayahKeys: [], createdAt: now, updatedAt: now }, ...current.playlists],
+      playlists: [{ id: crypto.randomUUID(), title: normalized, ayahKeys: [], spokenContentIds: [], allowMixedContent: false, createdAt: now, updatedAt: now }, ...current.playlists],
     }));
+  }, []);
+
+  const toggleSpokenInPlaylist = useCallback((playlistId: string, contentId: string) => {
+    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
+      if (playlist.id !== playlistId) return playlist;
+      if (!playlist.allowMixedContent && playlist.ayahKeys.length > 0 && !playlist.spokenContentIds.includes(contentId)) return playlist;
+      return { ...playlist, spokenContentIds: playlist.spokenContentIds.includes(contentId) ? playlist.spokenContentIds.filter((id) => id !== contentId) : [...playlist.spokenContentIds, contentId], updatedAt: Date.now() };
+    }) }));
+  }, []);
+
+  const setPlaylistMixedContent = useCallback((playlistId: string, allowMixedContent: boolean) => {
+    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, allowMixedContent, updatedAt: Date.now() } : playlist) }));
   }, []);
 
   const toggleAyahInPlaylist = useCallback((playlistId: string, surah: number, ayah: number) => {
@@ -650,6 +664,8 @@ export function useLocalLibrary() {
     saveAyahNote,
     createPlaylist,
     toggleAyahInPlaylist,
+    toggleSpokenInPlaylist,
+    setPlaylistMixedContent,
     deletePlaylist,
     movePlaylistAyah,
     renamePlaylist,
