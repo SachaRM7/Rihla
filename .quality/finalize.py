@@ -9,3 +9,6 @@ if 'let endedSource:' not in s:
     s=s.replace('  useEffect(() => {\n    const frame = window.requestAnimationFrame(resetStudyLoopProgress);','  useEffect(() => {\n    cancelDelayedPlayback();\n    const frame = window.requestAnimationFrame(resetStudyLoopProgress);')
     s=s.replace('  }, [studyLoop, resetStudyLoopProgress]);','  }, [studyLoop, resetStudyLoopProgress, cancelDelayedPlayback]);')
     f.write_text(s)
+f=Path('scripts/test-browser.mjs');s=f.read_text()
+s=s.replace('if(await evaluate(expression))return;',"if(await evaluate('Boolean('+expression+')'))return;")
+f.write_text(s)
