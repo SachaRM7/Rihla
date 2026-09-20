@@ -167,6 +167,8 @@ export function AppShell() {
     setCrossFamilyAutoAdvance,
     setPlaybackQueue,
     saveSpokenProgress,
+    removeSpokenProgress,
+    clearSpokenProgress,
     toggleFollow,
     setFollowNotification,
     hideRecommendation,
@@ -996,7 +998,7 @@ export function AppShell() {
               </section>}
 
               {(librarySection === "all" || librarySection === "history") && library.spokenProgress.length > 0 && <section className="library-section">
-                <div className="section-title-row"><div><p className="eyebrow">Contenus parlés</p><h2>À reprendre</h2></div><span className="section-count">{library.spokenProgress.length}</span></div>
+                <div className="section-title-row"><div><p className="eyebrow">Contenus parlés</p><h2>À reprendre</h2></div><button type="button" className="text-action" onClick={clearSpokenProgress}>Effacer</button></div>
                 <div className="history-list">{[...library.spokenProgress].sort((a,b)=>b.updatedAt-a.updatedAt).map((progress)=>{
                   const content=SPOKEN_CATALOG.contents.find((item)=>item.id===progress.contentId);
                   if(!content)return null;
