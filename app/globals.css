@@ -478,3 +478,5 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .translation-options footer a{color:var(--olive-strong);text-decoration:none;font-weight:700}
 
 @media(max-width:520px){.surah-select{grid-template-columns:34px minmax(0,1fr) auto}.surah-label{min-width:0}.surah-label strong,.surah-label small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.surah-arabic-name{max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+
+.search-hit-copy small{display:block;margin-top:4px;color:var(--faint);font-size:.62rem}
