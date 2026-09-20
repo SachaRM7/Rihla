@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizePlaylists, togglePlaylistItem, removePlaylistItem, movePlaylistEntry } from "@/lib/playlist-integrity";
 import type { QueueEntry } from "@/lib/playback";
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
@@ -271,7 +272,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     listeningHistory,
     ayahNotes,
     historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
-    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item) => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100).map((item) => ({ ...(item as PersonalPlaylist), spokenContentIds: Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.filter((id): id is string => typeof id === "string") : [], itemOrder: Array.isArray((item as PersonalPlaylist).itemOrder) ? (item as PersonalPlaylist).itemOrder.filter((id): id is string => typeof id === "string") : [...(item as PersonalPlaylist).ayahKeys.map((key) => `quran:${key}`), ...(Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.map((id) => `spoken:${id}`) : [])], allowMixedContent: (item as PersonalPlaylist).allowMixedContent === true })) : [],
+    playlists: normalizePlaylists(candidate.playlists),
     quranReadingSurah: Number.isInteger(candidate.quranReadingSurah) && candidate.quranReadingSurah! >= 1 && candidate.quranReadingSurah! <= 114 ? candidate.quranReadingSurah! : 1,
     quranReadingAyah: Number.isInteger(candidate.quranReadingAyah) && candidate.quranReadingAyah! >= 1 ? candidate.quranReadingAyah! : 1,
     quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
@@ -281,7 +282,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     continuousQuran: typeof candidate.continuousQuran === "boolean" ? candidate.continuousQuran : false,
     hiddenRecommendations: Array.isArray(candidate.hiddenRecommendations) ? candidate.hiddenRecommendations.filter((item): item is string => typeof item === "string").slice(0, 100) : [],
     remindersEnabled: typeof candidate.remindersEnabled === "boolean" ? candidate.remindersEnabled : false,
-    reminderTime: typeof candidate.reminderTime === "string" && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(candidate.reminderTime) ? candidate.reminderTime : "19:00",
+    reminderTime: typeof candidate.reminderTime === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(candidate.reminderTime) ? candidate.reminderTime : "19:00",
     memorizationRevealDelay: [0, 3, 5, 10].includes(Number(candidate.memorizationRevealDelay)) ? Number(candidate.memorizationRevealDelay) : 0,
     readingGoalEnabled: typeof candidate.readingGoalEnabled === "boolean" ? candidate.readingGoalEnabled : false,
     readingGoalAyahsPerDay: Number.isInteger(candidate.readingGoalAyahsPerDay) ? Math.min(100, Math.max(1, Number(candidate.readingGoalAyahsPerDay))) : 10,
@@ -442,10 +443,6 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, listeningHistory: current.listeningHistory.filter((item) => item.surah !== surah) }));
   }, []);
 
-  const removeSpokenProgress = useCallback((contentId: string) => {
-    setLibrary((current) => ({ ...current, spokenProgress: current.spokenProgress.filter((item) => item.contentId !== contentId) }));
-  }, []);
-
   const setHistoryEnabled = useCallback((historyEnabled: boolean) => {
     setLibrary((current) => ({ ...current, historyEnabled }));
   }, []);
@@ -561,12 +558,7 @@ export function useLocalLibrary() {
   }, []);
 
   const toggleSpokenInPlaylist = useCallback((playlistId: string, contentId: string) => {
-    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
-      if (playlist.id !== playlistId) return playlist;
-      if (!playlist.allowMixedContent && playlist.ayahKeys.length > 0 && !playlist.spokenContentIds.includes(contentId)) return playlist;
-      const removing = playlist.spokenContentIds.includes(contentId);
-      return { ...playlist, spokenContentIds: removing ? playlist.spokenContentIds.filter((id) => id !== contentId) : [...playlist.spokenContentIds, contentId], itemOrder: removing ? playlist.itemOrder.filter((id) => id !== `spoken:${contentId}`) : [...playlist.itemOrder, `spoken:${contentId}`], updatedAt: Date.now() };
-    }) }));
+    setLibrary(current => ({ ...current, playlists: current.playlists.map(p => p.id === playlistId ? togglePlaylistItem(p, `spoken:${contentId}`) : p) }));
   }, []);
 
   const duplicatePlaylist = useCallback((playlistId: string) => {
@@ -582,21 +574,13 @@ export function useLocalLibrary() {
   }, []);
 
   const toggleAyahInPlaylist = useCallback((playlistId: string, surah: number, ayah: number) => {
-    const key = `${surah}:${ayah}`;
-    setLibrary((current) => ({
-      ...current,
-      playlists: current.playlists.map((playlist) => playlist.id !== playlistId ? playlist : {
-        ...playlist,
-        ayahKeys: playlist.ayahKeys.includes(key) ? playlist.ayahKeys.filter((item) => item !== key) : [...playlist.ayahKeys, key],
-        itemOrder: playlist.ayahKeys.includes(key) ? playlist.itemOrder.filter((item) => item !== `quran:${key}`) : [...playlist.itemOrder, `quran:${key}`],
-        updatedAt: Date.now(),
-      }),
-    }));
+    setLibrary(current => ({ ...current, playlists: current.playlists.map(p => p.id === playlistId ? togglePlaylistItem(p, `quran:${surah}:${ayah}`) : p) }));
   }, []);
 
   const importData = useCallback((raw: string) => {
     try {
       const parsed = JSON.parse(raw);
+      if (!parsed || Array.isArray(parsed) || parsed.version !== 1 || !Array.isArray(parsed.favoriteSurahs) || !Array.isArray(parsed.favoriteAyahs)) return false;
       const restored = sanitizeLibrary(parsed);
       setLibrary(restored);
       return true;
@@ -606,15 +590,7 @@ export function useLocalLibrary() {
   }, []);
 
   const removeAyahFromPlaylist = useCallback((playlistId: string, key: string) => {
-    setLibrary((current) => ({
-      ...current,
-      playlists: current.playlists.map((playlist) => playlist.id === playlistId ? {
-        ...playlist,
-        ayahKeys: playlist.ayahKeys.filter((item) => item !== key),
-        itemOrder: playlist.itemOrder.filter((item) => item !== `quran:${key}`),
-        updatedAt: Date.now(),
-      } : playlist),
-    }));
+    setLibrary(current => ({ ...current, playlists: current.playlists.map(p => p.id === playlistId ? removePlaylistItem(p, `quran:${key}`) : p) }));
   }, []);
 
   const renamePlaylist = useCallback((playlistId: string, title: string) => {
@@ -626,25 +602,14 @@ export function useLocalLibrary() {
     }));
   }, []);
 
-  const movePlaylistItem = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
-    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
-      if (playlist.id !== playlistId || fromIndex < 0 || toIndex < 0 || fromIndex >= playlist.itemOrder.length || toIndex >= playlist.itemOrder.length) return playlist;
-      const itemOrder = [...playlist.itemOrder]; const [moved] = itemOrder.splice(fromIndex,1); itemOrder.splice(toIndex,0,moved);
-      return { ...playlist, itemOrder, updatedAt: Date.now() };
-    }) }));
+  const movePlaylistItem = useCallback((playlistId: string, from: number, to: number) => {
+    setLibrary(current => ({ ...current, playlists: current.playlists.map(p => p.id === playlistId ? movePlaylistEntry(p, from, to) : p) }));
   }, []);
-
-  const movePlaylistAyah = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
-    setLibrary((current) => ({
-      ...current,
-      playlists: current.playlists.map((playlist) => {
-        if (playlist.id !== playlistId || fromIndex < 0 || toIndex < 0 || fromIndex >= playlist.ayahKeys.length || toIndex >= playlist.ayahKeys.length) return playlist;
-        const ayahKeys = [...playlist.ayahKeys];
-        const [item] = ayahKeys.splice(fromIndex, 1);
-        ayahKeys.splice(toIndex, 0, item);
-        return { ...playlist, ayahKeys, updatedAt: Date.now() };
-      }),
-    }));
+  const movePlaylistAyah = useCallback((playlistId: string, from: number, to: number) => {
+    setLibrary(current => ({ ...current, playlists: current.playlists.map(p => {
+      if (p.id !== playlistId) return p;
+      return movePlaylistEntry(p, p.itemOrder.indexOf(`quran:${p.ayahKeys[from]}`), p.itemOrder.indexOf(`quran:${p.ayahKeys[to]}`));
+    }) }));
   }, []);
 
   const deletePlaylist = useCallback((playlistId: string) => {
@@ -696,7 +661,6 @@ export function useLocalLibrary() {
     importData,
     setHistoryEnabled,
     removeHistoryItem,
-    removeSpokenProgress,
     setWifiOnlyDownloads,
     setMemorizationMode,
     setContinuousQuran,

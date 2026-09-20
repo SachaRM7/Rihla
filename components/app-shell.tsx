@@ -18,6 +18,7 @@ import {
   Search,
   Settings,
   Wifi,
+  WifiOff,
   Bell,
   StickyNote,
 } from "lucide-react";
@@ -40,9 +41,11 @@ import { preferredMediaVariant } from "@/lib/media-variants";
 import { canDownloadOffline } from "@/lib/offline";
 import { publicContents } from "@/lib/catalog";
 import { SPOKEN_CATALOG } from "@/lib/spoken-catalog";
+import { PlaylistTransitionDialog } from "@/components/playlist-transition-dialog";
 import { TafsirDialog } from "@/components/tafsir-dialog";
 import { SourceDisclosure } from "@/components/source-disclosure";
 import { SurahBrowser } from "@/components/surah-browser";
+import { nextPlaylistRun, startPlaylistRun, type PlaylistRun } from "@/lib/playlist-integrity";
 import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
 import { useQuranPlayer } from "@/hooks/use-quran-player";
 import { parseQuranJump } from "@/lib/quran/jump";
@@ -147,6 +150,9 @@ export function AppShell() {
     saveAyahNote,
     createPlaylist,
     toggleAyahInPlaylist,
+    toggleSpokenInPlaylist,
+    setPlaylistMixedContent,
+    duplicatePlaylist,
     deletePlaylist,
     movePlaylistAyah,
     movePlaylistItem,
@@ -157,7 +163,6 @@ export function AppShell() {
     clearHistory,
     setHistoryEnabled,
     removeHistoryItem,
-    removeSpokenProgress,
     setWifiOnlyDownloads,
     setMemorizationMode,
     setContinuousQuran,
@@ -230,8 +235,15 @@ export function AppShell() {
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [downloadStates, setDownloadStates] = useState<Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">>({});
-  const [activePlaylistRun, setActivePlaylistRun] = useState<{playlistId:string;index:number}|null>(null);
-  const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
+  const [activePlaylistRun, setActivePlaylistRun] = useState<PlaylistRun | null>(null);
+  const playlistRunRef = useRef<PlaylistRun | null>(null);
+  const runTokenRef = useRef(0);
+  const [pendingPlaylistTransition, setPendingPlaylistTransition] = useState<PlaylistRun | null>(null);
+  const updatePlaylistRun = useCallback((run: PlaylistRun | null) => {
+    playlistRunRef.current = run;
+    setActivePlaylistRun(run);
+  }, []);
+  const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset; sessionId: number } | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
   const [noteQuery, setNoteQuery] = useState("");
@@ -372,8 +384,13 @@ export function AppShell() {
     repeatMode: library.repeatMode,
     studyLoop: library.studyLoop,
     stopAtEnd: sleepAtEnd,
-    onStopAtEndConsumed: () => setSleepAtEnd(null),
-    onSurahEnded: () => { if (activePlaylistRun) advancePlaylist(); },
+    onStopAtEndConsumed: () => { setSleepAtEnd(null); updatePlaylistRun(null); setPendingPlaylistTransition(null); },
+    onAyahEnded: (key) => {
+      const run = playlistRunRef.current;
+      if (!run || run.items[run.index] !== key) return false;
+      advancePlaylist(key, run.token);
+      return true;
+    },
   });
   const {
     loadedSourceUrl,
@@ -400,6 +417,8 @@ export function AppShell() {
       const remaining = Math.max(0, Math.ceil((sleepTimerEndsAt - Date.now()) / 1000));
       setSleepTimerRemaining(remaining);
       if (remaining === 0) {
+        updatePlaylistRun(null);
+        setPendingPlaylistTransition(null);
         pausePlayback();
         setSleepTimerEndsAt(null);
       }
@@ -471,7 +490,9 @@ export function AppShell() {
     savePlaybackProgress,
   ]);
 
-  const openSurah = useCallback((number: number, ayah?: number, positionMs = 0, autoplay = false) => {
+  const openSurah = useCallback((number: number, ayah?: number, positionMs = 0, autoplay = false, fromPlaylist = false) => {
+    if (!fromPlaylist) { updatePlaylistRun(null); setPendingPlaylistTransition(null); }
+    if (autoplay) setSpokenNowPlaying(null);
     requestedAyahRef.current = ayah ?? 1;
     requestedPositionRef.current = positionMs;
     requestedAutoplayRef.current = autoplay;
@@ -500,7 +521,7 @@ export function AppShell() {
     setDetail(null);
     setSelectedNumber(number);
     setActiveView("quran");
-  }, [activeIndex, detail, loadedSourceUrl, playPlayback, seekPlayback, selectPlaybackAyah]);
+  }, [activeIndex, detail, loadedSourceUrl, playPlayback, seekPlayback, selectPlaybackAyah, updatePlaylistRun]);
 
   const selectedSummary = useMemo(
     () => surahs.find((surah) => surah.number === selectedNumber) ?? null,
@@ -526,26 +547,48 @@ export function AppShell() {
     setShareMessage("Ajouté à la file d’attente");
   };
 
-  const playPlaylistItem = (playlistId:string,index:number) => {
-    const playlist=library.playlists.find((item)=>item.id===playlistId); const key=playlist?.itemOrder[index]; if(!playlist||!key)return;
-    setActivePlaylistRun({playlistId,index});
-    if(key.startsWith("quran:")){const [surah,ayah]=key.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true);return;}
-    const content=SPOKEN_CATALOG.contents.find((item)=>item.id===key.slice(7)); if(content)playSpokenContent(content);
-  };
-  const advancePlaylist = () => {
-    if(!activePlaylistRun)return; const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId); if(!playlist)return;
-    const nextIndex=activePlaylistRun.index+1; if(nextIndex>=playlist.itemOrder.length){setActivePlaylistRun(null);return;}
-    const current=playlist.itemOrder[activePlaylistRun.index]; const next=playlist.itemOrder[nextIndex];
-    const crosses=current.startsWith("quran:")!==next.startsWith("quran:");
-    if(crosses && !playlist.allowMixedContent){setActivePlaylistRun(null);setShareMessage("Lecture arrêtée avant le changement de format");return;}
-    playPlaylistItem(playlist.id,nextIndex);
-  };
-
-  const playSpokenContent = (content: ContentItem) => {
-    const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
-    if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
+  const playSpokenContent = (content: ContentItem, fromPlaylist = false) => {
+    if (!fromPlaylist) { updatePlaylistRun(null); setPendingPlaylistTransition(null); }
+    if (!spokenContents.some(item => item.id === content.id)) { setShareMessage("Ce contenu n’est plus disponible."); return; }
+    const asset = content.mediaAssetIds.map(id => SPOKEN_CATALOG.media.find(item => item.id === id)).find((item): item is MediaAsset => Boolean(item));
+    if (!asset) { setShareMessage("Aucun média disponible."); return; }
+    pausePlayback();
+    setPlayerOpen(false);
     const preferred = preferredMediaVariant(asset, SPOKEN_CATALOG.variants ?? [], library.audioQuality);
-    setSpokenNowPlaying({ content, asset: preferred ? { ...asset, url: preferred.url } : asset });
+    setSpokenNowPlaying({ content, asset: preferred ? { ...asset, url: preferred.url } : asset, sessionId: ++runTokenRef.current });
+  };
+  const playPlaylistItem = (playlistId: string, index: number, snapshot?: PlaylistRun) => {
+    const playlist = library.playlists.find(item => item.id === playlistId);
+    if (!playlist) { updatePlaylistRun(null); return; }
+    const run = snapshot ? { ...snapshot, index, token: ++runTokenRef.current } : startPlaylistRun(playlist, index, ++runTokenRef.current);
+    const key = run?.items[index];
+    if (!run || !key) return;
+    setPendingPlaylistTransition(null);
+    updatePlaylistRun(run);
+    if (key.startsWith("quran:")) {
+      pausePlayback();
+      setSpokenNowPlaying(null);
+      setRepeatMode("off");
+      setStudyLoop(null);
+      const [surah, ayah] = key.slice(6).split(":").map(Number);
+      openSurah(surah, ayah, 0, true, true);
+    } else {
+      const content = spokenContents.find(item => item.id === key.slice(7));
+      if (content) playSpokenContent(content, true);
+      else { updatePlaylistRun(null); setShareMessage("Lecture arrêtée : un contenu de cette playlist est indisponible."); }
+    }
+  };
+  const advancePlaylist = (finishedKey: string, token: number) => {
+    const run = playlistRunRef.current;
+    if (!run || run.token !== token) return;
+    const playlist = library.playlists.find(item => item.id === run.playlistId);
+    if (!playlist) { updatePlaylistRun(null); return; }
+    const next = nextPlaylistRun(run, finishedKey, playlist.allowMixedContent && library.allowCrossFamilyAutoAdvance);
+    if (next.type === "stale") return;
+    playlistRunRef.current = { ...run, token: -1 };
+    if (next.type === "end") { updatePlaylistRun(null); setShareMessage("Playlist terminée."); }
+    else if (next.type === "consent") setPendingPlaylistTransition({ ...run, index: run.index + 1 });
+    else if (next.run) playPlaylistItem(run.playlistId, next.run.index, next.run);
   };
 
   const featuredSurahs = useMemo(
@@ -784,7 +827,7 @@ export function AppShell() {
               {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="spoken-catalog-list">{spokenContents.map((item) => {
                 const asset = item.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
                 const allowed = Boolean(asset && canDownloadOffline(asset,SPOKEN_CATALOG.rights));
-                return <div className="spoken-catalog-row" key={item.id}><button type="button" onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_"," ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18}/></button><button type="button" className="queue-add-action" onClick={()=>queueSpokenContent(item)} aria-label={`Ajouter ${item.title} à la file d’attente`}><Plus size={16}/>File</button>{asset && <OfflineDownloadControl allowed={allowed} status={downloadStates[item.id]} onDownload={()=>{ if(library.wifiOnlyDownloads){ const connection=(navigator as Navigator & {connection?:{type?:string}}).connection; if(connection?.type && connection.type!=="wifi"){setShareMessage("Téléchargement réservé au Wi-Fi");return;} } setDownloadStates((current)=>({...current,[item.id]:"QUEUED"})); setShareMessage("Téléchargement prêt · stockage hors connexion à connecter"); }} />}</div>;
+                return <div className="spoken-catalog-row" key={item.id}><button type="button" onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_"," ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18}/></button><button type="button" className="queue-add-action" onClick={()=>queueSpokenContent(item)} aria-label={`Ajouter ${item.title} à la file d’attente`}><Plus size={16}/>File</button>{asset && <OfflineDownloadControl allowed={allowed} status={downloadStates[item.id]} onDownload={()=>{ if(library.wifiOnlyDownloads){ const connection=(navigator as Navigator & {connection?:{type?:string}}).connection; if(connection?.type && connection.type!=="wifi"){setShareMessage("Téléchargement réservé au Wi-Fi");return;} } setShareMessage("Le téléchargement hors connexion n’est pas encore disponible."); }} />}</div>;
               })}</div>}
               {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.mediaAssetIds.length) playSpokenContent(content); else if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
@@ -798,6 +841,7 @@ export function AppShell() {
                 event.preventDefault();
                 const target = parseQuranJump(quranJump);
                 if (!target) { showShareMessage("Exemples : 2:255, Juz 30 ou Hizb 60"); return; }
+                if (target.kind !== "SURAH") { showShareMessage("Cette division nécessite un index coranique vérifié."); return; }
                 if (target.surah < 1 || target.surah > 114 || target.ayah < 1) { showShareMessage("Référence invalide"); return; }
                 openSurah(target.surah, target.ayah);
               }}>
@@ -826,9 +870,9 @@ export function AppShell() {
                       <select name="reader-reciter" autoComplete="off" value={reciterId} onChange={(event) => {
                         const ayahNumber = detail?.ayahs[activeIndex]?.numberInSurah ?? library.lastAyah;
                         setReciterId(event.target.value);
-                        setInitialAyah(ayahNumber);
-                        setInitialPositionMs(0);
-                        setInitialAutoplay(player.isPlaying);
+                        requestedAyahRef.current = ayahNumber;
+                        requestedPositionRef.current = 0;
+                        requestedAutoplayRef.current = player.isPlaying;
                       }}>
                         {RECITERS.map((reciter) => <option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}
                       </select>
@@ -872,7 +916,6 @@ export function AppShell() {
                         favoriteAyahs={library.favoriteAyahs}
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
-                showTranslation={library.showTranslation}
                         continuousView={library.continuousQuran}
                         memorizationMode={library.memorizationMode}
                         memorizationRevealDelay={library.memorizationRevealDelay}
@@ -930,7 +973,7 @@ export function AppShell() {
                   return <div className="playlist-detail">
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
                     <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length + playlist.spokenContentIds.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button><button type="button" className="icon-button" aria-label="Dupliquer la playlist" onClick={()=>{duplicatePlaylist(playlist.id);showShareMessage("Playlist dupliquée");}}><Plus size={16}/></button></div></div>
-                    {playlist.itemOrder.length > 0 && <button type="button" className="primary-action playlist-play-all" onClick={()=>playPlaylistItem(playlist.id,0)}}><Play size={16}/>Lire la playlist</button>}
+                    {playlist.itemOrder.length > 0 && <button type="button" className="primary-action playlist-play-all" onClick={()=>playPlaylistItem(playlist.id,0)}><Play size={16}/>Lire la playlist</button>}
                     <button type="button" role="switch" aria-checked={playlist.allowMixedContent} className="setting-toggle compact-toggle" onClick={()=>setPlaylistMixedContent(playlist.id,!playlist.allowMixedContent)}><span className="setting-copy"><strong>Autoriser le mélange des formats</strong><small>Coran et contenus parlés dans cette même playlist</small></span><span className="switch-track" aria-hidden="true"><i/></span></button>
                     {playlist.itemOrder.length > 0 ? <div className="mixed-playlist-items">{playlist.itemOrder.map((itemKey,index)=>{
                       const isQuran=itemKey.startsWith("quran:");
@@ -942,33 +985,10 @@ export function AppShell() {
                 })() : library.playlists.length ? <div className="library-grid">
                   {library.playlists.map((playlist) => <div className="playlist-row" key={playlist.id}>
                     <button type="button" onClick={() => setSelectedPlaylistId(playlist.id)}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length + playlist.spokenContentIds.length} élément{playlist.ayahKeys.length + playlist.spokenContentIds.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
-                    <button type="button" className="playlist-delete" aria-label={`Supprimer ${playlist.title}`} onClick={() => { if (window.confirm(`Supprimer la playlist « ${playlist.title} » ?`)) deletePlaylist(playlist.id); }}>×</button>
+                    <button type="button" className="playlist-delete" aria-label={`Supprimer ${playlist.title}`} onClick={() => { if (window.confirm(`Supprimer la playlist « ${playlist.title} » ?`)) { if (playlistRunRef.current?.playlistId === playlist.id) { updatePlaylistRun(null); setPendingPlaylistTransition(null); pausePlayback(); setSpokenNowPlaying(null); } deletePlaylist(playlist.id); } }}>×</button>
                   </div>)}
                 </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Aucune playlist</strong><p>Créez une collection personnelle pour organiser vos écoutes.</p></div>}
               </section>}
-
-              {librarySection === "playlists" && selectedPlaylistId && (() => {
-                const playlist = library.playlists.find((item) => item.id === selectedPlaylistId);
-                if (!playlist) return null;
-                return <section className="library-section playlist-detail">
-                  <div className="section-title-row">
-                    <div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div>
-                    <button type="button" className="text-action" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={15}/> Renommer</button>
-                  </div>
-                  {playlist.ayahKeys.length ? <div className="playlist-items">
-                    {playlist.ayahKeys.map((key, index) => {
-                      const [surahNumber, ayahNumber] = key.split(":").map(Number);
-                      const surah = surahs.find((item) => item.number === surahNumber);
-                      return <div className="playlist-item" key={key}>
-                        <button type="button" className="playlist-open" onClick={() => openSurah(surahNumber, ayahNumber)}><span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong></button>
-                        <button type="button" disabled={index === 0} aria-label="Monter" onClick={() => movePlaylistAyah(playlist.id,index,index-1)}><ArrowUp size={15}/></button>
-                        <button type="button" disabled={index === playlist.ayahKeys.length-1} aria-label="Descendre" onClick={() => movePlaylistAyah(playlist.id,index,index+1)}><ArrowDown size={15}/></button>
-                        <button type="button" aria-label="Retirer" onClick={() => toggleAyahInPlaylist(playlist.id,surahNumber,ayahNumber)}>×</button>
-                      </div>;
-                    })}
-                  </div> : <div className="empty-library compact"><ListMusic size={22}/><strong>Playlist vide</strong><p>Ajoutez des passages depuis le menu d’un verset.</p></div>}
-                </section>;
-              })()}
 
               {(librarySection === "all" || librarySection === "history") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
@@ -1105,6 +1125,7 @@ export function AppShell() {
                 readingSize={library.readingSize}
                 translationSize={library.translationSize}
                 autoScroll={library.autoScroll}
+                showTranslation={library.showTranslation}
                 onThemeChange={(theme) => {
                   setTheme(theme);
                   showShareMessage("Couleur d’accent appliquée");
@@ -1298,11 +1319,12 @@ export function AppShell() {
         />
       )}
 
-      {activePlaylistRun && (()=>{const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId);if(!playlist)return null;return <div className="playlist-run-bar" role="status"><div><ListMusic size={16}/><span><strong>{playlist.title}</strong><small>{activePlaylistRun.index+1} / {playlist.itemOrder.length}</small></span></div><span className="playlist-run-actions"><button type="button" disabled={activePlaylistRun.index===0} onClick={()=>playPlaylistItem(playlist.id,activePlaylistRun.index-1)} aria-label="Élément précédent"><ChevronUp size={15}/></button><button type="button" disabled={activePlaylistRun.index>=playlist.itemOrder.length-1} onClick={()=>playPlaylistItem(playlist.id,activePlaylistRun.index+1)} aria-label="Élément suivant"><ChevronDown size={15}/></button><button type="button" onClick={()=>{setActivePlaylistRun(null);pausePlayback();setSpokenNowPlaying(null);}}>Arrêter</button></span></div>})()}
+      {activePlaylistRun && (()=>{const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId);if(!playlist)return null;return <div className="playlist-run-bar" role="status"><div><ListMusic size={16}/><span><strong>{playlist.title}</strong><small>{activePlaylistRun.index+1} / {activePlaylistRun.items.length}</small></span></div><span className="playlist-run-actions"><button type="button" disabled={activePlaylistRun.index===0} onClick={()=>playPlaylistItem(playlist.id,activePlaylistRun.index-1,activePlaylistRun)} aria-label="Élément précédent"><ChevronUp size={15}/></button><button type="button" disabled={activePlaylistRun.index>=activePlaylistRun.items.length-1} onClick={()=>playPlaylistItem(playlist.id,activePlaylistRun.index+1,activePlaylistRun)} aria-label="Élément suivant"><ChevronDown size={15}/></button><button type="button" onClick={()=>{updatePlaylistRun(null);setPendingPlaylistTransition(null);pausePlayback();setSpokenNowPlaying(null);}}>Arrêter</button></span></div>})()}
 
       {activeView === "library" && library.playbackQueue.length > 0 && <div className="queue-drawer"><PlaybackQueue queue={library.playbackQueue} onPlay={(entry)=>{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===entry.item.contentId);if(content)playSpokenContent(content);}} onRemove={(id)=>setPlaybackQueue(removeQueueEntry(library.playbackQueue,id))} onMove={(id,toIndex)=>setPlaybackQueue(moveQueueEntry(library.playbackQueue,id,toIndex))} onClear={()=>setPlaybackQueue([])} /></div>}
-      
+
             {spokenNowPlaying && <SpokenPlayer
+        key={spokenNowPlaying.sessionId}
         content={spokenNowPlaying.content}
         asset={spokenNowPlaying.asset}
         variants={SPOKEN_CATALOG.variants ?? []}
@@ -1312,14 +1334,20 @@ export function AppShell() {
         chapters={(SPOKEN_CATALOG.chapters ?? []).filter((item) => item.contentId === spokenNowPlaying.content.id)}
         initialPositionMs={library.spokenProgress.find((item) => item.contentId === spokenNowPlaying.content.id)?.positionMs ?? 0}
         onProgress={(positionMs, durationMs) => saveSpokenProgress(spokenNowPlaying.content.id, positionMs, durationMs)}
-        onEnded={advancePlaylist}
-        onReportIssue={() => setShareMessage("Signalement enregistré localement · envoi serveur à connecter")}
-        onClose={() => setSpokenNowPlaying(null)}
+        onEnded={() => { const run = playlistRunRef.current; if (run) advancePlaylist(`spoken:${spokenNowPlaying.content.id}`, run.token); }}
+        onSleepStop={() => { updatePlaylistRun(null); setPendingPlaylistTransition(null); }}
+
+        onClose={() => { setSpokenNowPlaying(null); updatePlaylistRun(null); setPendingPlaylistTransition(null); }}
       />}
-      
+
             {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
 
       {tafsirTarget && detail && <TafsirDialog surahNumber={detail.surah.number} ayahNumber={tafsirTarget} source={detail.source} onClose={() => setTafsirTarget(null)} />}
+
+      {pendingPlaylistTransition && <PlaylistTransitionDialog
+        onClose={() => { setPendingPlaylistTransition(null); updatePlaylistRun(null); }}
+        onConfirm={() => playPlaylistItem(pendingPlaylistTransition.playlistId, pendingPlaylistTransition.index, pendingPlaylistTransition)}
+      />}
 
       {noteTarget && (
         <AyahNoteDialog

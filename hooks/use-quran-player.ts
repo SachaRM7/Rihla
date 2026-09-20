@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
+import { claimPlayback, ownsPlayback, releasePlayback } from "@/lib/playback-ownership";
 import type { SurahDetail } from "@/lib/quran/types";
 
 export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "buffering" | "error";
@@ -16,6 +17,7 @@ type PlayerOptions = {
   stopAtEnd?: "ayah" | "surah" | null;
   onStopAtEndConsumed?: () => void;
   onSurahEnded?: () => void;
+  onAyahEnded?: (key: string) => boolean;
 };
 
 function readableAudioError() {
@@ -32,6 +34,7 @@ export function useQuranPlayer({
   stopAtEnd = null,
   onStopAtEndConsumed,
   onSurahEnded,
+  onAyahEnded,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
@@ -43,6 +46,8 @@ export function useQuranPlayer({
   const studyLoopRef = useRef(studyLoop);
   const studyLoopIterationRef = useRef(1);
   const playbackRateRef = useRef(playbackRate);
+  const completionRef = useRef({ stopAtEnd, onStopAtEndConsumed, onSurahEnded, onAyahEnded });
+  useEffect(() => { completionRef.current = { stopAtEnd, onStopAtEndConsumed, onSurahEnded, onAyahEnded }; }, [stopAtEnd, onStopAtEndConsumed, onSurahEnded, onAyahEnded]);
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
@@ -52,6 +57,11 @@ export function useQuranPlayer({
   const [repeatIteration, setRepeatIteration] = useState(1);
   const [studyLoopIteration, setStudyLoopIteration] = useState(1);
   const pauseTimeoutRef = useRef<number | null>(null);
+
+  const cancelDelayedPlayback = useCallback(() => {
+    if (pauseTimeoutRef.current !== null) window.clearTimeout(pauseTimeoutRef.current);
+    pauseTimeoutRef.current = null;
+  }, []);
 
   const resetRepeatProgress = useCallback(() => {
     repeatIterationRef.current = 1;
@@ -88,6 +98,7 @@ export function useQuranPlayer({
     const ayah = currentDetail?.ayahs[index];
     if (!audio || !ayah) return;
 
+    cancelDelayedPlayback();
     playWhenLoadedRef.current = autoplay;
     setError(null);
     setStatus("loading");
@@ -107,7 +118,7 @@ export function useQuranPlayer({
         setStatus("ready");
       });
     }
-  }, [resetRepeatProgress]);
+  }, [cancelDelayedPlayback, resetRepeatProgress]);
 
   useEffect(() => {
     const audio = new Audio();
@@ -158,6 +169,7 @@ export function useQuranPlayer({
       else if (audio.src) setStatus("ready");
     };
     const onPlay = () => {
+      claimPlayback(audio, () => { cancelDelayedPlayback(); playWhenLoadedRef.current = false; audio.pause(); });
       playWhenLoadedRef.current = true;
       setStatus("playing");
       setError(null);
@@ -177,6 +189,7 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
+      const { stopAtEnd, onStopAtEndConsumed, onSurahEnded, onAyahEnded } = completionRef.current;
       if (stopAtEnd === "ayah" || (stopAtEnd === "surah" && indexRef.current >= (detailRef.current?.ayahs.length ?? 1) - 1)) {
         playWhenLoadedRef.current = false;
         setStatus("paused");
@@ -186,6 +199,14 @@ export function useQuranPlayer({
       }
       const currentDetail = detailRef.current;
       const currentIndex = indexRef.current;
+      const endedAyah = currentDetail?.ayahs[currentIndex];
+      if (currentDetail && endedAyah && onAyahEnded) {
+        // Settle the completed source BEFORE a callback can load the next source.
+        playWhenLoadedRef.current = false;
+        setStatus("paused");
+        setCurrentTime(Number.isFinite(audio.duration) ? audio.duration : audio.currentTime);
+        if (onAyahEnded(`quran:${currentDetail.surah.number}:${endedAyah.numberInSurah}`)) return;
+      }
 
       const moveToIndex = (targetIndex: number, autoplay: boolean) => {
         const targetAyah = currentDetail?.ayahs[targetIndex];
@@ -315,9 +336,10 @@ export function useQuranPlayer({
       audio.removeEventListener("pause", onPause);
       audio.removeEventListener("error", onError);
       audio.removeEventListener("ended", onEnded);
+      releasePlayback(audio);
       audioRef.current = null;
     };
-  }, [onStopAtEndConsumed, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
+  }, [cancelDelayedPlayback, resetRepeatProgress, resetStudyLoopProgress]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -373,12 +395,13 @@ export function useQuranPlayer({
   }, [loadAtIndex]);
 
   const pause = useCallback(() => {
+    cancelDelayedPlayback();
     playWhenLoadedRef.current = false;
     audioRef.current?.pause();
-  }, []);
+  }, [cancelDelayedPlayback]);
 
   const toggle = useCallback(() => {
-    if (status === "playing") pause();
+    if (status === "playing" || status === "buffering") pause();
     else play();
   }, [pause, play, status]);
 
@@ -391,6 +414,7 @@ export function useQuranPlayer({
 
   const selectAyah = useCallback(
     (index: number, autoplay = true) => {
+      cancelDelayedPlayback();
       const currentDetail = detailRef.current;
       if (!currentDetail || index < 0 || index >= currentDetail.ayahs.length) return;
 
@@ -404,7 +428,7 @@ export function useQuranPlayer({
       changeIndexRef.current(index);
       loadAtIndex(index, autoplay);
     },
-    [loadAtIndex, play],
+    [cancelDelayedPlayback, loadAtIndex, play],
   );
 
   const previous = useCallback(() => selectAyah(Math.max(0, indexRef.current - 1), true), [selectAyah]);
@@ -413,11 +437,18 @@ export function useQuranPlayer({
     selectAyah(Math.min(last, indexRef.current + 1), true);
   }, [selectAyah]);
 
-  const retry = useCallback(() => loadAtIndex(indexRef.current, true), [loadAtIndex]);
+  const retry = useCallback(() => {
+    const audio = audioRef.current;
+    const position = audio?.currentTime ?? 0;
+    const restore = () => { if (audio && Number.isFinite(audio.duration)) audio.currentTime = Math.min(position, audio.duration); };
+    audio?.addEventListener("loadedmetadata", restore, { once: true });
+    audio?.load();
+    play();
+  }, [play]);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if (!audio || !ownsPlayback(audio) || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     if ("setPositionState" in navigator.mediaSession && Number.isFinite(audio.duration) && audio.duration > 0) {
       try {
         navigator.mediaSession.setPositionState({
@@ -431,32 +462,35 @@ export function useQuranPlayer({
   }, [currentTime, duration, playbackRate, status]);
 
   useEffect(() => {
-    if (!detail || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if (!detail || !audioRef.current || !ownsPlayback(audioRef.current) || typeof MediaMetadata === "undefined" || !("mediaSession" in navigator)) return;
     const ayah = detail.ayahs[activeIndex];
     if (!ayah) return;
+    const ownedAudio = audioRef.current;
+    const setAction = (action: MediaSessionAction, handler: MediaSessionActionHandler | null) => { try { navigator.mediaSession.setActionHandler(action, handler); } catch { /* optional OS control */ } };
     navigator.mediaSession.metadata = new MediaMetadata({
       title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}`,
       artist: detail.reciterName,
       album: "RIHLA · Le Coran",
     });
-    navigator.mediaSession.setActionHandler("play", play);
-    navigator.mediaSession.setActionHandler("pause", pause);
-    navigator.mediaSession.setActionHandler("previoustrack", previous);
-    navigator.mediaSession.setActionHandler("nexttrack", next);
-    navigator.mediaSession.setActionHandler("seekto", (details) => {
+    setAction("play", play);
+    setAction("pause", pause);
+    setAction("previoustrack", previous);
+    setAction("nexttrack", next);
+    setAction("seekto", (details) => {
       const audio = audioRef.current;
       if (!audio || details.seekTime === undefined || !Number.isFinite(audio.duration)) return;
       audio.currentTime = Math.min(Math.max(details.seekTime, 0), audio.duration);
       setCurrentTime(audio.currentTime);
     });
     return () => {
-      navigator.mediaSession.setActionHandler("play", null);
-      navigator.mediaSession.setActionHandler("pause", null);
-      navigator.mediaSession.setActionHandler("previoustrack", null);
-      navigator.mediaSession.setActionHandler("nexttrack", null);
-      navigator.mediaSession.setActionHandler("seekto", null);
+      if (!ownedAudio || !ownsPlayback(ownedAudio)) return;
+      setAction("play", null);
+      setAction("pause", null);
+      setAction("previoustrack", null);
+      setAction("nexttrack", null);
+      setAction("seekto", null);
     };
-  }, [activeIndex, detail, next, pause, play, previous]);
+  }, [activeIndex, detail, next, pause, play, previous, status]);
 
   return {
     status,

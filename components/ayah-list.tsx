@@ -199,10 +199,10 @@ export function AyahList({
                 {showTranslation && (
                   <>
                     <span className={`ayah-translation ${karaokeActive ? "active-translation" : ""}`} lang="fr">{ayah.frenchText}</span>
-                    {detail.source.translationAuthor && <TranslationCompare primary={{ id: "primary", language: "fr", name: detail.source.translationName ?? "Traduction française", author: detail.source.translationAuthor, text: ayah.frenchText, sourceUrl: detail.source.url }} alternatives={ayah.translations ?? []} />}
                   </>
                 )}
               </button>
+                    {showTranslation && detail.source.translationAuthor && <TranslationCompare primary={{ id: "primary", language: "fr", name: detail.source.translationName ?? "Traduction française", author: detail.source.translationAuthor, text: ayah.frenchText, sourceUrl: detail.source.url }} alternatives={ayah.translations ?? []} />}
               {memorizationMode && <button type="button" className="reveal-ayah" onClick={() => setRevealedAyahs((current) => current.includes(ayah.numberInSurah) ? current.filter((item) => item !== ayah.numberInSurah) : [...current, ayah.numberInSurah])}>Masquer / révéler le texte</button>}
             </article>
           );

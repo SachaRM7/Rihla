@@ -1,7 +1,7 @@
 import type { MediaAsset, MediaVariant } from "./domain";
 
 export function siblingMediaVariants(asset: MediaAsset, variants: MediaVariant[]) {
-  return variants.filter((variant) => asset.variantIds?.includes(variant.id));
+  return variants.filter((variant) => variant.mediaAssetId === asset.id && asset.variantIds?.includes(variant.id));
 }
 
 export function findSwitchVariant(

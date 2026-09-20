@@ -64,7 +64,7 @@ export interface PlaybackPreferences {
   spokenSpeed: number;
   recitationSpeed: number;
   autoAdvanceWithinFamily: boolean;
-  allowCrossFamilyAutoAdvance: false;
+  allowCrossFamilyAutoAdvance: boolean;
 }
 
 export function skipTarget(item: PlaybackItem, positionMs: number, direction: "back" | "forward", seconds = SPOKEN_SKIP_SECONDS) {
