@@ -569,6 +569,14 @@ export function useLocalLibrary() {
     }) }));
   }, []);
 
+  const duplicatePlaylist = useCallback((playlistId: string) => {
+    setLibrary((current) => {
+      const source = current.playlists.find((item) => item.id === playlistId); if (!source) return current;
+      const now = Date.now(); const copy = { ...source, id: crypto.randomUUID(), title: (source.title + " · copie").slice(0,80), ayahKeys: [...source.ayahKeys], spokenContentIds: [...source.spokenContentIds], itemOrder: [...source.itemOrder], createdAt: now, updatedAt: now };
+      return { ...current, playlists: [copy, ...current.playlists] };
+    });
+  }, []);
+
   const setPlaylistMixedContent = useCallback((playlistId: string, allowMixedContent: boolean) => {
     setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, allowMixedContent, updatedAt: Date.now() } : playlist) }));
   }, []);
@@ -678,6 +686,7 @@ export function useLocalLibrary() {
     toggleAyahInPlaylist,
     toggleSpokenInPlaylist,
     setPlaylistMixedContent,
+    duplicatePlaylist,
     deletePlaylist,
     movePlaylistAyah,
     movePlaylistItem,
