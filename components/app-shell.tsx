@@ -152,6 +152,7 @@ export function AppShell() {
     removeHistoryItem,
     setWifiOnlyDownloads,
     setMemorizationMode,
+    setContinuousQuran,
     setMemorizationRevealDelay,
     setReadingGoal,
     setReadingGoalMode,
@@ -211,7 +212,6 @@ export function AppShell() {
   const [detailAttempt, setDetailAttempt] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
-  const [continuousQuran, setContinuousQuran] = useState(false);
   const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [quranJump, setQuranJump] = useState("");
@@ -786,8 +786,8 @@ export function AppShell() {
                         {library.memorizationMode ? "Mémorisation active" : "Mémoriser"}
                       </button>
                       {library.memorizationMode && <label className="memorization-delay"><span>Révéler après</span><select value={library.memorizationRevealDelay} onChange={(event) => setMemorizationRevealDelay(Number(event.target.value))}><option value={0}>Manuellement</option><option value={3}>3 s</option><option value={5}>5 s</option><option value={10}>10 s</option></select></label>}
-                      <button type="button" className={`secondary-action ${continuousQuran ? "active" : ""}`} onClick={() => setContinuousQuran((value) => !value)} aria-pressed={continuousQuran}>
-                        {continuousQuran ? "Vue continue" : "Vue par verset"}
+                      <button type="button" className={`secondary-action ${library.continuousQuran ? "active" : ""}`} onClick={() => setContinuousQuran(!library.continuousQuran)} aria-pressed={library.continuousQuran}>
+                        {library.continuousQuran ? "Vue continue" : "Vue par verset"}
                       </button>
                       <button
                         type="button"
@@ -821,7 +821,7 @@ export function AppShell() {
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
                 showTranslation={library.showTranslation}
-                        continuousView={continuousQuran}
+                        continuousView={library.continuousQuran}
                         memorizationMode={library.memorizationMode}
                         memorizationRevealDelay={library.memorizationRevealDelay}
                         onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); }}
