@@ -22,6 +22,7 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [recent, setRecent] = useState<string[]>([]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const clearRecent = () => { setRecent([]); try { localStorage.removeItem("rihla.search.recent"); } catch {} };
 
   useEffect(() => {
     try {
@@ -80,7 +81,7 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
     if (recent.length === 0) return null;
     return (
       <section className="recent-searches" aria-labelledby="recent-search-title">
-        <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2 id="recent-search-title">Recherches récentes</h2></div></div>
+        <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2 id="recent-search-title">Recherches récentes</h2></div><button type="button" className="text-action" onClick={clearRecent}>Effacer</button></div>
         <div className="recent-search-chips">
           {recent.map((item) => <button type="button" key={item} onClick={() => onQueryChange?.(item)}>{item}</button>)}
         </div>
@@ -138,7 +139,7 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
               <span className="search-hit-reference">{result.surahNumber}:{result.numberInSurah}</span>
               <span className="search-hit-copy">
                 <strong>{result.surahEnglishName}</strong>
-                <span>{result.frenchText}</span>
+                <span>{result.frenchText}</span><small>Correspondance dans la traduction française</small>
               </span>
               <span className="search-hit-action" aria-hidden="true"><BookOpenText size={17} /><ChevronRight size={16} /></span>
             </button>
