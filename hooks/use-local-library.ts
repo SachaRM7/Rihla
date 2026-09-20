@@ -394,10 +394,10 @@ export function useLocalLibrary() {
   const clearSpokenProgress = useCallback(() => setLibrary((current) => ({ ...current, spokenProgress: [] })), []);
 
   const saveSpokenProgress = useCallback((contentId: string, positionMs: number, durationMs: number) => {
-    setLibrary((current) => ({
-      ...current,
-      spokenProgress: [{ contentId, positionMs: Math.max(0, Math.round(positionMs)), durationMs: Math.max(0, Math.round(durationMs)), updatedAt: Date.now() }, ...current.spokenProgress.filter((item) => item.contentId !== contentId)].slice(0, 100),
-    }));
+    setLibrary((current) => {
+      if (!current.historyEnabled) return current;
+      return { ...current, spokenProgress: [{ contentId, positionMs: Math.max(0, Math.round(positionMs)), durationMs: Math.max(0, Math.round(durationMs)), updatedAt: Date.now() }, ...current.spokenProgress.filter((item) => item.contentId !== contentId)].slice(0, 100) };
+    });
   }, []);
 
   const setPlaybackQueue = useCallback((playbackQueue: QueueEntry[]) => setLibrary((current) => ({ ...current, playbackQueue: playbackQueue.slice(0, 100) })), []);
