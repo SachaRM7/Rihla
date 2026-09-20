@@ -156,6 +156,7 @@ export function AppShell() {
     clearHistory,
     setHistoryEnabled,
     removeHistoryItem,
+    removeSpokenProgress,
     setWifiOnlyDownloads,
     setMemorizationMode,
     setContinuousQuran,
@@ -1000,7 +1001,7 @@ export function AppShell() {
                   const content=SPOKEN_CATALOG.contents.find((item)=>item.id===progress.contentId);
                   if(!content)return null;
                   const percent=progress.durationMs>0?Math.min(100,(progress.positionMs/progress.durationMs)*100):0;
-                  return <button type="button" className="history-item" key={progress.contentId} onClick={()=>playSpokenContent(content)}><span className="history-reference"><Play size={16}/></span><span className="history-copy"><strong>{content.title}</strong><small>{formatHistoryDate(progress.updatedAt)} · reprise à {formatPlaybackTime(progress.positionMs)}</small><progress max="100" value={percent} aria-label={`Progression de ${Math.round(percent)} %`}/></span><ChevronRight size={18}/></button>;
+                  return <div className="history-row" key={progress.contentId}><button type="button" className="history-item" onClick={()=>playSpokenContent(content)}><span className="history-reference"><Play size={16}/></span><span className="history-copy"><strong>{content.title}</strong><small>{formatHistoryDate(progress.updatedAt)} · reprise à {formatPlaybackTime(progress.positionMs)}</small><progress max="100" value={percent} aria-label={`Progression de ${Math.round(percent)} %`}/></span><ChevronRight size={18}/></button><button type="button" className="history-remove" aria-label={`Retirer ${content.title} de l’historique`} onClick={()=>removeSpokenProgress(progress.contentId)}><Trash2 size={15}/></button></div>;
                 })}</div>
               </section>}
 
