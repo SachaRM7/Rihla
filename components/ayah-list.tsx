@@ -135,6 +135,7 @@ export function AyahList({
               ref={isActive ? activeRef : undefined}
               className={`ayah-card ${isActive ? "active" : ""} ${continuousView ? "continuous" : ""} ${revealedAyahs.includes(ayah.numberInSurah) ? "revealed" : ""}`}
               aria-current={isActive ? "true" : undefined}
+              data-ayah={ayah.numberInSurah}
             >
               <div className="ayah-meta">
                 <span>{detail.surah.number}:{ayah.numberInSurah}</span>
