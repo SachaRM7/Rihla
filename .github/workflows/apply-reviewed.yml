@@ -2,7 +2,7 @@ name: Verify reviewed recovery
 on:
   push:
     branches: [quality/verified-playback-20260920]
-    paths: ['.quality/**', '.github/workflows/apply-reviewed.yml']
+    paths: ['.quality/**', '.github/workflows/apply-reviewed.yml', 'scripts/test-browser.mjs']
   workflow_dispatch:
 permissions:
   contents: write
@@ -20,18 +20,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Apply reviewed source edits
-        run: |
-          python .quality/repair-source.py
-          python .quality/repair-playback.py
-          if [ -f .quality/followup.py ]; then python .quality/followup.py; fi
-          git diff --check
+      - name: Apply final reviewed lifecycle guard
+        run: python .quality/finalize.py
       - name: Install locked dependencies
         run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit --pretty false
       - name: Regression tests
         run: node scripts/test-regressions.mjs
+      - name: Browser integration tests
+        run: node scripts/test-browser.mjs
       - name: Build Cloudflare Worker
         run: npx vinext build
       - name: Commit only verified source to staging branch
@@ -39,7 +37,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app components hooks lib scripts
+          git diff --cached --check
           if ! git diff --cached --quiet; then
-            git commit -m 'fix: verify mixed playlist playback end to end'
+            git commit -m 'fix: verify playlist lifecycle in browser before production'
             git push origin HEAD:quality/verified-playback-20260920
           fi
