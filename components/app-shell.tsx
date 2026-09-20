@@ -1298,6 +1298,8 @@ export function AppShell() {
         />
       )}
 
+      {activePlaylistRun && (()=>{const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId);if(!playlist)return null;return <div className="playlist-run-bar" role="status"><div><ListMusic size={16}/><span><strong>{playlist.title}</strong><small>{activePlaylistRun.index+1} / {playlist.itemOrder.length}</small></span></div><button type="button" onClick={()=>{setActivePlaylistRun(null);pausePlayback();setSpokenNowPlaying(null);}}>Arrêter</button></div>})()}
+
       {activeView === "library" && library.playbackQueue.length > 0 && <div className="queue-drawer"><PlaybackQueue queue={library.playbackQueue} onPlay={(entry)=>{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===entry.item.contentId);if(content)playSpokenContent(content);}} onRemove={(id)=>setPlaybackQueue(removeQueueEntry(library.playbackQueue,id))} onMove={(id,toIndex)=>setPlaybackQueue(moveQueueEntry(library.playbackQueue,id,toIndex))} onClear={()=>setPlaybackQueue([])} /></div>}
       
             {spokenNowPlaying && <SpokenPlayer
