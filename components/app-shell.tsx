@@ -996,7 +996,7 @@ export function AppShell() {
 
               {(librarySection === "all" || librarySection === "history") && library.spokenProgress.length > 0 && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Contenus parlés</p><h2>À reprendre</h2></div><span className="section-count">{library.spokenProgress.length}</span></div>
-                <div className="history-list">{library.spokenProgress.sort((a,b)=>b.updatedAt-a.updatedAt).map((progress)=>{
+                <div className="history-list">{[...library.spokenProgress].sort((a,b)=>b.updatedAt-a.updatedAt).map((progress)=>{
                   const content=SPOKEN_CATALOG.contents.find((item)=>item.id===progress.contentId);
                   if(!content)return null;
                   const percent=progress.durationMs>0?Math.min(100,(progress.positionMs/progress.durationMs)*100):0;
