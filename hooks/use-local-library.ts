@@ -270,7 +270,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     listeningHistory,
     ayahNotes,
     historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
-    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item): item is PersonalPlaylist => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100) : [],
+    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item) => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100).map((item) => ({ ...(item as PersonalPlaylist), spokenContentIds: Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.filter((id): id is string => typeof id === "string") : [], allowMixedContent: (item as PersonalPlaylist).allowMixedContent === true })) : [],
     quranReadingSurah: Number.isInteger(candidate.quranReadingSurah) && candidate.quranReadingSurah! >= 1 && candidate.quranReadingSurah! <= 114 ? candidate.quranReadingSurah! : 1,
     quranReadingAyah: Number.isInteger(candidate.quranReadingAyah) && candidate.quranReadingAyah! >= 1 ? candidate.quranReadingAyah! : 1,
     quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
