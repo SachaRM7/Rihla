@@ -1,7 +1,7 @@
 name: Quality checks
 on:
   push:
-    branches: [main, 'quality/**']
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -18,36 +18,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Preserve public source snapshot for verification
-        uses: actions/upload-artifact@v4
-        with:
-          name: source-validation
-          retention-days: 1
-          path: |
-            app
-            components
-            hooks
-            lib
-            scripts
-            public
-            db
-            docs
-            design-system
-            *.json
-            *.jsonc
-            *.ts
-            *.mjs
-            README.md
-            RESSOURCES.md
-          if-no-files-found: error
       - name: Install locked dependencies
         run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit --pretty false
       - name: Regression tests
-        run: |
-          if [ -f scripts/test-regressions.mjs ]; then
-            node scripts/test-regressions.mjs
-          fi
+        run: node scripts/test-regressions.mjs
       - name: Build Cloudflare Worker
         run: npx vinext build
