@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
 import { AyahNoteDialog } from "@/components/ayah-note-dialog";
 import { CreatorProfile } from "@/components/creator-profile";
+import { PlaybackQueue } from "@/components/playback-queue";
 import { OfflineDownloadControl } from "@/components/offline-download-control";
 import { SpokenPlayer } from "@/components/spoken-player";
 import { SeriesProfile } from "@/components/series-profile";
@@ -33,6 +34,8 @@ import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
 import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
+import { moveQueueEntry, removeQueueEntry } from "@/lib/playback-queue";
+import type { QueueEntry } from "@/lib/playback";
 import { preferredMediaVariant } from "@/lib/media-variants";
 import { canDownloadOffline } from "@/lib/offline";
 import { publicContents } from "@/lib/catalog";
@@ -161,6 +164,7 @@ export function AppShell() {
     setReadingGoalMode,
     setSpokenPlaybackRate,
     setCrossFamilyAutoAdvance,
+    setPlaybackQueue,
     saveSpokenProgress,
     toggleFollow,
     setFollowNotification,
@@ -508,6 +512,14 @@ export function AppShell() {
   const hasSpokenContents = spokenContents.length > 0;
   const selectedCreator = SPOKEN_CATALOG.creators.find((item) => item.id === selectedCreatorId) ?? null;
   const selectedSeries = SPOKEN_CATALOG.series.find((item) => item.id === selectedSeriesId) ?? null;
+  const queueSpokenContent = (content: ContentItem) => {
+    const asset = content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item&&item.kind==="AUDIO"));
+    if(!asset) return;
+    const entry: QueueEntry = { id: crypto.randomUUID(), addedAt: new Date().toISOString(), item: { id: content.id, family: "SPOKEN", title: content.title, subtitle: content.description, mediaUrl: asset.url, durationMs: asset.durationMs, contentId: content.id } };
+    setPlaybackQueue([...library.playbackQueue, entry]);
+    setShareMessage("Ajouté à la file d’attente");
+  };
+
   const playSpokenContent = (content: ContentItem) => {
     const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
     if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
@@ -1263,7 +1275,9 @@ export function AppShell() {
         />
       )}
 
-      {spokenNowPlaying && <SpokenPlayer
+      {activeView === "library" && library.playbackQueue.length > 0 && <div className="queue-drawer"><PlaybackQueue queue={library.playbackQueue} onPlay={(entry)=>{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===entry.item.contentId);if(content)playSpokenContent(content);}} onRemove={(id)=>setPlaybackQueue(removeQueueEntry(library.playbackQueue,id))} onMove={(id,toIndex)=>setPlaybackQueue(moveQueueEntry(library.playbackQueue,id,toIndex))} onClear={()=>setPlaybackQueue([])} /></div>}
+      
+            {spokenNowPlaying && <SpokenPlayer
         content={spokenNowPlaying.content}
         asset={spokenNowPlaying.asset}
         variants={SPOKEN_CATALOG.variants ?? []}
