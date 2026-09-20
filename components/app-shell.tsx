@@ -911,7 +911,9 @@ export function AppShell() {
                   if (!playlist) return null;
                   return <div className="playlist-detail">
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
-                    <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button></div></div>
+                    <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length + playlist.spokenContentIds.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button></div></div>
+                    <button type="button" role="switch" aria-checked={playlist.allowMixedContent} className="setting-toggle compact-toggle" onClick={()=>setPlaylistMixedContent(playlist.id,!playlist.allowMixedContent)}><span className="setting-copy"><strong>Autoriser le mélange des formats</strong><small>Coran et contenus parlés dans cette même playlist</small></span><span className="switch-track" aria-hidden="true"><i/></span></button>
+                    {playlist.spokenContentIds.length > 0 && <div className="spoken-playlist-items">{playlist.spokenContentIds.map((contentId)=>{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===contentId);if(!content)return null;return <div key={contentId}><button type="button" onClick={()=>playSpokenContent(content)}><Play size={15}/><span>{content.title}</span></button><button type="button" aria-label={`Retirer ${content.title}`} onClick={()=>toggleSpokenInPlaylist(playlist.id,contentId)}><Trash2 size={14}/></button></div>})}</div>}
                     {playlist.ayahKeys.length ? <div className="saved-ayah-grid">
                       {playlist.ayahKeys.map((key, index) => {
                         const [surahNumber, ayahNumber] = key.split(":").map(Number);
@@ -931,7 +933,7 @@ export function AppShell() {
                   </div>;
                 })() : library.playlists.length ? <div className="library-grid">
                   {library.playlists.map((playlist) => <div className="playlist-row" key={playlist.id}>
-                    <button type="button" onClick={() => setSelectedPlaylistId(playlist.id)}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length} passage{playlist.ayahKeys.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
+                    <button type="button" onClick={() => setSelectedPlaylistId(playlist.id)}><ListMusic size={18} /><div><strong>{playlist.title}</strong><small>{playlist.ayahKeys.length + playlist.spokenContentIds.length} élément{playlist.ayahKeys.length + playlist.spokenContentIds.length > 1 ? "s" : ""}</small></div><ChevronRight size={18} /></button>
                     <button type="button" className="playlist-delete" aria-label={`Supprimer ${playlist.title}`} onClick={() => { if (window.confirm(`Supprimer la playlist « ${playlist.title} » ?`)) deletePlaylist(playlist.id); }}>×</button>
                   </div>)}
                 </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Aucune playlist</strong><p>Créez une collection personnelle pour organiser vos écoutes.</p></div>}
