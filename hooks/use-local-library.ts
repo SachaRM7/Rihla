@@ -603,6 +603,7 @@ export function useLocalLibrary() {
       playlists: current.playlists.map((playlist) => playlist.id === playlistId ? {
         ...playlist,
         ayahKeys: playlist.ayahKeys.filter((item) => item !== key),
+        itemOrder: playlist.itemOrder.filter((item) => item !== `quran:${key}`),
         updatedAt: Date.now(),
       } : playlist),
     }));
