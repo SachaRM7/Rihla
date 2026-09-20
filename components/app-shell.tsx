@@ -33,6 +33,7 @@ import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
 import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
+import { preferredMediaVariant } from "@/lib/media-variants";
 import { canDownloadOffline } from "@/lib/offline";
 import { publicContents } from "@/lib/catalog";
 import { SPOKEN_CATALOG } from "@/lib/spoken-catalog";
@@ -510,7 +511,8 @@ export function AppShell() {
   const playSpokenContent = (content: ContentItem) => {
     const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
     if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
-    setSpokenNowPlaying({ content, asset });
+    const preferred = preferredMediaVariant(asset, SPOKEN_CATALOG.variants ?? [], library.audioQuality);
+    setSpokenNowPlaying({ content, asset: preferred ? { ...asset, url: preferred.url } : asset });
   };
 
   const featuredSurahs = useMemo(
