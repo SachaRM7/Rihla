@@ -88,9 +88,10 @@ export function useQuranPlayer({
   }, [repeatMode, resetRepeatProgress]);
 
   useEffect(() => {
+    cancelDelayedPlayback();
     const frame = window.requestAnimationFrame(resetStudyLoopProgress);
     return () => window.cancelAnimationFrame(frame);
-  }, [studyLoop, resetStudyLoopProgress]);
+  }, [studyLoop, resetStudyLoopProgress, cancelDelayedPlayback]);
 
   const loadAtIndex = useCallback((index: number, autoplay: boolean) => {
     const audio = audioRef.current;
@@ -126,6 +127,7 @@ export function useQuranPlayer({
     audioRef.current = audio;
     let animationFrame: number | null = null;
     let lastClockUpdate = 0;
+    let endedSource: string | null = null;
 
     const stopClock = () => {
       if (animationFrame !== null) cancelAnimationFrame(animationFrame);
@@ -169,6 +171,7 @@ export function useQuranPlayer({
       else if (audio.src) setStatus("ready");
     };
     const onPlay = () => {
+      endedSource = null;
       claimPlayback(audio, () => { cancelDelayedPlayback(); playWhenLoadedRef.current = false; audio.pause(); });
       playWhenLoadedRef.current = true;
       setStatus("playing");
@@ -188,12 +191,14 @@ export function useQuranPlayer({
       setLoadedSourceUrl("");
     };
     const onEnded = () => {
+      if (!audio.ended || !ownsPlayback(audio) || endedSource === audio.src) return;
+      endedSource = audio.src;
       stopClock();
       const { stopAtEnd, onStopAtEndConsumed, onSurahEnded, onAyahEnded } = completionRef.current;
       if (stopAtEnd === "ayah" || (stopAtEnd === "surah" && indexRef.current >= (detailRef.current?.ayahs.length ?? 1) - 1)) {
         playWhenLoadedRef.current = false;
         setStatus("paused");
-        setCurrentTime(0);
+        setCurrentTime(Number.isFinite(audio.duration) ? audio.duration : audio.currentTime);
         onStopAtEndConsumed?.();
         return;
       }
@@ -298,7 +303,7 @@ export function useQuranPlayer({
       if (!currentDetail || nextIndex >= currentDetail.ayahs.length) {
         playWhenLoadedRef.current = false;
         setStatus("paused");
-        setCurrentTime(0);
+        setCurrentTime(Number.isFinite(audio.duration) ? audio.duration : audio.currentTime);
         onSurahEnded?.();
         return;
       }
