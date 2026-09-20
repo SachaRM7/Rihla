@@ -373,6 +373,7 @@ export function AppShell() {
     studyLoop: library.studyLoop,
     stopAtEnd: sleepAtEnd,
     onStopAtEndConsumed: () => setSleepAtEnd(null),
+    onSurahEnded: () => { if (activePlaylistRun) advancePlaylist(); },
   });
   const {
     loadedSourceUrl,
