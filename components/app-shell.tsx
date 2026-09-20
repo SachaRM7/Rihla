@@ -230,6 +230,7 @@ export function AppShell() {
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [downloadStates, setDownloadStates] = useState<Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">>({});
+  const [activePlaylistRun, setActivePlaylistRun] = useState<{playlistId:string;index:number}|null>(null);
   const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
@@ -522,6 +523,21 @@ export function AppShell() {
     const entry: QueueEntry = { id: crypto.randomUUID(), addedAt: new Date().toISOString(), item: { id: content.id, family: "SPOKEN", title: content.title, subtitle: content.description, mediaUrl: asset.url, durationMs: asset.durationMs, contentId: content.id } };
     setPlaybackQueue([...library.playbackQueue, entry]);
     setShareMessage("Ajouté à la file d’attente");
+  };
+
+  const playPlaylistItem = (playlistId:string,index:number) => {
+    const playlist=library.playlists.find((item)=>item.id===playlistId); const key=playlist?.itemOrder[index]; if(!playlist||!key)return;
+    setActivePlaylistRun({playlistId,index});
+    if(key.startsWith("quran:")){const [surah,ayah]=key.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true);return;}
+    const content=SPOKEN_CATALOG.contents.find((item)=>item.id===key.slice(7)); if(content)playSpokenContent(content);
+  };
+  const advancePlaylist = () => {
+    if(!activePlaylistRun)return; const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId); if(!playlist)return;
+    const nextIndex=activePlaylistRun.index+1; if(nextIndex>=playlist.itemOrder.length){setActivePlaylistRun(null);return;}
+    const current=playlist.itemOrder[activePlaylistRun.index]; const next=playlist.itemOrder[nextIndex];
+    const crosses=current.startsWith("quran:")!==next.startsWith("quran:");
+    if(crosses && !playlist.allowMixedContent){setActivePlaylistRun(null);setShareMessage("Lecture arrêtée avant le changement de format");return;}
+    playPlaylistItem(playlist.id,nextIndex);
   };
 
   const playSpokenContent = (content: ContentItem) => {
@@ -913,7 +929,7 @@ export function AppShell() {
                   return <div className="playlist-detail">
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
                     <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length + playlist.spokenContentIds.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button></div></div>
-                    {playlist.itemOrder.length > 0 && <button type="button" className="primary-action playlist-play-all" onClick={()=>{const first=playlist.itemOrder[0];if(first.startsWith("quran:")){const [surah,ayah]=first.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true);}else{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===first.slice(7));if(content)playSpokenContent(content);}}}><Play size={16}/>Lire la playlist</button>}
+                    {playlist.itemOrder.length > 0 && <button type="button" className="primary-action playlist-play-all" onClick={()=>playPlaylistItem(playlist.id,0)}}><Play size={16}/>Lire la playlist</button>}
                     <button type="button" role="switch" aria-checked={playlist.allowMixedContent} className="setting-toggle compact-toggle" onClick={()=>setPlaylistMixedContent(playlist.id,!playlist.allowMixedContent)}><span className="setting-copy"><strong>Autoriser le mélange des formats</strong><small>Coran et contenus parlés dans cette même playlist</small></span><span className="switch-track" aria-hidden="true"><i/></span></button>
                     {playlist.itemOrder.length > 0 ? <div className="mixed-playlist-items">{playlist.itemOrder.map((itemKey,index)=>{
                       const isQuran=itemKey.startsWith("quran:");
@@ -1293,6 +1309,7 @@ export function AppShell() {
         chapters={(SPOKEN_CATALOG.chapters ?? []).filter((item) => item.contentId === spokenNowPlaying.content.id)}
         initialPositionMs={library.spokenProgress.find((item) => item.contentId === spokenNowPlaying.content.id)?.positionMs ?? 0}
         onProgress={(positionMs, durationMs) => saveSpokenProgress(spokenNowPlaying.content.id, positionMs, durationMs)}
+        onEnded={advancePlaylist}
         onReportIssue={() => setShareMessage("Signalement enregistré localement · envoi serveur à connecter")}
         onClose={() => setSpokenNowPlaying(null)}
       />}
