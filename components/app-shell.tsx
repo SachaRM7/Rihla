@@ -1175,7 +1175,7 @@ export function AppShell() {
                   setHistoryEnabled(!library.historyEnabled);
                   showShareMessage(library.historyEnabled ? "Historique suspendu" : "Historique activé");
                 }}>
-                  <span className="setting-copy"><strong>Enregistrer l’historique</strong><small>{library.historyEnabled ? "Les prochaines écoutes seront ajoutées" : "Les nouvelles écoutes ne seront pas ajoutées"}</small></span>
+                  <span className="setting-copy"><strong>Enregistrer l’historique</strong><small>{library.historyEnabled ? "Les prochaines écoutes Coran et contenus parlés seront ajoutées" : "Aucune nouvelle écoute ne sera ajoutée"}</small></span>
                   <span className="switch-track" aria-hidden="true"><i /></span>
                 </button>
                 <div className="data-settings-actions">
@@ -1200,7 +1200,7 @@ export function AppShell() {
                     }} />
                   </label>
                   <button type="button" className="secondary-action" onClick={() => {
-                    if (window.confirm("Effacer tout l’historique d’écoute sur cet appareil ?")) {
+                    if (window.confirm("Effacer tout l’historique d’écoute, Coran et contenus parlés, sur cet appareil ?")) {
                       clearHistory();
                       showShareMessage("Historique effacé");
                     }
