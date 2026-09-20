@@ -73,9 +73,13 @@ export function AyahList({
   }, [activeIndex, detail.ayahs, memorizationMode, memorizationRevealDelay]);
 
   useEffect(() => {
-    if (!autoScroll || followSuspended) return;
+    if (!isPlaying && followSuspended) setFollowSuspended(false);
+  }, [isPlaying, followSuspended]);
+
+  useEffect(() => {
+    if (!autoScroll || !isPlaying || followSuspended) return;
     activeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [activeIndex, autoScroll, followSuspended]);
+  }, [activeIndex, autoScroll, followSuspended, isPlaying]);
 
   return (
     <section className="ayah-section" aria-labelledby="ayah-list-title">
@@ -113,8 +117,9 @@ export function AyahList({
 
       <div
         className="ayah-list"
-        onWheel={() => setFollowSuspended(true)}
-        onTouchMove={() => setFollowSuspended(true)}
+        onWheel={() => { if (autoScroll && isPlaying) setFollowSuspended(true); }}
+        onTouchMove={() => { if (autoScroll && isPlaying) setFollowSuspended(true); }}
+        onPointerDown={(event) => { if (autoScroll && isPlaying && event.pointerType !== "mouse") setFollowSuspended(true); }}
       >
         {detail.ayahs.map((ayah, index) => {
           const key = `${detail.surah.number}:${ayah.numberInSurah}`;
