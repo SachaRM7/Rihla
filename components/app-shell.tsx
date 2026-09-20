@@ -528,7 +528,7 @@ export function AppShell() {
 
   const playPlaylistItem = (playlistId:string,index:number) => {
     const playlist=library.playlists.find((item)=>item.id===playlistId); const key=playlist?.itemOrder[index]; if(!playlist||!key)return;
-    setActivePlaylistRun({playlistId,index});
+    pausePlayback(); setSpokenNowPlaying(null); setActivePlaylistRun({playlistId,index});
     if(key.startsWith("quran:")){const [surah,ayah]=key.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true);return;}
     const content=SPOKEN_CATALOG.contents.find((item)=>item.id===key.slice(7)); if(content)playSpokenContent(content);
   };
