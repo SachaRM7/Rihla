@@ -1,5 +1,6 @@
 "use client";
 
+import type { QueueEntry } from "@/lib/playback";
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
 import {
@@ -96,6 +97,7 @@ export type LocalLibrary = {
   spokenPlaybackRate: PlaybackRate;
   spokenProgress: SpokenProgress[];
   allowCrossFamilyAutoAdvance: boolean;
+  playbackQueue: QueueEntry[];
 };
 
 const DEFAULT_LIBRARY: LocalLibrary = {
@@ -139,6 +141,7 @@ const DEFAULT_LIBRARY: LocalLibrary = {
   spokenPlaybackRate: 1,
   spokenProgress: [],
   allowCrossFamilyAutoAdvance: false,
+  playbackQueue: [],
 };
 
 function sanitizeAyahNote(value: unknown): AyahNote | null {
@@ -296,6 +299,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     spokenPlaybackRate: isPlaybackRate(candidate.spokenPlaybackRate) ? candidate.spokenPlaybackRate : 1,
     spokenProgress: Array.isArray(candidate.spokenProgress) ? candidate.spokenProgress.filter((item): item is SpokenProgress => Boolean(item && typeof item === "object" && typeof (item as SpokenProgress).contentId === "string" && Number.isFinite((item as SpokenProgress).positionMs))).slice(0, 100) : [],
     allowCrossFamilyAutoAdvance: typeof candidate.allowCrossFamilyAutoAdvance === "boolean" ? candidate.allowCrossFamilyAutoAdvance : false,
+    playbackQueue: Array.isArray(candidate.playbackQueue) ? candidate.playbackQueue.filter((entry): entry is QueueEntry => Boolean(entry && typeof entry === "object" && typeof (entry as QueueEntry).id === "string" && (entry as QueueEntry).item && typeof (entry as QueueEntry).item.title === "string")).slice(0, 100) : [],
   };
 }
 
@@ -392,6 +396,8 @@ export function useLocalLibrary() {
       spokenProgress: [{ contentId, positionMs: Math.max(0, Math.round(positionMs)), durationMs: Math.max(0, Math.round(durationMs)), updatedAt: Date.now() }, ...current.spokenProgress.filter((item) => item.contentId !== contentId)].slice(0, 100),
     }));
   }, []);
+
+  const setPlaybackQueue = useCallback((playbackQueue: QueueEntry[]) => setLibrary((current) => ({ ...current, playbackQueue: playbackQueue.slice(0, 100) })), []);
 
   const setCrossFamilyAutoAdvance = useCallback((allowCrossFamilyAutoAdvance: boolean) => setLibrary((current) => ({ ...current, allowCrossFamilyAutoAdvance })), []);
 
@@ -656,6 +662,7 @@ export function useLocalLibrary() {
     setReadingGoalMode,
     setSpokenPlaybackRate,
     setCrossFamilyAutoAdvance,
+    setPlaybackQueue,
     saveSpokenProgress,
     toggleFollow,
     setFollowNotification,
