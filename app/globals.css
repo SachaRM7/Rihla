@@ -476,3 +476,5 @@ html[data-translation-size="large"] .reading-preview span{font-size:1.05rem}
 .translation-credit{display:block;color:var(--faint);font-size:.65rem}.translation-compare{display:grid;gap:7px}.translation-compare>.text-action{justify-self:start}.translation-options{display:grid;gap:7px}.translation-options article{display:grid;gap:5px;border-left:2px solid var(--line-strong);padding:6px 10px}.translation-options p{margin:0;color:var(--cream);font-size:.8rem;line-height:1.55}.translation-options footer{display:flex;gap:6px;color:var(--faint);font-size:.65rem}.translation-options footer strong{color:var(--muted)}
 
 .translation-options footer a{color:var(--olive-strong);text-decoration:none;font-weight:700}
+
+@media(max-width:520px){.surah-select{grid-template-columns:34px minmax(0,1fr) auto}.surah-label{min-width:0}.surah-label strong,.surah-label small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.surah-arabic-name{max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
