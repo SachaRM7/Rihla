@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Pause, Play, RotateCcw, X } from "lucide-react";
+import { LoaderCircle, Pause, Play, RotateCcw, Timer, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ContentItem, MediaAsset, MediaChapter, Transcript, TranscriptSegment } from "@/lib/domain";
 import type { PlaybackRate } from "@/lib/preferences";
@@ -17,7 +17,10 @@ export function SpokenPlayer({ content, asset, playbackRate, transcript, transcr
   const [position,setPosition]=useState(initialPositionMs/1000);
   const [duration,setDuration]=useState((asset.durationMs??0)/1000);
   const [error,setError]=useState<string|null>(null);
+  const [sleepMinutes,setSleepMinutes]=useState<number|null>(null);
+  const [sleepAtEnd,setSleepAtEnd]=useState(false);
   const lastSavedRef = useRef(initialPositionMs);
+  const sleepDeadlineRef = useRef<number|null>(null);
   useEffect(()=>{ const audio=audioRef.current; if(!audio)return; audio.playbackRate=playbackRate; },[playbackRate]);
   useEffect(()=>{
     if(typeof navigator==="undefined" || !("mediaSession" in navigator)) return;
@@ -29,6 +32,12 @@ export function SpokenPlayer({ content, asset, playbackRate, transcript, transcr
     navigator.mediaSession.setActionHandler("seekto",(details)=>{if(details.seekTime!==undefined)seek(details.seekTime);});
     return ()=>{["play","pause","seekbackward","seekforward","seekto"].forEach((action)=>{try{navigator.mediaSession.setActionHandler(action as MediaSessionAction,null)}catch{}});};
   },[content.id]);
+  useEffect(()=>{
+    if(sleepMinutes===null){sleepDeadlineRef.current=null;return;}
+    sleepDeadlineRef.current=Date.now()+sleepMinutes*60_000;
+    const timer=window.setInterval(()=>{if(sleepDeadlineRef.current&&Date.now()>=sleepDeadlineRef.current){audioRef.current?.pause();setSleepMinutes(null);}},1000);
+    return()=>window.clearInterval(timer);
+  },[sleepMinutes]);
   const seek=(seconds:number)=>{const audio=audioRef.current;if(!audio)return;audio.currentTime=Math.min(Math.max(seconds,0),audio.duration||seconds);setPosition(audio.currentTime);};
   return <section className="spoken-player" aria-label="Lecteur de contenu parlé">
     <audio ref={audioRef} src={asset.url} preload="metadata" onLoadedMetadata={(e)=>{const a=e.currentTarget;a.currentTime=Math.min(initialPositionMs/1000,a.duration||0);setDuration(a.duration||0);setLoading(false);}} onTimeUpdate={(e)=>{
@@ -36,11 +45,12 @@ export function SpokenPlayer({ content, asset, playbackRate, transcript, transcr
       const positionMs=e.currentTarget.currentTime*1000; const durationMs=(e.currentTarget.duration||0)*1000;
       setPosition(e.currentTarget.currentTime);
       if(Math.abs(positionMs-lastSavedRef.current)>=5000){lastSavedRef.current=positionMs;onProgress?.(positionMs,durationMs);}
-    }} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);if(typeof navigator!=="undefined"&&"mediaSession" in navigator)navigator.mediaSession.playbackState="paused";}} onWaiting={()=>setLoading(true)} onCanPlay={()=>{setLoading(false);setError(null);}} onError={()=>{setLoading(false);setPlaying(false);setError("Impossible de charger cet audio.");}} onEnded={()=>{setPlaying(false);onProgress?.(duration*1000,duration*1000);}}/>
+    }} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);if(typeof navigator!=="undefined"&&"mediaSession" in navigator)navigator.mediaSession.playbackState="paused";}} onWaiting={()=>setLoading(true)} onCanPlay={()=>{setLoading(false);setError(null);}} onError={()=>{setLoading(false);setPlaying(false);setError("Impossible de charger cet audio.");}} onEnded={()=>{setPlaying(false);onProgress?.(duration*1000,duration*1000);if(sleepAtEnd){setSleepAtEnd(false);audioRef.current?.pause();}}}/>
     <header><div><p className="eyebrow">En cours</p><h2>{content.title}</h2></div><button type="button" className="icon-button" aria-label="Fermer le lecteur" onClick={()=>{onProgress?.(position*1000,duration*1000);onClose();}}><X size={18}/></button></header>
     <input type="range" min={0} max={duration||0} step={1} value={Math.min(position,duration||0)} onChange={(e)=>seek(Number(e.target.value))} aria-label="Position dans le contenu"/>
     {error && <div className="audio-error" role="alert"><span>{error}</span><button type="button" onClick={()=>{setError(null);audioRef.current?.load();}}><RotateCcw size={14}/>Réessayer</button></div>}
     <div className="spoken-player-controls"><SpokenSkipControls onBack={()=>seek(position-15)} onForward={()=>seek(position+15)}/><button type="button" className="main-player-button" onClick={()=>{const a=audioRef.current;if(!a)return;if(a.paused)void a.play();else a.pause();}}>{loading?<LoaderCircle className="spin" size={24}/>:playing?<Pause size={24}/>:<Play size={24}/>}</button></div>
+    <div className="spoken-sleep"><span><Timer size={15}/>Minuterie</span><select value={sleepMinutes ?? ""} onChange={(e)=>{setSleepAtEnd(false);setSleepMinutes(e.target.value?Number(e.target.value):null)}}><option value="">Désactivée</option><option value={10}>10 min</option><option value={20}>20 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select><button type="button" className={sleepAtEnd?"active":""} aria-pressed={sleepAtEnd} onClick={()=>{setSleepMinutes(null);setSleepAtEnd(!sleepAtEnd)}}>Fin de l’épisode</button></div>
     {chapters.length > 0 && <MediaChapters chapters={chapters} positionMs={position*1000} onSeek={(ms)=>seek(ms/1000)} />}
     {transcript && transcriptSegments.length > 0 && <TimedTranscript transcript={transcript} segments={transcriptSegments} positionMs={position*1000} onSeek={(ms)=>seek(ms/1000)} onReportIssue={onReportIssue} />}
   </section>;
