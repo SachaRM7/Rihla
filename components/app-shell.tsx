@@ -534,10 +534,10 @@ export function AppShell() {
   };
   const advancePlaylist = () => {
     if(!activePlaylistRun)return; const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId); if(!playlist)return;
-    const nextIndex=activePlaylistRun.index+1; if(nextIndex>=playlist.itemOrder.length){setActivePlaylistRun(null);return;}
+    const nextIndex=activePlaylistRun.index+1; if(nextIndex>=playlist.itemOrder.length){setActivePlaylistRun(null);setShareMessage("Playlist terminée");return;}
     const current=playlist.itemOrder[activePlaylistRun.index]; const next=playlist.itemOrder[nextIndex];
     const crosses=current.startsWith("quran:")!==next.startsWith("quran:");
-    if(crosses && !playlist.allowMixedContent){setActivePlaylistRun(null);setShareMessage("Lecture arrêtée avant le changement de format");return;}
+    if(crosses && !playlist.allowMixedContent){setActivePlaylistRun(null);pausePlayback();setSpokenNowPlaying(null);setShareMessage("Lecture arrêtée avant le changement de format");return;}
     playPlaylistItem(playlist.id,nextIndex);
   };
 
