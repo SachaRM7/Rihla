@@ -1266,6 +1266,7 @@ export function AppShell() {
       {spokenNowPlaying && <SpokenPlayer
         content={spokenNowPlaying.content}
         asset={spokenNowPlaying.asset}
+        variants={SPOKEN_CATALOG.variants ?? []}
         playbackRate={library.spokenPlaybackRate}
         transcript={SPOKEN_CATALOG.transcripts?.find((item) => item.contentId === spokenNowPlaying.content.id)}
         transcriptSegments={SPOKEN_CATALOG.transcriptSegments ?? []}
