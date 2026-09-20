@@ -9,9 +9,9 @@ import { MediaChapters } from "@/components/media-chapters";
 import { TimedTranscript } from "@/components/timed-transcript";
 import { SpokenSkipControls } from "@/components/spoken-skip-controls";
 
-type Props = { content: ContentItem; asset: MediaAsset; variants?: MediaVariant[]; playbackRate: PlaybackRate; transcript?: Transcript; transcriptSegments?: TranscriptSegment[]; chapters?: MediaChapter[]; initialPositionMs?: number; onProgress?:(positionMs:number,durationMs:number)=>void; onReportIssue?:(kind:"TEXT"|"TIMING"|"SOURCE"|"UNAVAILABLE",note?:string)=>void; onClose:()=>void };
+type Props = { content: ContentItem; asset: MediaAsset; variants?: MediaVariant[]; playbackRate: PlaybackRate; transcript?: Transcript; transcriptSegments?: TranscriptSegment[]; chapters?: MediaChapter[]; initialPositionMs?: number; onProgress?:(positionMs:number,durationMs:number)=>void; onEnded?:()=>void; onReportIssue?:(kind:"TEXT"|"TIMING"|"SOURCE"|"UNAVAILABLE",note?:string)=>void; onClose:()=>void };
 
-export function SpokenPlayer({ content, asset, variants=[], playbackRate, transcript, transcriptSegments=[], chapters=[], initialPositionMs=0, onProgress, onReportIssue, onClose }: Props) {
+export function SpokenPlayer({ content, asset, variants=[], playbackRate, transcript, transcriptSegments=[], chapters=[], initialPositionMs=0, onProgress, onEnded, onReportIssue, onClose }: Props) {
   const audioRef = useRef<HTMLAudioElement|null>(null);
   const videoRef = useRef<HTMLVideoElement|null>(null);
   const [mediaKind,setMediaKind]=useState<MediaKind>(asset.kind);
@@ -53,7 +53,7 @@ export function SpokenPlayer({ content, asset, variants=[], playbackRate, transc
       const positionMs=e.currentTarget.currentTime*1000; const durationMs=(e.currentTarget.duration||0)*1000;
       setPosition(e.currentTarget.currentTime);
       if(Math.abs(positionMs-lastSavedRef.current)>=5000){lastSavedRef.current=positionMs;onProgress?.(positionMs,durationMs);}
-    }} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);if(typeof navigator!=="undefined"&&"mediaSession" in navigator)navigator.mediaSession.playbackState="paused";}} onWaiting={()=>setLoading(true)} onCanPlay={()=>{setLoading(false);setError(null);}} onError={()=>{setLoading(false);setPlaying(false);setError("Impossible de charger cet audio.");}} onEnded={()=>{setPlaying(false);onProgress?.(duration*1000,duration*1000);if(sleepAtEnd){setSleepAtEnd(false);audioRef.current?.pause();}}}/>
+    }} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);if(typeof navigator!=="undefined"&&"mediaSession" in navigator)navigator.mediaSession.playbackState="paused";}} onWaiting={()=>setLoading(true)} onCanPlay={()=>{setLoading(false);setError(null);}} onError={()=>{setLoading(false);setPlaying(false);setError("Impossible de charger cet audio.");}} onEnded={()=>{setPlaying(false);onProgress?.(duration*1000,duration*1000);if(sleepAtEnd){setSleepAtEnd(false);audioRef.current?.pause();}else onEnded?.();}}/>
     {videoUrl && <video ref={videoRef} className={mediaKind==="VIDEO"?"spoken-video active":"spoken-video"} src={videoUrl} playsInline controls={false} onTimeUpdate={(e)=>setPosition(e.currentTarget.currentTime)} onLoadedMetadata={(e)=>setDuration(e.currentTarget.duration||duration)} />}
     <header><div><p className="eyebrow">En cours</p><h2>{content.title}</h2></div><button type="button" className="icon-button" aria-label="Fermer le lecteur" onClick={()=>{onProgress?.(position*1000,duration*1000);onClose();}}><X size={18}/></button></header>
     <MediaModeSwitch active={mediaKind} audioAvailable={audioAvailable} videoAvailable={videoAvailable} onChange={switchMedia} />
