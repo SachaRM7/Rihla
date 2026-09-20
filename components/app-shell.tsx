@@ -406,6 +406,12 @@ export function AppShell() {
 
   useEffect(() => {
     const ayah = detail?.ayahs[activeIndex];
+    if (!detail || !ayah || activeView !== "quran") return;
+    saveReadingProgress(detail.surah.number, ayah.numberInSurah);
+  }, [activeIndex, activeView, detail, saveReadingProgress]);
+
+  useEffect(() => {
+    const ayah = detail?.ayahs[activeIndex];
     const requestedPosition = requestedPositionRef.current;
     if (
       !ayah ||
