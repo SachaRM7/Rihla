@@ -436,6 +436,10 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, listeningHistory: current.listeningHistory.filter((item) => item.surah !== surah) }));
   }, []);
 
+  const removeSpokenProgress = useCallback((contentId: string) => {
+    setLibrary((current) => ({ ...current, spokenProgress: current.spokenProgress.filter((item) => item.contentId !== contentId) }));
+  }, []);
+
   const setHistoryEnabled = useCallback((historyEnabled: boolean) => {
     setLibrary((current) => ({ ...current, historyEnabled }));
   }, []);
@@ -651,6 +655,7 @@ export function useLocalLibrary() {
     importData,
     setHistoryEnabled,
     removeHistoryItem,
+    removeSpokenProgress,
     setWifiOnlyDownloads,
     setMemorizationMode,
     setContinuousQuran,
@@ -667,7 +672,7 @@ export function useLocalLibrary() {
     toggleFollow,
     setFollowNotification,
     setAudioQuality,
-    clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], lastPositionMs: 0 })),
+    clearHistory: () => setLibrary((current) => ({ ...current, listeningHistory: [], spokenProgress: [], lastPositionMs: 0 })),
     clearPersonalData: () => setLibrary((current) => ({
       ...DEFAULT_LIBRARY,
       theme: current.theme,
