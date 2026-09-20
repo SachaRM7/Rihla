@@ -42,6 +42,7 @@ export type PersonalPlaylist = {
   title: string;
   ayahKeys: string[];
   spokenContentIds: string[];
+  itemOrder: string[];
   allowMixedContent: boolean;
   createdAt: number;
   updatedAt: number;
@@ -270,7 +271,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     listeningHistory,
     ayahNotes,
     historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
-    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item) => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100).map((item) => ({ ...(item as PersonalPlaylist), spokenContentIds: Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.filter((id): id is string => typeof id === "string") : [], allowMixedContent: (item as PersonalPlaylist).allowMixedContent === true })) : [],
+    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item) => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100).map((item) => ({ ...(item as PersonalPlaylist), spokenContentIds: Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.filter((id): id is string => typeof id === "string") : [], itemOrder: Array.isArray((item as PersonalPlaylist).itemOrder) ? (item as PersonalPlaylist).itemOrder.filter((id): id is string => typeof id === "string") : [...(item as PersonalPlaylist).ayahKeys.map((key) => `quran:${key}`), ...(Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.map((id) => `spoken:${id}`) : [])], allowMixedContent: (item as PersonalPlaylist).allowMixedContent === true })) : [],
     quranReadingSurah: Number.isInteger(candidate.quranReadingSurah) && candidate.quranReadingSurah! >= 1 && candidate.quranReadingSurah! <= 114 ? candidate.quranReadingSurah! : 1,
     quranReadingAyah: Number.isInteger(candidate.quranReadingAyah) && candidate.quranReadingAyah! >= 1 ? candidate.quranReadingAyah! : 1,
     quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
@@ -555,7 +556,7 @@ export function useLocalLibrary() {
     const now = Date.now();
     setLibrary((current) => ({
       ...current,
-      playlists: [{ id: crypto.randomUUID(), title: normalized, ayahKeys: [], spokenContentIds: [], allowMixedContent: false, createdAt: now, updatedAt: now }, ...current.playlists],
+      playlists: [{ id: crypto.randomUUID(), title: normalized, ayahKeys: [], spokenContentIds: [], itemOrder: [], allowMixedContent: false, createdAt: now, updatedAt: now }, ...current.playlists],
     }));
   }, []);
 
@@ -563,7 +564,8 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
       if (playlist.id !== playlistId) return playlist;
       if (!playlist.allowMixedContent && playlist.ayahKeys.length > 0 && !playlist.spokenContentIds.includes(contentId)) return playlist;
-      return { ...playlist, spokenContentIds: playlist.spokenContentIds.includes(contentId) ? playlist.spokenContentIds.filter((id) => id !== contentId) : [...playlist.spokenContentIds, contentId], updatedAt: Date.now() };
+      const removing = playlist.spokenContentIds.includes(contentId);
+      return { ...playlist, spokenContentIds: removing ? playlist.spokenContentIds.filter((id) => id !== contentId) : [...playlist.spokenContentIds, contentId], itemOrder: removing ? playlist.itemOrder.filter((id) => id !== `spoken:${contentId}`) : [...playlist.itemOrder, `spoken:${contentId}`], updatedAt: Date.now() };
     }) }));
   }, []);
 
@@ -578,6 +580,7 @@ export function useLocalLibrary() {
       playlists: current.playlists.map((playlist) => playlist.id !== playlistId ? playlist : {
         ...playlist,
         ayahKeys: playlist.ayahKeys.includes(key) ? playlist.ayahKeys.filter((item) => item !== key) : [...playlist.ayahKeys, key],
+        itemOrder: playlist.ayahKeys.includes(key) ? playlist.itemOrder.filter((item) => item !== `quran:${key}`) : [...playlist.itemOrder, `quran:${key}`],
         updatedAt: Date.now(),
       }),
     }));
@@ -612,6 +615,14 @@ export function useLocalLibrary() {
       ...current,
       playlists: current.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, title: normalized, updatedAt: Date.now() } : playlist),
     }));
+  }, []);
+
+  const movePlaylistItem = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
+    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
+      if (playlist.id !== playlistId || fromIndex < 0 || toIndex < 0 || fromIndex >= playlist.itemOrder.length || toIndex >= playlist.itemOrder.length) return playlist;
+      const itemOrder = [...playlist.itemOrder]; const [moved] = itemOrder.splice(fromIndex,1); itemOrder.splice(toIndex,0,moved);
+      return { ...playlist, itemOrder, updatedAt: Date.now() };
+    }) }));
   }, []);
 
   const movePlaylistAyah = useCallback((playlistId: string, fromIndex: number, toIndex: number) => {
@@ -668,6 +679,7 @@ export function useLocalLibrary() {
     setPlaylistMixedContent,
     deletePlaylist,
     movePlaylistAyah,
+    movePlaylistItem,
     renamePlaylist,
     removeAyahFromPlaylist,
     exportData: () => JSON.stringify(library, null, 2),
