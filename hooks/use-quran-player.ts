@@ -15,6 +15,7 @@ type PlayerOptions = {
   studyLoop: StudyLoopPreference | null;
   stopAtEnd?: "ayah" | "surah" | null;
   onStopAtEndConsumed?: () => void;
+  onSurahEnded?: () => void;
 };
 
 function readableAudioError() {
@@ -30,6 +31,7 @@ export function useQuranPlayer({
   studyLoop,
   stopAtEnd = null,
   onStopAtEndConsumed,
+  onSurahEnded,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
@@ -276,6 +278,7 @@ export function useQuranPlayer({
         playWhenLoadedRef.current = false;
         setStatus("paused");
         setCurrentTime(0);
+        onSurahEnded?.();
         return;
       }
 
