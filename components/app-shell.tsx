@@ -149,6 +149,7 @@ export function AppShell() {
     toggleAyahInPlaylist,
     deletePlaylist,
     movePlaylistAyah,
+    movePlaylistItem,
     renamePlaylist,
     removeAyahFromPlaylist,
     exportData,
@@ -912,6 +913,7 @@ export function AppShell() {
                   return <div className="playlist-detail">
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
                     <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length + playlist.spokenContentIds.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button></div></div>
+                    {playlist.itemOrder.length > 0 && <button type="button" className="primary-action playlist-play-all" onClick={()=>{const first=playlist.itemOrder[0];if(first.startsWith("quran:")){const [surah,ayah]=first.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true);}else{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===first.slice(7));if(content)playSpokenContent(content);}}}><Play size={16}/>Lire la playlist</button>}
                     <button type="button" role="switch" aria-checked={playlist.allowMixedContent} className="setting-toggle compact-toggle" onClick={()=>setPlaylistMixedContent(playlist.id,!playlist.allowMixedContent)}><span className="setting-copy"><strong>Autoriser le mélange des formats</strong><small>Coran et contenus parlés dans cette même playlist</small></span><span className="switch-track" aria-hidden="true"><i/></span></button>
                     {playlist.spokenContentIds.length > 0 && <div className="spoken-playlist-items">{playlist.spokenContentIds.map((contentId)=>{const content=SPOKEN_CATALOG.contents.find((item)=>item.id===contentId);if(!content)return null;return <div key={contentId}><button type="button" onClick={()=>playSpokenContent(content)}><Play size={15}/><span>{content.title}</span></button><button type="button" aria-label={`Retirer ${content.title}`} onClick={()=>toggleSpokenInPlaylist(playlist.id,contentId)}><Trash2 size={14}/></button></div>})}</div>}
                     {playlist.ayahKeys.length ? <div className="saved-ayah-grid">
