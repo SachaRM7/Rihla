@@ -150,7 +150,7 @@ export function SurahBrowser({
                   <span className="surah-index">{String(surah.number).padStart(3, "0")}</span>
                   <span className="surah-label">
                     <strong>{surah.englishName}</strong>
-                    <small>{surah.frenchName} · {surah.numberOfAyahs} ayat</small>
+                    <small>{surah.frenchName} · {surah.numberOfAyahs} ayat · {formatEstimate(estimateMinutes(surah.numberOfAyahs))}</small>
                   </span>
                   <span className="surah-arabic-name" lang="ar" dir="rtl" translate="no">{surah.name}</span>
                 </button>
@@ -158,7 +158,7 @@ export function SurahBrowser({
                   type="button"
                   className={`favorite-button ${isFavorite ? "active" : ""}`}
                   onClick={() => onToggleFavorite(surah.number)}
-                  aria-label={isFavorite ? "Retirer cette sourate des favoris" : "Ajouter cette sourate aux favoris"}
+                  aria-label={isFavorite ? `Retirer ${surah.englishName} des sourates favorites` : `Ajouter ${surah.englishName} aux sourates favorites`}
                   aria-pressed={isFavorite}
                 >
                   <Heart size={18} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
