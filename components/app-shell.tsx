@@ -28,6 +28,7 @@ import { CreatorProfile } from "@/components/creator-profile";
 import { PlaybackQueue } from "@/components/playback-queue";
 import { OfflineDownloadControl } from "@/components/offline-download-control";
 import { SpokenPlayer } from "@/components/spoken-player";
+import { SpokenSearchResults } from "@/components/spoken-search-results";
 import { SeriesProfile } from "@/components/series-profile";
 import { FullPlayer } from "@/components/full-player";
 import { MiniPlayer } from "@/components/mini-player";
@@ -793,13 +794,33 @@ export function AppShell() {
           )}
 
           {activeView === "search" && (
-            <div className="content-stack">
+            <div className="content-stack search-view-stack">
+              <label className="search-control transversal-search">
+                <Search size={19} aria-hidden="true" />
+                <input
+                  autoFocus
+                  type="search"
+                  name="global-search"
+                  autoComplete="off"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Sourate, verset, cours, intervenant…"
+                  aria-label="Rechercher dans tous les contenus"
+                />
+                {query && <button type="button" onClick={() => setQuery("")} aria-label="Effacer la recherche">×</button>}
+              </label>
+
               <div className="search-filters" role="group" aria-label="Type de contenu">
                 <button type="button" className={searchType === "all" ? "active" : ""} onClick={() => { setSearchType("all"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Tout</button>
                 <button type="button" className={searchType === "quran" ? "active" : ""} onClick={() => { setSearchType("quran"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Coran</button>
-                <button type="button" className={searchType === "spoken" ? "active" : ""} onClick={() => { setSearchType("spoken"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Cours & rappels</button>
+                {hasSpokenContents && <button type="button" className={searchType === "spoken" ? "active" : ""} onClick={() => { setSearchType("spoken"); setSelectedCreatorId(null); setSelectedSeriesId(null); }}>Cours & rappels</button>}
               </div>
-              {searchType !== "spoken" && <SurahBrowser
+
+              {(searchType === "all" || searchType === "quran") && <div className="search-secondary-filters">
+                <label><span>Récitant</span><select value={reciterId} onChange={(event) => setReciterId(event.target.value)}>{RECITERS.map((reciter)=><option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}</select></label>
+              </div>}
+
+              {(searchType === "all" || searchType === "quran") && query.trim().length > 0 && <SurahBrowser
                 surahs={surahs}
                 selectedNumber={selectedNumber}
                 query={query}
@@ -810,18 +831,15 @@ export function AppShell() {
                 loading={catalogLoading}
                 error={catalogError}
                 onRetry={() => setCatalogAttempt((value) => value + 1)}
-                searchPlaceholder="Sourate, mot ou référence 2:255…"
+                showSearch={false}
               />}
-              {searchType !== "spoken" && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
-              {searchType === "spoken" && !hasSpokenContents && <div className="empty-library"><Search size={24} /><strong>Catalogue parlé en préparation</strong><p>Les cours, rappels et conférences apparaîtront ici uniquement lorsqu’une sélection autorisée sera disponible.</p></div>}
-              {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="spoken-catalog-list">{spokenContents.map((item) => {
-                const asset = item.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
-                const allowed = Boolean(asset && canDownloadOffline(asset,SPOKEN_CATALOG.rights));
-                return <div className="spoken-catalog-row" key={item.id}><button type="button" onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_"," ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18}/></button><button type="button" className="queue-add-action" onClick={()=>queueSpokenContent(item)} aria-label={`Ajouter ${item.title} à la file d’attente`}><Plus size={16}/>File</button><button type="button" className="queue-add-action" onClick={()=>addSpokenToPlaylist(item)} aria-label={`Ajouter ${item.title} à une playlist`}><ListMusic size={16}/>Playlist</button>{asset && <OfflineDownloadControl allowed={allowed} status={downloadStates[item.id]} onDownload={()=>{ if(library.wifiOnlyDownloads){ const connection=(navigator as Navigator & {connection?:{type?:string}}).connection; if(connection?.type && connection.type!=="wifi"){setShareMessage("Téléchargement réservé au Wi-Fi");return;} } setDownloadStates((current)=>({...current,[item.id]:"DOWNLOADING"}));
-                  void downloadMediaAsset(asset).then(()=>{setDownloadStates((current)=>({...current,[item.id]:"AVAILABLE"}));setShareMessage("Disponible hors connexion");}).catch((error)=>{setDownloadStates((current)=>({...current,[item.id]:"ERROR"}));setShareMessage(error instanceof Error?error.message:"Téléchargement impossible");}); }} />}</div>;
-              })}</div>}
+
+              {(searchType === "all" || searchType === "quran") && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
+
+              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} query={query} onOpen={playSpokenContent} />}
+
               {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
-              {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.mediaAssetIds.length) playSpokenContent(content); else if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
+              {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>playSpokenContent(content)} />}
               {searchType === "spoken" && selectedSeries && <SeriesProfile series={selectedSeries} contents={spokenContents} followed={library.follows.some((item)=>item.id===selectedSeries.id&&item.type==="SERIES")} notifications={library.follows.find((item)=>item.id===selectedSeries.id&&item.type==="SERIES")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedSeries.id,"SERIES")} onToggleNotifications={(enabled)=>setFollowNotification(selectedSeries.id,"SERIES",enabled)} onOpen={(content)=>playSpokenContent(content)} />}
             </div>
           )}
