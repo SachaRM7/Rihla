@@ -73,10 +73,6 @@ export function AyahList({
   }, [activeIndex, detail.ayahs, memorizationMode, memorizationRevealDelay]);
 
   useEffect(() => {
-    if (!isPlaying && followSuspended) setFollowSuspended(false);
-  }, [isPlaying, followSuspended]);
-
-  useEffect(() => {
     if (!autoScroll || !isPlaying || followSuspended) return;
     activeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [activeIndex, autoScroll, followSuspended, isPlaying]);

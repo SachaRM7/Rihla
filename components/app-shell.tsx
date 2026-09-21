@@ -20,6 +20,7 @@ import {
   Wifi,
   Bell,
   StickyNote,
+  WifiOff,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
@@ -169,7 +170,6 @@ export function AppShell() {
     setCrossFamilyAutoAdvance,
     setPlaybackQueue,
     saveSpokenProgress,
-    removeSpokenProgress,
     clearSpokenProgress,
     toggleFollow,
     setFollowNotification,
@@ -254,6 +254,17 @@ export function AppShell() {
   const requestedAutoplayRef = useRef(false);
 
   useEffect(() => {
+    const updateNetworkState = () => setIsOnline(navigator.onLine);
+    updateNetworkState();
+    window.addEventListener("online", updateNetworkState);
+    window.addEventListener("offline", updateNetworkState);
+    return () => {
+      window.removeEventListener("online", updateNetworkState);
+      window.removeEventListener("offline", updateNetworkState);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!hydrated || initializedRef.current) return;
     initializedRef.current = true;
     const params = new URLSearchParams(window.location.search);
@@ -278,7 +289,10 @@ export function AppShell() {
   }, [])
 
   useEffect(() => {
-    setNotificationPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
+    const frame = window.requestAnimationFrame(() => {
+      setNotificationPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -517,7 +531,7 @@ export function AppShell() {
   const effectiveReadingProgress = library.readingGoalEnabled ? Math.min(100, Math.round((todayReadCount / effectiveDailyTarget) * 100)) : 0;
   const recentReadingDays = Object.entries(library.readingDays).sort(([a],[b]) => b.localeCompare(a)).slice(0,7);
 
-  const spokenContents = publicContents(SPOKEN_CATALOG);
+  const spokenContents = useMemo(() => publicContents(SPOKEN_CATALOG), []);
   useEffect(() => {
     if (!hydrated || !SPOKEN_CATALOG.media.length) return;
     let cancelled=false;
@@ -526,7 +540,7 @@ export function AppShell() {
       return [content.id,asset?await isMediaDownloaded(asset.url):false] as const;
     })).then((entries)=>{if(!cancelled)setDownloadStates(Object.fromEntries(entries.filter(([,available])=>available).map(([id])=>[id,"AVAILABLE" as const])));});
     return()=>{cancelled=true;};
-  }, [hydrated]);
+  }, [hydrated, spokenContents]);
 
 
   const hasSpokenContents = spokenContents.length > 0;
@@ -578,9 +592,12 @@ export function AppShell() {
     if (!activePlaylistRun) return;
     const playlist = library.playlists.find((item) => item.id === activePlaylistRun.playlistId);
     if (!playlist || activePlaylistRun.index >= playlist.itemOrder.length) {
-      setActivePlaylistRun(null);
-      pausePlayback();
-      setSpokenNowPlaying(null);
+      const frame = window.requestAnimationFrame(() => {
+        setActivePlaylistRun(null);
+        pausePlayback();
+        setSpokenNowPlaying(null);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [activePlaylistRun, library.playlists, pausePlayback]);
 
@@ -641,7 +658,7 @@ export function AppShell() {
     shareTimerRef.current = window.setTimeout(() => setShareMessage(null), 2600);
   }, []);
 
-  const shareAyah = useCallback(async (ayahNumber: number, positionMs = 0) => {
+  const shareAyah = async (ayahNumber: number, positionMs = 0) => {
     const ayah = detail?.ayahs.find((item) => item.numberInSurah === ayahNumber);
     if (!detail || !ayah) return;
 
@@ -685,7 +702,7 @@ export function AppShell() {
     } catch {
       showShareMessage("Impossible de copier le lien");
     }
-  }, [detail, showShareMessage]);
+  };
 
   const showQuranView = () => {
     setPlayerOpen(false);
@@ -933,7 +950,6 @@ export function AppShell() {
                         favoriteAyahs={library.favoriteAyahs}
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
-                showTranslation={library.showTranslation}
                         continuousView={library.continuousQuran}
                         memorizationMode={library.memorizationMode}
                         memorizationRevealDelay={library.memorizationRevealDelay}
@@ -1001,6 +1017,8 @@ export function AppShell() {
                     <button type="button" role="switch" aria-checked={playlist.allowMixedContent} className="setting-toggle compact-toggle" onClick={()=>{const disabling=playlist.allowMixedContent;if(disabling&&playlist.ayahKeys.length>0&&playlist.spokenContentIds.length>0){const keep=window.prompt("Pour désactiver le mélange, tapez CORAN pour garder seulement les passages, ou PARLÉ pour garder seulement les contenus parlés.");if(keep?.trim().toLocaleUpperCase("fr")==="CORAN"){removePlaylistFormat(playlist.id,"SPOKEN");showShareMessage("Playlist conservée avec le Coran uniquement");}else if(["PARLÉ","PARLE"].includes(keep?.trim().toLocaleUpperCase("fr")??"")){removePlaylistFormat(playlist.id,"QURAN");showShareMessage("Playlist conservée avec les contenus parlés uniquement");}return;}setPlaylistMixedContent(playlist.id,!playlist.allowMixedContent);}}><span className="setting-copy"><strong>Autoriser le mélange des formats</strong><small>Coran et contenus parlés dans cette même playlist</small></span><span className="switch-track" aria-hidden="true"><i/></span></button>
                     {playlist.itemOrder.length > 0 ? <div className="mixed-playlist-items">{playlist.itemOrder.map((itemKey,index)=>{
                       const isQuran=itemKey.startsWith("quran:");
+                      // The navigation callback writes pending async-load state only after a user click.
+                      // eslint-disable-next-line react-hooks/refs
                       if(isQuran){const key=itemKey.slice(6);const [surahNumber,ayahNumber]=key.split(":").map(Number);const surah=surahs.find((item)=>item.number===surahNumber);return <div className="mixed-playlist-row" key={itemKey}><button type="button" className="mixed-playlist-main" onClick={()=>openSurah(surahNumber,ayahNumber)}><BookOpenText size={16}/><span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong><small>{key} · Coran</small></span></button><span className="playlist-order"><button type="button" aria-label="Retirer" onClick={()=>removeAyahFromPlaylist(playlist.id,key)}><Trash2 size={15}/></button><button type="button" aria-label="Monter" disabled={index===0} onClick={()=>movePlaylistItem(playlist.id,index,index-1)}><ChevronUp size={16}/></button><button type="button" aria-label="Descendre" disabled={index===playlist.itemOrder.length-1} onClick={()=>movePlaylistItem(playlist.id,index,index+1)}><ChevronDown size={16}/></button></span></div>}
                       const contentId=itemKey.slice(7);const content=SPOKEN_CATALOG.contents.find((item)=>item.id===contentId);if(!content)return null;return <div className="mixed-playlist-row" key={itemKey}><button type="button" className="mixed-playlist-main" onClick={()=>playSpokenContent(content)}><Play size={16}/><span><strong>{content.title}</strong><small>Contenu parlé</small></span></button><span className="playlist-order"><button type="button" aria-label="Retirer" onClick={()=>toggleSpokenInPlaylist(playlist.id,contentId)}><Trash2 size={15}/></button><button type="button" aria-label="Monter" disabled={index===0} onClick={()=>movePlaylistItem(playlist.id,index,index-1)}><ChevronUp size={16}/></button><button type="button" aria-label="Descendre" disabled={index===playlist.itemOrder.length-1} onClick={()=>movePlaylistItem(playlist.id,index,index+1)}><ChevronDown size={16}/></button></span></div>;
                     })}</div> : <div className="empty-library compact"><ListMusic size={22}/><strong>Playlist vide</strong><p>Ajoutez des passages ou contenus parlés.</p></div>}

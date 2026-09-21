@@ -406,7 +406,6 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, follows: current.follows.map((item) => item.id === id && item.type === type ? { ...item, notify } : item) }));
   }, []);
 
-  const removeSpokenProgress = useCallback((contentId: string) => setLibrary((current) => ({ ...current, spokenProgress: current.spokenProgress.filter((item) => item.contentId !== contentId) })), []);
   const clearSpokenProgress = useCallback(() => setLibrary((current) => ({ ...current, spokenProgress: [] })), []);
 
   const saveSpokenProgress = useCallback((contentId: string, positionMs: number, durationMs: number) => {
@@ -750,7 +749,6 @@ export function useLocalLibrary() {
     setCrossFamilyAutoAdvance,
     setPlaybackQueue,
     saveSpokenProgress,
-    removeSpokenProgress,
     clearSpokenProgress,
     toggleFollow,
     setFollowNotification,

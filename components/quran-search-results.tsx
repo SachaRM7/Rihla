@@ -25,10 +25,17 @@ export function QuranSearchResults({ query, onOpen, onQueryChange }: Props) {
   const clearRecent = () => { setRecent([]); try { localStorage.removeItem("rihla.search.recent"); } catch {} };
 
   useEffect(() => {
+    let cancelled = false;
     try {
       const stored = JSON.parse(localStorage.getItem("rihla.search.recent") ?? "[]");
-      if (Array.isArray(stored)) setRecent(stored.filter((item): item is string => typeof item === "string").slice(0, 6));
+      if (Array.isArray(stored)) {
+        const next = stored.filter((item): item is string => typeof item === "string").slice(0, 6);
+        window.requestAnimationFrame(() => {
+          if (!cancelled) setRecent(next);
+        });
+      }
     } catch {}
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

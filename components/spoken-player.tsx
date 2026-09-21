@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, Pause, Play, RotateCcw, Timer, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ContentItem, MediaAsset, MediaChapter, MediaKind, MediaVariant, Transcript, TranscriptSegment } from "@/lib/domain";
 import type { PlaybackRate } from "@/lib/preferences";
 import { MediaModeSwitch } from "@/components/media-mode-switch";
@@ -24,6 +24,13 @@ export function SpokenPlayer({ content, asset, variants=[], playbackRate, transc
   const [sleepAtEnd,setSleepAtEnd]=useState(false);
   const lastSavedRef = useRef(initialPositionMs);
   const sleepDeadlineRef = useRef<number|null>(null);
+  const seek = useCallback((seconds: number) => {
+    const media = mediaKind === "VIDEO" ? videoRef.current : audioRef.current;
+    if (!media) return;
+    media.currentTime = Math.min(Math.max(seconds, 0), media.duration || seconds);
+    setPosition(media.currentTime);
+  }, [mediaKind]);
+
   useEffect(()=>{ const media=mediaKind==="VIDEO"?videoRef.current:audioRef.current; if(media) media.playbackRate=playbackRate; },[mediaKind,playbackRate]);
   useEffect(()=>{
     if(typeof navigator==="undefined" || !("mediaSession" in navigator)) return;
@@ -35,14 +42,13 @@ export function SpokenPlayer({ content, asset, variants=[], playbackRate, transc
     navigator.mediaSession.setActionHandler("seekforward",()=>seek((media()?.currentTime??0)+15));
     navigator.mediaSession.setActionHandler("seekto",(details)=>{if(details.seekTime!==undefined)seek(details.seekTime);});
     return ()=>{["play","pause","seekbackward","seekforward","seekto"].forEach((action)=>{try{navigator.mediaSession.setActionHandler(action as MediaSessionAction,null)}catch{}});};
-  },[content.id,mediaKind]);
+  },[content.description, content.id, content.title, mediaKind, seek]);
   useEffect(()=>{
     if(sleepMinutes===null){sleepDeadlineRef.current=null;return;}
     sleepDeadlineRef.current=Date.now()+sleepMinutes*60_000;
     const timer=window.setInterval(()=>{if(sleepDeadlineRef.current&&Date.now()>=sleepDeadlineRef.current){(mediaKind==="VIDEO"?videoRef.current:audioRef.current)?.pause();setSleepMinutes(null);}},1000);
     return()=>window.clearInterval(timer);
   },[mediaKind,sleepMinutes]);
-  const seek=(seconds:number)=>{const media=mediaKind==="VIDEO"?videoRef.current:audioRef.current;if(!media)return;media.currentTime=Math.min(Math.max(seconds,0),media.duration||seconds);setPosition(media.currentTime);};
   const switchMedia=(kind:MediaKind)=>{const current=mediaKind==="VIDEO"?videoRef.current:audioRef.current;const next=kind==="VIDEO"?videoRef.current:audioRef.current;const at=current?.currentTime??position;current?.pause();setMediaKind(kind);window.requestAnimationFrame(()=>{if(next){next.currentTime=Math.min(at,next.duration||at);if(playing)void next.play();}});};
   const audioUrl=asset.kind==="AUDIO"?asset.url:variants.find((item)=>item.kind==="AUDIO")?.url;
   const videoUrl=asset.kind==="VIDEO"?asset.url:variants.find((item)=>item.kind==="VIDEO")?.url;
