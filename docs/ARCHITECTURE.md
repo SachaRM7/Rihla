@@ -30,8 +30,8 @@ Tout média externe suit le workflow suivant :
 ## Étapes techniques
 
 1. Valider le prototype et le design system.
-2. Brancher le projet Supabase dev/prod puis ajouter Supabase Auth au-dessus de la migration existante.
+2. Brancher les projets Supabase dev/prod avec Auth, puis activer la synchronisation privée de la bibliothèque.
 3. Connecter Quran Foundation après validation de ses conditions d’API et d’attribution.
-4. Implémenter la progression, les favoris et la bibliothèque.
+4. Implémenter la progression, les favoris et la bibliothèque (stockage local v2 migré et snapshots cloud versionnés).
 5. Ajouter l’ingestion contrôlée des contenus et le registre de licences.
 6. Ajouter la transcription, l’indexation plein texte et les téléchargements autorisés.

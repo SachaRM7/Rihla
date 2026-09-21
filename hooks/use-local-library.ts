@@ -3,6 +3,8 @@
 import type { QueueEntry } from "@/lib/playback";
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_RECITER_ID } from "@/lib/quran/constants";
+import { migrateLocalLibraryPayload, LOCAL_LIBRARY_SCHEMA_VERSION } from "@/lib/local-library-schema";
+import { readLocalLibraryStorage, writeLocalLibraryStorage } from "@/lib/local-library-storage";
 import {
   isAppearanceMode,
   isAudioQuality,
@@ -22,7 +24,6 @@ import {
   type TranslationSize,
 } from "@/lib/preferences";
 
-const STORAGE_KEY = "rihla.library.v1";
 const MAX_HISTORY_ITEMS = 24;
 const MAX_NOTES = 250;
 const MAX_NOTE_LENGTH = 2_000;
@@ -60,7 +61,7 @@ export type AyahNote = {
 };
 
 export type LocalLibrary = {
-  version: 1;
+  version: typeof LOCAL_LIBRARY_SCHEMA_VERSION;
   favoriteSurahs: number[];
   favoriteAyahs: string[];
   lastSurah: number;
@@ -104,7 +105,7 @@ export type LocalLibrary = {
 };
 
 export const DEFAULT_LIBRARY: LocalLibrary = {
-  version: 1,
+  version: LOCAL_LIBRARY_SCHEMA_VERSION,
   favoriteSurahs: [],
   favoriteAyahs: [],
   lastSurah: 1,
@@ -220,9 +221,9 @@ function sanitizePlaylist(value: unknown): PersonalPlaylist | null {
 }
 
 export function sanitizeLibrary(value: unknown): LocalLibrary {
-  if (!value || typeof value !== "object") return DEFAULT_LIBRARY;
-  const candidate = value as Partial<LocalLibrary>;
-  if (candidate.version !== 1) return DEFAULT_LIBRARY;
+  const migrated = migrateLocalLibraryPayload(value);
+  if (!migrated) return DEFAULT_LIBRARY;
+  const candidate = migrated as Partial<LocalLibrary>;
 
   const favoriteSurahs = Array.isArray(candidate.favoriteSurahs)
     ? [...new Set(candidate.favoriteSurahs.filter((item) => Number.isInteger(item) && item >= 1 && item <= 114))]
@@ -259,7 +260,7 @@ export function sanitizeLibrary(value: unknown): LocalLibrary {
     : [];
 
   return {
-    version: 1,
+    version: LOCAL_LIBRARY_SCHEMA_VERSION,
     favoriteSurahs,
     favoriteAyahs,
     lastSurah:
@@ -326,8 +327,8 @@ export function useLocalLibrary() {
   useEffect(() => {
     let restored = DEFAULT_LIBRARY;
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) restored = sanitizeLibrary(JSON.parse(stored));
+      const stored = readLocalLibraryStorage((key) => window.localStorage.getItem(key));
+      if (stored) restored = sanitizeLibrary(stored);
     } catch {
       // The player remains usable when storage is blocked or corrupted.
     }
@@ -341,7 +342,7 @@ export function useLocalLibrary() {
   useEffect(() => {
     if (!hydrated) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(library));
+      writeLocalLibraryStorage(library, (key, value) => window.localStorage.setItem(key, value));
     } catch {
       // Storage is an enhancement, never a playback dependency.
     }

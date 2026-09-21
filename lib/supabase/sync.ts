@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { AyahNote, ListeningHistoryItem, LocalLibrary, PersonalPlaylist, SpokenProgress } from "@/hooks/use-local-library";
 import { DEFAULT_LIBRARY, sanitizeLibrary } from "@/hooks/use-local-library";
 import type { Database, Json } from "@/lib/supabase/database.types";
+import { LOCAL_LIBRARY_SCHEMA_VERSION } from "@/lib/local-library-schema";
 
 type Client = SupabaseClient<Database>;
 type SyncRows = {
@@ -55,7 +56,7 @@ function asJson(value: unknown) {
 
 function readSnapshot(value: unknown): LocalLibrary | null {
   const candidate = isRecord(value) && "library" in value ? value.library : value;
-  return isRecord(candidate) && candidate.version === 1 ? sanitizeLibrary(candidate) : null;
+  return isRecord(candidate) && candidate.version === LOCAL_LIBRARY_SCHEMA_VERSION ? sanitizeLibrary(candidate) : null;
 }
 
 function itemUpdatedAt(value: { updatedAt?: number } | null | undefined) {

@@ -11,6 +11,7 @@
     "build": "node scripts/run-framework.mjs build",
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint app components hooks lib",
+    "test:storage": "node --experimental-strip-types scripts/verify-library-migrations.mjs",
     "db:generate": "drizzle-kit generate",
     "deploy:cloudflare": "vinext build && wrangler deploy --config dist/server/wrangler.json",
     "preview:cloudflare": "vinext build && wrangler dev --config dist/server/wrangler.json"
