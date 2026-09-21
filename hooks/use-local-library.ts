@@ -578,7 +578,11 @@ export function useLocalLibrary() {
   }, []);
 
   const setPlaylistMixedContent = useCallback((playlistId: string, allowMixedContent: boolean) => {
-    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => playlist.id === playlistId ? { ...playlist, allowMixedContent, updatedAt: Date.now() } : playlist) }));
+    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
+      if (playlist.id !== playlistId) return playlist;
+      if (!allowMixedContent && playlist.ayahKeys.length > 0 && playlist.spokenContentIds.length > 0) return playlist;
+      return { ...playlist, allowMixedContent, updatedAt: Date.now() };
+    }) }));
   }, []);
 
   const toggleAyahInPlaylist = useCallback((playlistId: string, surah: number, ayah: number) => {
