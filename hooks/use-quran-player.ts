@@ -43,6 +43,7 @@ export function useQuranPlayer({
   const studyLoopRef = useRef(studyLoop);
   const studyLoopIterationRef = useRef(1);
   const playbackRateRef = useRef(playbackRate);
+  const onSurahEndedRef = useRef(onSurahEnded);
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
@@ -70,7 +71,8 @@ export function useQuranPlayer({
     repeatModeRef.current = repeatMode;
     studyLoopRef.current = studyLoop;
     playbackRateRef.current = playbackRate;
-  }, [activeIndex, detail, onActiveIndexChange, playbackRate, repeatMode, studyLoop]);
+    onSurahEndedRef.current = onSurahEnded;
+  }, [activeIndex, detail, onActiveIndexChange, onSurahEnded, playbackRate, repeatMode, studyLoop]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(resetRepeatProgress);
@@ -278,7 +280,7 @@ export function useQuranPlayer({
         playWhenLoadedRef.current = false;
         setStatus("paused");
         setCurrentTime(0);
-        onSurahEnded?.();
+        onSurahEndedRef.current?.();
         return;
       }
 
@@ -317,7 +319,7 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, [onStopAtEndConsumed, onSurahEnded, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
+  }, [onStopAtEndConsumed, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
 
   useEffect(() => {
     const audio = audioRef.current;
