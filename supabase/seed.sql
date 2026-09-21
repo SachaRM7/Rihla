@@ -1,0 +1,2 @@
+-- Intentionally empty: catalog records are imported only after source and rights review.
+-- User data must never be seeded into local or production environments.

@@ -1,6 +1,6 @@
 # Architecture cible
 
-Ce dépôt démarre par un prototype web/PWA local. L’objectif est de valider la navigation, le player universel et l’expérience de transcription synchronisée avant de brancher les services externes.
+Ce dépôt conserve un mode invité local-first tout en préparant le backend distant. La navigation, le player universel et l’expérience de transcription synchronisée restent utilisables sans compte ; la fondation Supabase est désormais versionnée et attend seulement les identifiants dev/prod du projet hébergé.
 
 ## Découpage recommandé
 
@@ -9,7 +9,7 @@ Ce dépôt démarre par un prototype web/PWA local. L’objectif est de valider 
 - `components/transcript/` : `TimedTranscript`, recherche, segment actif et liens temporels.
 - `components/quran/` : adaptateur ayah/mot, traduction, tafsir et répétition.
 - `lib/` : types de domaine, API clients et règles métier.
-- `supabase/` : migrations, politiques RLS et fonctions serveur lorsque Supabase sera connecté.
+- `supabase/` : configuration locale, migration PostgreSQL, politiques RLS et Storage privé.
 
 ## Principe du player
 
@@ -30,7 +30,7 @@ Tout média externe suit le workflow suivant :
 ## Étapes techniques
 
 1. Valider le prototype et le design system.
-2. Ajouter Supabase Auth, PostgreSQL, Storage et RLS.
+2. Brancher le projet Supabase dev/prod puis ajouter Supabase Auth au-dessus de la migration existante.
 3. Connecter Quran Foundation après validation de ses conditions d’API et d’attribution.
 4. Implémenter la progression, les favoris et la bibliothèque.
 5. Ajouter l’ingestion contrôlée des contenus et le registre de licences.
