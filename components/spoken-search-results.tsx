@@ -1,8 +1,10 @@
 "use client";
 
-import { ChevronRight, SearchX } from "lucide-react";
+import { ChevronRight, ListMusic, Plus, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { ContentItem } from "@/lib/domain";
+import { OfflineDownloadControl } from "@/components/offline-download-control";
+import { canDownloadOffline } from "@/lib/offline";
+import type { ContentItem, MediaAsset } from "@/lib/domain";
 import type { CatalogBundle } from "@/lib/catalog";
 import {
   formatMediaDuration,
@@ -15,9 +17,13 @@ type Props = {
   catalog: CatalogBundle;
   query: string;
   onOpen: (content: ContentItem) => void;
+  onQueue?: (content: ContentItem) => void;
+  onAddToPlaylist?: (content: ContentItem) => void;
+  downloadStates?: Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">;
+  onDownload?: (content: ContentItem, asset: MediaAsset) => void;
 };
 
-export function SpokenSearchResults({ catalog, query, onOpen }: Props) {
+export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPlaylist, downloadStates = {}, onDownload }: Props) {
   const [language, setLanguage] = useState("");
   const [duration, setDuration] = useState<SpokenDurationFilter>("all");
   const [creatorId, setCreatorId] = useState("");
@@ -38,9 +44,20 @@ export function SpokenSearchResults({ catalog, query, onOpen }: Props) {
     </div>}
 
     <div className="section-title-row"><div><p className="eyebrow">Cours, rappels, conférences</p><h2 id="spoken-results-title">Contenus disponibles</h2></div><span className="result-count">{results.length}</span></div>
-    {results.length ? <div className="spoken-search-list">{results.map(({item,durationMs,creators})=><button type="button" key={item.id} onClick={()=>onOpen(item)}>
-      <span className="search-hit-copy"><strong>{item.title}</strong><span>{item.description ?? creators.map((creator)=>creator.name).join(" · ")}</span><small>{[creators.map((creator)=>creator.name).join(" · "),item.language.toUpperCase(),formatMediaDuration(durationMs)].filter(Boolean).join(" · ")}</small></span>
-      <ChevronRight size={17}/>
-    </button>)}</div> : <div className="empty-library compact"><SearchX size={22}/><strong>Aucun contenu trouvé</strong><p>Essayez un autre terme ou retirez un filtre.</p></div>}
+    {results.length ? <div className="spoken-search-list">{results.map(({item,durationMs,creators})=>{
+      const asset = item.mediaAssetIds.map((id)=>catalog.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
+      const downloadable = Boolean(asset && canDownloadOffline(asset,catalog.rights));
+      return <div className="spoken-search-result" key={item.id}>
+        <button type="button" className="spoken-search-main" onClick={()=>onOpen(item)}>
+          <span className="search-hit-copy"><strong>{item.title}</strong><span>{item.description ?? creators.map((creator)=>creator.name).join(" · ")}</span><small>{[creators.map((creator)=>creator.name).join(" · "),item.language.toUpperCase(),formatMediaDuration(durationMs)].filter(Boolean).join(" · ")}</small></span>
+          <ChevronRight size={17}/>
+        </button>
+        <div className="spoken-search-actions">
+          {onQueue && <button type="button" onClick={()=>onQueue(item)} aria-label={`Ajouter ${item.title} à la file`}><Plus size={15}/>File</button>}
+          {onAddToPlaylist && <button type="button" onClick={()=>onAddToPlaylist(item)} aria-label={`Ajouter ${item.title} à une playlist`}><ListMusic size={15}/>Playlist</button>}
+          {asset && onDownload && <OfflineDownloadControl allowed={downloadable} status={downloadStates[item.id]} onDownload={()=>onDownload(item,asset)} />}
+        </div>
+      </div>;
+    })}</div> : <div className="empty-library compact"><SearchX size={22}/><strong>Aucun contenu trouvé</strong><p>Essayez un autre terme ou retirez un filtre.</p></div>}
   </section>;
 }
