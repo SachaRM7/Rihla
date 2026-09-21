@@ -16,6 +16,8 @@ type PlayerOptions = {
   stopAtEnd?: "ayah" | "surah" | null;
   onStopAtEndConsumed?: () => void;
   onSurahEnded?: () => void;
+  stopAfterCurrentAyah?: boolean;
+  onAyahEnded?: () => void;
 };
 
 function readableAudioError() {
@@ -32,6 +34,8 @@ export function useQuranPlayer({
   stopAtEnd = null,
   onStopAtEndConsumed,
   onSurahEnded,
+  stopAfterCurrentAyah = false,
+  onAyahEnded,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
@@ -44,6 +48,8 @@ export function useQuranPlayer({
   const studyLoopIterationRef = useRef(1);
   const playbackRateRef = useRef(playbackRate);
   const onSurahEndedRef = useRef(onSurahEnded);
+  const onAyahEndedRef = useRef(onAyahEnded);
+  const stopAfterCurrentAyahRef = useRef(stopAfterCurrentAyah);
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
@@ -72,7 +78,9 @@ export function useQuranPlayer({
     studyLoopRef.current = studyLoop;
     playbackRateRef.current = playbackRate;
     onSurahEndedRef.current = onSurahEnded;
-  }, [activeIndex, detail, onActiveIndexChange, onSurahEnded, playbackRate, repeatMode, studyLoop]);
+    onAyahEndedRef.current = onAyahEnded;
+    stopAfterCurrentAyahRef.current = stopAfterCurrentAyah;
+  }, [activeIndex, detail, onActiveIndexChange, onAyahEnded, onSurahEnded, playbackRate, repeatMode, stopAfterCurrentAyah, studyLoop]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(resetRepeatProgress);
@@ -275,6 +283,13 @@ export function useQuranPlayer({
         return;
       }
       resetRepeatProgress();
+      if (stopAfterCurrentAyahRef.current) {
+        playWhenLoadedRef.current = false;
+        setStatus("paused");
+        setCurrentTime(0);
+        onAyahEndedRef.current?.();
+        return;
+      }
       const nextIndex = indexRef.current + 1;
       if (!currentDetail || nextIndex >= currentDetail.ayahs.length) {
         playWhenLoadedRef.current = false;
