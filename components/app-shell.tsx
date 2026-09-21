@@ -150,7 +150,6 @@ export function AppShell() {
     createPlaylistWithSpoken,
     toggleAyahInPlaylist,
     deletePlaylist,
-    movePlaylistAyah,
     movePlaylistItem,
     renamePlaylist,
     removeAyahFromPlaylist,
