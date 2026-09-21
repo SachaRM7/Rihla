@@ -4,7 +4,7 @@ export type QuranJumpTarget =
   | { kind: "HIZB"; hizb: number };
 
 export function parseQuranJump(value: string): QuranJumpTarget | null {
-  const input = value.trim().toLocaleLowerCase("fr").replace(/s+/g, " ");
+  const input = value.trim().toLocaleLowerCase("fr").replace(/\s+/g, " ");
   const reference = input.match(/^(\d{1,3})(?::(\d{1,3}))?$/);
   if (reference) {
     const surah = Number(reference[1]);

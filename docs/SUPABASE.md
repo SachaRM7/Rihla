@@ -25,6 +25,12 @@ Le projet de production doit avoir un autre `project-ref`. Les sauvegardes, la r
 
 La migration crée les agrégats du catalogue et les tables privées nécessaires aux favoris, marque-pages, notes, playlists, progressions, préférences, abonnements, téléchargements, rapports et événements de synchronisation.
 
+## Comptes
+
+`components/account-panel.tsx` garde un mode invité sans variables Supabase et utilise Auth email/mot de passe lorsqu'un projet est configuré. L'inscription crée le profil privé puis envoie le snapshot local comme événement `local_library` une seule fois par utilisateur et par appareil. La récupération de mot de passe redirige vers le panneau Réglages pour permettre le changement du mot de passe.
+
+La suppression du compte passe par `supabase/functions/delete-account`. Déployer cette fonction avec `supabase functions deploy delete-account` et conserver `SUPABASE_SERVICE_ROLE_KEY` uniquement dans les secrets Edge Function du projet. Cette clé n'est jamais incluse dans le client web.
+
 ## Sécurité
 
 - Toutes les tables du schéma `public` ont RLS activé.

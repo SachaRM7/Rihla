@@ -34,6 +34,7 @@ import { FullPlayer } from "@/components/full-player";
 import { MiniPlayer } from "@/components/mini-player";
 import { MobileNavigation, type AppView } from "@/components/mobile-navigation";
 import { PreferencesPanel } from "@/components/preferences-panel";
+import { AccountPanel } from "@/components/account-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
 import { moveQueueEntry, removeQueueEntry } from "@/lib/playback-queue";
 import type { QueueEntry } from "@/lib/playback";
@@ -47,6 +48,7 @@ import { SurahBrowser } from "@/components/surah-browser";
 import { useLocalLibrary, type ListeningHistoryItem } from "@/hooks/use-local-library";
 import { useQuranPlayer } from "@/hooks/use-quran-player";
 import { parseQuranJump } from "@/lib/quran/jump";
+import { resolveHizb, resolveJuz } from "@/lib/quran/navigation";
 import { DEFAULT_RECITER_ID, RECITERS } from "@/lib/quran/constants";
 import type { ContentItem, MediaAsset } from "@/lib/domain";
 import type {
@@ -150,6 +152,10 @@ export function AppShell() {
     createPlaylistWithAyah,
     createPlaylistWithSpoken,
     toggleAyahInPlaylist,
+    toggleSpokenInPlaylist,
+    setPlaylistMixedContent,
+    removePlaylistFormat,
+    duplicatePlaylist,
     deletePlaylist,
     movePlaylistItem,
     renamePlaylist,
@@ -272,6 +278,7 @@ export function AppShell() {
     const linkedAyah = Number(params.get("ayah"));
     const linkedTimeValue = params.get("t");
     const linkedTime = linkedTimeValue === null ? 0 : Number(linkedTimeValue);
+    const isAuthRecovery = params.get("auth") === "recovery";
     const hasValidLink =
       Number.isInteger(linkedSurah) && linkedSurah >= 1 && linkedSurah <= 114 &&
       Number.isInteger(linkedAyah) && linkedAyah >= 1 && linkedAyah <= 286 &&
@@ -282,6 +289,7 @@ export function AppShell() {
     requestedAyahRef.current = hasValidLink ? linkedAyah : null;
     requestedPositionRef.current = hasValidLink ? linkedTime * 1000 : library.lastPositionMs;
     if (hasValidLink) window.requestAnimationFrame(() => setActiveView("quran"));
+    if (isAuthRecovery) window.requestAnimationFrame(() => setActiveView("settings"));
   }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
 
   useEffect(() => () => {
@@ -876,6 +884,18 @@ export function AppShell() {
                 event.preventDefault();
                 const target = parseQuranJump(quranJump);
                 if (!target) { showShareMessage("Exemples : 2:255, Juz 30 ou Hizb 60"); return; }
+                if (target.kind === "JUZ") {
+                  const division = resolveJuz(target.juz);
+                  if (!division) { showShareMessage("Référence invalide"); return; }
+                  openSurah(division.surah, division.ayah);
+                  return;
+                }
+                if (target.kind === "HIZB") {
+                  const division = resolveHizb(target.hizb);
+                  if (!division) { showShareMessage("Référence invalide"); return; }
+                  openSurah(division.surah, division.ayah);
+                  return;
+                }
                 if (target.surah < 1 || target.surah > 114 || target.ayah < 1) { showShareMessage("Référence invalide"); return; }
                 openSurah(target.surah, target.ayah);
               }}>
@@ -904,9 +924,9 @@ export function AppShell() {
                       <select name="reader-reciter" autoComplete="off" value={reciterId} onChange={(event) => {
                         const ayahNumber = detail?.ayahs[activeIndex]?.numberInSurah ?? library.lastAyah;
                         setReciterId(event.target.value);
-                        setInitialAyah(ayahNumber);
-                        setInitialPositionMs(0);
-                        setInitialAutoplay(player.isPlaying);
+                        requestedAyahRef.current = ayahNumber;
+                        requestedPositionRef.current = 0;
+                        requestedAutoplayRef.current = player.isPlaying;
                       }}>
                         {RECITERS.map((reciter) => <option value={reciter.id} key={reciter.id}>{reciter.name}</option>)}
                       </select>
@@ -1012,6 +1032,8 @@ export function AppShell() {
                   if (!playlist) return null;
                   return <div className="playlist-detail">
                     <button type="button" className="text-action" onClick={() => setSelectedPlaylistId(null)}>← Playlists</button>
+                    {/* The playlist action reads only immutable render data; the callback itself runs after a user click. */}
+                    {/* eslint-disable-next-line react-hooks/refs */}
                     <div className="section-title-row"><div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div><div className="playlist-title-actions"><span className="section-count">{playlist.ayahKeys.length + playlist.spokenContentIds.length}</span><button type="button" className="icon-button" aria-label="Renommer la playlist" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={16} /></button><button type="button" className="icon-button" aria-label="Dupliquer la playlist" onClick={()=>{duplicatePlaylist(playlist.id);showShareMessage("Playlist dupliquée");}}><Plus size={16}/></button></div></div>
                     {playlist.itemOrder.length > 0 && <button type="button" className="primary-action playlist-play-all" onClick={()=>playPlaylistItem(playlist.id,0)}><Play size={16}/>Lire la playlist</button>}
                     <button type="button" role="switch" aria-checked={playlist.allowMixedContent} className="setting-toggle compact-toggle" onClick={()=>{const disabling=playlist.allowMixedContent;if(disabling&&playlist.ayahKeys.length>0&&playlist.spokenContentIds.length>0){const keep=window.prompt("Pour désactiver le mélange, tapez CORAN pour garder seulement les passages, ou PARLÉ pour garder seulement les contenus parlés.");if(keep?.trim().toLocaleUpperCase("fr")==="CORAN"){removePlaylistFormat(playlist.id,"SPOKEN");showShareMessage("Playlist conservée avec le Coran uniquement");}else if(["PARLÉ","PARLE"].includes(keep?.trim().toLocaleUpperCase("fr")??"")){removePlaylistFormat(playlist.id,"QURAN");showShareMessage("Playlist conservée avec les contenus parlés uniquement");}return;}setPlaylistMixedContent(playlist.id,!playlist.allowMixedContent);}}><span className="setting-copy"><strong>Autoriser le mélange des formats</strong><small>Coran et contenus parlés dans cette même playlist</small></span><span className="switch-track" aria-hidden="true"><i/></span></button>
@@ -1161,12 +1183,15 @@ export function AppShell() {
                 <p>Adaptez l’apparence et la lecture sans encombrer votre bibliothèque.</p>
               </section>
 
+              <AccountPanel library={library} hydrated={hydrated} />
+
               <PreferencesPanel
                 theme={library.theme}
                 appearance={library.appearance}
                 readingSize={library.readingSize}
                 translationSize={library.translationSize}
                 autoScroll={library.autoScroll}
+                showTranslation={library.showTranslation}
                 onThemeChange={(theme) => {
                   setTheme(theme);
                   showShareMessage("Couleur d’accent appliquée");
@@ -1242,7 +1267,7 @@ export function AppShell() {
 
               <section className="data-settings" aria-labelledby="data-settings-title">
                 <div className="section-title-row"><div><p className="eyebrow">Données</p><h2 id="data-settings-title">Vos données locales</h2></div></div>
-                <p>Vos notes, favoris, playlists et historique sont privés par défaut. Un futur compte servira uniquement à les synchroniser si vous le choisissez.</p>
+                <p>Vos notes, favoris, playlists et historique restent privés par défaut. Un compte, si vous le choisissez, sert uniquement à les synchroniser entre vos appareils.</p>
                 <button type="button" role="switch" aria-checked={library.historyEnabled} className="setting-toggle history-toggle" onClick={() => {
                   setHistoryEnabled(!library.historyEnabled);
                   showShareMessage(library.historyEnabled ? "Historique suspendu" : "Historique activé");
