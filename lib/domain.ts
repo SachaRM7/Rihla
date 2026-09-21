@@ -4,10 +4,11 @@ export type ContentType =
   | "LECTURE"
   | "INTERVIEW"
   | "PODCAST_EPISODE"
-  | "VIDEO";
+  | "VIDEO"
+  | "AUDIOBOOK";
 
 export type MediaKind = "AUDIO" | "VIDEO";
-export type LanguageCode = "fr" | "ar" | "en";
+export type LanguageCode = "fr" | "ar" | "en" | "ur";
 export type EditorialLevel =
   | "DISCOVERY"
   | "BEGINNER"
@@ -36,6 +37,7 @@ export interface SourceRef {
   name: string;
   originalUrl: string;
   publisher?: string;
+  accessedAt?: string;
 }
 
 export interface RightsCapabilities {
@@ -62,8 +64,17 @@ export interface RightsRecord {
   attributionText?: string;
   evidenceUrl?: string;
   verifiedAt?: string;
+  territories?: string[];
+  reviewNotes?: string;
+  revokedAt?: string;
   verification: RightsVerification;
   capabilities: RightsCapabilities;
+}
+
+export interface Topic {
+  id: string;
+  slug: string;
+  label: string;
 }
 
 export interface Creator {
@@ -71,7 +82,7 @@ export interface Creator {
   slug: string;
   name: string;
   languages: LanguageCode[];
-  roles: Array<"RECITER" | "TEACHER" | "SPEAKER" | "PODCASTER" | "ORGANIZATION">;
+  roles: Array<"RECITER" | "TEACHER" | "SPEAKER" | "PODCASTER" | "AUTHOR" | "ORGANIZATION">;
   officialUrls: string[];
 }
 
@@ -81,6 +92,9 @@ export interface MediaVariant {
   kind: MediaKind;
   url: string;
   quality?: "DATA_SAVER" | "STANDARD" | "HIGH";
+  mimeType?: string;
+  sizeBytes?: number;
+  checksumSha1?: string;
 }
 
 export interface MediaAsset {
@@ -90,6 +104,10 @@ export interface MediaAsset {
   durationMs?: number;
   sourceId: string;
   rightsRecordId: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  checksumSha1?: string;
+  sourceFileName?: string;
   variantIds?: string[];
 }
 
@@ -107,6 +125,8 @@ export interface ContentItem {
   seriesId?: string;
   mediaAssetIds: string[];
   sourceId: string;
+  artworkUrl?: string;
+  artworkAlt?: string;
   publishedAt?: string;
 }
 

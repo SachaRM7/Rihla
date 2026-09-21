@@ -20,7 +20,9 @@ Règles : conserver le texte arabe canonique, la traduction, le tafsir, la trans
 
 ## Catalogue audio et vidéo
 
-Priorité d’intégration :
+La première sélection publiée est documentée dans [`docs/CATALOG.md`](docs/CATALOG.md) et dans `lib/spoken-catalog.ts`. Elle se limite actuellement à des fichiers audio dont les notices Internet Archive déclarent le domaine public ou CC0 ; aucune vidéo, conférence ou podcast sous licence ambiguë n'est simulé pour remplir l'interface.
+
+Priorité d'intégration :
 
 1. contenus CC0 et domaine public ;
 2. contenus CC BY avec attribution complète ;

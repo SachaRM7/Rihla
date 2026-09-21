@@ -43,7 +43,7 @@ export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPl
       {options.creators.length > 0 && <label><span>Intervenant</span><select value={creatorId} onChange={(event)=>setCreatorId(event.target.value)}><option value="">Tous</option>{options.creators.map((creator)=><option value={creator.id} key={creator.id}>{creator.name}</option>)}</select></label>}
     </div>}
 
-    <div className="section-title-row"><div><p className="eyebrow">Cours, rappels, conférences</p><h2 id="spoken-results-title">Contenus disponibles</h2></div><span className="result-count">{results.length}</span></div>
+    <div className="section-title-row"><div><p className="eyebrow">Cours, archives et contenus audio</p><h2 id="spoken-results-title">Contenus disponibles</h2></div><span className="result-count">{results.length}</span></div>
     {results.length ? <div className="spoken-search-list">{results.map(({item,durationMs,creators})=>{
       const asset = item.mediaAssetIds.map((id)=>catalog.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
       const downloadable = Boolean(asset && canDownloadOffline(asset,catalog.rights));

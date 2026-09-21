@@ -1,4 +1,4 @@
-import type { CatalogBundle } from "./catalog";
+import { canPublish, type CatalogBundle } from "./catalog";
 import type { ContentItem, Creator } from "./domain";
 
 export type SpokenDurationFilter = "all" | "short" | "medium" | "long";
@@ -40,7 +40,7 @@ export function searchSpokenCatalog(
 ) {
   const needle = normalize(query);
   return catalog.contents
-    .filter((item) => item.status === "PUBLISHED")
+    .filter((item) => canPublish(item, catalog))
     .filter((item) => !filters.language || item.language === filters.language)
     .filter((item) => !filters.creatorId || item.creatorIds.includes(filters.creatorId))
     .filter((item) => durationMatches(estimatedDurationMs(item, catalog), filters.duration ?? "all"))
