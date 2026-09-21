@@ -51,6 +51,7 @@ import { parseQuranJump } from "@/lib/quran/jump";
 import { resolveHizb, resolveJuz } from "@/lib/quran/navigation";
 import { DEFAULT_RECITER_ID, RECITERS } from "@/lib/quran/constants";
 import type { ContentItem, MediaAsset } from "@/lib/domain";
+import { parsePublicRoute, publicRoutePath, type PublicRoute } from "@/lib/public-routes";
 import type {
   ApiErrorResponse,
   SurahCatalogResponse,
@@ -129,7 +130,9 @@ function DesktopNavigation({
   );
 }
 
-export function AppShell() {
+type AppShellProps = { initialRoute?: PublicRoute };
+
+export function AppShell({ initialRoute }: AppShellProps = {}) {
   const {
     library,
     hydrated,
@@ -216,13 +219,14 @@ export function AppShell() {
     return () => media.removeEventListener("change", applyAppearance);
   }, [library.appearance]);
 
-  const [activeView, setActiveView] = useState<AppView>("home");
+  const initialView: AppView = initialRoute?.kind === "quran" ? "quran" : initialRoute && initialRoute.kind !== "home" ? "search" : "home";
+  const [activeView, setActiveView] = useState<AppView>(initialView);
   const [surahs, setSurahs] = useState<SurahSummary[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogAttempt, setCatalogAttempt] = useState(0);
 
-  const [selectedNumber, setSelectedNumber] = useState(1);
+  const [selectedNumber, setSelectedNumber] = useState(initialRoute?.kind === "quran" ? initialRoute.surah : 1);
   const [reciterId, setReciterId] = useState(DEFAULT_RECITER_ID);
   const [detail, setDetail] = useState<SurahDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -239,10 +243,12 @@ export function AppShell() {
   const [downloadStates, setDownloadStates] = useState<Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">>({});
   const [activePlaylistRun, setActivePlaylistRun] = useState<{playlistId:string;index:number}|null>(null);
   const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
-  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(() => initialRoute?.kind === "creator" ? SPOKEN_CATALOG.creators.find((item) => item.slug === initialRoute.slug)?.id ?? null : null);
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(() => initialRoute?.kind === "series" ? SPOKEN_CATALOG.series.find((item) => item.slug === initialRoute.slug)?.id ?? null : null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(() => initialRoute?.kind === "collection" ? SPOKEN_CATALOG.collections.find((item) => item.slug === initialRoute.slug)?.id ?? null : null);
+  const [pendingContentSlug, setPendingContentSlug] = useState<string | null>(() => initialRoute?.kind === "content" ? initialRoute.slug : null);
   const [noteQuery, setNoteQuery] = useState("");
-  const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">("all");
+  const [searchType, setSearchType] = useState<"all" | "quran" | "spoken">(initialRoute && initialRoute.kind !== "home" && initialRoute.kind !== "quran" ? "spoken" : "all");
   const [playerOpen, setPlayerOpen] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(null);
@@ -259,6 +265,88 @@ export function AppShell() {
   const requestedPositionRef = useRef<number | null>(null);
   const requestedAutoplayRef = useRef(false);
 
+  const applyRoute = useCallback((route: PublicRoute) => {
+    if (route.kind === "quran") {
+      setActiveView("quran");
+      setSelectedNumber(route.surah);
+      requestedAyahRef.current = route.ayah ?? 1;
+      setSelectedCreatorId(null);
+      setSelectedSeriesId(null);
+      setSelectedCollectionId(null);
+      return;
+    }
+    if (route.kind === "creator") {
+      setActiveView("search");
+      setSearchType("spoken");
+      setSelectedCreatorId(SPOKEN_CATALOG.creators.find((item) => item.slug === route.slug)?.id ?? null);
+      setSelectedSeriesId(null);
+      setSelectedCollectionId(null);
+      return;
+    }
+    if (route.kind === "series") {
+      setActiveView("search");
+      setSearchType("spoken");
+      setSelectedSeriesId(SPOKEN_CATALOG.series.find((item) => item.slug === route.slug)?.id ?? null);
+      setSelectedCreatorId(null);
+      setSelectedCollectionId(null);
+      return;
+    }
+    if (route.kind === "collection") {
+      setActiveView("search");
+      setSearchType("spoken");
+      setSelectedCollectionId(SPOKEN_CATALOG.collections.find((item) => item.slug === route.slug)?.id ?? null);
+      setSelectedCreatorId(null);
+      setSelectedSeriesId(null);
+      return;
+    }
+    if (route.kind === "content") {
+      setActiveView("search");
+      setSearchType("spoken");
+      setSelectedCreatorId(null);
+      setSelectedSeriesId(null);
+      setSelectedCollectionId(null);
+      setPendingContentSlug(route.slug);
+      return;
+    }
+    setActiveView("home");
+    setSelectedCreatorId(null);
+    setSelectedSeriesId(null);
+    setSelectedCollectionId(null);
+  }, []);
+
+  const pushRoute = useCallback((route: PublicRoute, replace = false) => {
+    applyRoute(route);
+    const path = publicRoutePath(route);
+    if (`${window.location.pathname}${window.location.search}` !== path) {
+      window.history[replace ? "replaceState" : "pushState"]({}, "", path);
+    }
+  }, [applyRoute]);
+
+  const navigateToView = useCallback((view: AppView) => {
+    if (view === "quran") pushRoute({ kind: "quran", surah: selectedNumber });
+    else if (view === "home") pushRoute({ kind: "home" });
+    else {
+      setActiveView(view);
+      setSelectedCreatorId(null);
+      setSelectedSeriesId(null);
+      setSelectedCollectionId(null);
+      window.history.pushState({}, "", `/?view=${view}`);
+    }
+  }, [pushRoute, selectedNumber]);
+
+  const applyLocation = useCallback(() => {
+    const route = parsePublicRoute(window.location.pathname, window.location.search);
+    applyRoute(route);
+    const params = new URLSearchParams(window.location.search);
+    if (route.kind === "home") {
+      setQuery(params.get("q") ?? "");
+      const type = params.get("type");
+      if (type === "quran" || type === "spoken" || type === "all") setSearchType(type);
+      const view = params.get("view");
+      if (view === "search" || view === "quran" || view === "library" || view === "settings") setActiveView(view);
+    }
+  }, [applyRoute]);
+
   useEffect(() => {
     const updateNetworkState = () => setIsOnline(navigator.onLine);
     updateNetworkState();
@@ -273,24 +361,35 @@ export function AppShell() {
   useEffect(() => {
     if (!hydrated || initializedRef.current) return;
     initializedRef.current = true;
+    applyLocation();
     const params = new URLSearchParams(window.location.search);
+    const parsedRoute = parsePublicRoute(window.location.pathname, window.location.search);
+    const routeSurah = parsedRoute.kind === "quran" ? parsedRoute.surah : null;
+    const routeAyah = parsedRoute.kind === "quran" ? parsedRoute.ayah ?? null : null;
     const linkedSurah = Number(params.get("surah"));
     const linkedAyah = Number(params.get("ayah"));
     const linkedTimeValue = params.get("t");
     const linkedTime = linkedTimeValue === null ? 0 : Number(linkedTimeValue);
     const isAuthRecovery = params.get("auth") === "recovery";
-    const hasValidLink =
+    const hasValidQueryLink =
       Number.isInteger(linkedSurah) && linkedSurah >= 1 && linkedSurah <= 114 &&
       Number.isInteger(linkedAyah) && linkedAyah >= 1 && linkedAyah <= 286 &&
       Number.isFinite(linkedTime) && linkedTime >= 0 && linkedTime <= 86_400;
+    const hasValidLink = routeSurah !== null || hasValidQueryLink;
 
-    setSelectedNumber(hasValidLink ? linkedSurah : library.lastSurah);
+    setSelectedNumber(routeSurah ?? (hasValidQueryLink ? linkedSurah : library.lastSurah));
     setReciterId(isValidReciter(library.reciterId) ? library.reciterId : DEFAULT_RECITER_ID);
-    requestedAyahRef.current = hasValidLink ? linkedAyah : null;
-    requestedPositionRef.current = hasValidLink ? linkedTime * 1000 : library.lastPositionMs;
-    if (hasValidLink) window.requestAnimationFrame(() => setActiveView("quran"));
+    requestedAyahRef.current = routeAyah ?? (hasValidQueryLink ? linkedAyah : null);
+    requestedPositionRef.current = routeSurah !== null ? library.lastPositionMs : hasValidLink ? linkedTime * 1000 : library.lastPositionMs;
+    if (hasValidQueryLink && routeSurah === null) window.requestAnimationFrame(() => setActiveView("quran"));
     if (isAuthRecovery) window.requestAnimationFrame(() => setActiveView("settings"));
-  }, [hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
+  }, [applyLocation, hydrated, library.lastPositionMs, library.lastSurah, library.reciterId]);
+
+  useEffect(() => {
+    const onPopState = () => applyLocation();
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [applyLocation]);
 
   useEffect(() => () => {
     if (shareTimerRef.current !== null) window.clearTimeout(shareTimerRef.current);
@@ -506,7 +605,7 @@ export function AppShell() {
         0,
         detail.ayahs.findIndex((item) => item.numberInSurah === (ayah ?? 1)),
       );
-      setActiveView("quran");
+      pushRoute({ kind: "quran", surah: number, ayah });
       if (
         nextIndex === activeIndex &&
         loadedSourceUrl === detail.ayahs[nextIndex]?.audioUrl
@@ -523,9 +622,8 @@ export function AppShell() {
 
     setActiveIndex(0);
     setDetail(null);
-    setSelectedNumber(number);
-    setActiveView("quran");
-  }, [activeIndex, detail, loadedSourceUrl, playPlayback, seekPlayback, selectPlaybackAyah]);
+    pushRoute({ kind: "quran", surah: number, ayah });
+  }, [activeIndex, detail, loadedSourceUrl, playPlayback, pushRoute, seekPlayback, selectPlaybackAyah]);
 
   const selectedSummary = useMemo(
     () => surahs.find((surah) => surah.number === selectedNumber) ?? null,
@@ -540,6 +638,8 @@ export function AppShell() {
   const recentReadingDays = Object.entries(library.readingDays).sort(([a],[b]) => b.localeCompare(a)).slice(0,7);
 
   const spokenContents = useMemo(() => publicContents(SPOKEN_CATALOG), []);
+  const selectedCollection = SPOKEN_CATALOG.collections.find((item) => item.id === selectedCollectionId) ?? null;
+  const selectedCollectionContentIds = selectedCollection?.contentIds;
   useEffect(() => {
     if (!hydrated || !SPOKEN_CATALOG.media.length) return;
     let cancelled=false;
@@ -614,7 +714,24 @@ export function AppShell() {
     if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
     const preferred = preferredMediaVariant(asset, SPOKEN_CATALOG.variants ?? [], library.audioQuality);
     setSpokenNowPlaying({ content, asset: preferred ? { ...asset, url: preferred.url } : asset });
+    pushRoute({ kind: "content", slug: content.slug });
   };
+
+  useEffect(() => {
+    if (!pendingContentSlug || !spokenContents.length) return;
+    const content = spokenContents.find((item) => item.slug === pendingContentSlug);
+    setPendingContentSlug(null);
+    if (content) playSpokenContent(content);
+  }, [pendingContentSlug, spokenContents]);
+
+  useEffect(() => {
+    if (activeView !== "search" || !initializedRef.current || selectedCreator || selectedSeries || selectedCollection) return;
+    const params = new URLSearchParams();
+    params.set("view", "search");
+    if (query) params.set("q", query);
+    if (searchType !== "all") params.set("type", searchType);
+    window.history.replaceState({}, "", `/?${params.toString()}`);
+  }, [activeView, query, searchType, selectedCollection, selectedCreator, selectedSeries]);
 
   const featuredSurahs = useMemo(
     () => FEATURED_SURAHS.map((number) => surahs.find((surah) => surah.number === number)).filter((item): item is SurahSummary => Boolean(item)),
@@ -714,7 +831,7 @@ export function AppShell() {
 
   const showQuranView = () => {
     setPlayerOpen(false);
-    setActiveView("quran");
+    navigateToView("quran");
   };
 
   return (
@@ -722,11 +839,11 @@ export function AppShell() {
       <a className="skip-link" href="#main-content">Aller au contenu</a>
       {!isOnline && <div className="network-banner" role="status">Hors connexion · les contenus déjà chargés restent accessibles</div>}
       <a className="skip-link" href="#main-content">Aller au contenu principal</a>
-      <DesktopNavigation activeView={activeView} onChange={setActiveView} />
+      <DesktopNavigation activeView={activeView} onChange={navigateToView} />
 
       <div className="app-main">
         <header className="topbar">
-          <button type="button" className="mobile-brand" onClick={() => setActiveView("home")} aria-label="RIHLA, accueil">
+          <button type="button" className="mobile-brand" onClick={() => navigateToView("home")} aria-label="RIHLA, accueil">
             <span className="brand-mark" aria-hidden="true">ر</span>
             <strong>RIHLA</strong>
           </button>
@@ -736,7 +853,7 @@ export function AppShell() {
           <button
             type="button"
             className="topbar-library"
-            onClick={() => setActiveView("settings")}
+            onClick={() => navigateToView("settings")}
             aria-label="Ouvrir les réglages"
             aria-current={activeView === "settings" ? "page" : undefined}
           >
@@ -773,7 +890,7 @@ export function AppShell() {
                       <button type="button" className="primary-action" onClick={player.toggle} disabled={!detail}>
                         <Play size={18} fill="currentColor" /> {player.isPlaying ? "Mettre en pause" : "Écouter maintenant"}
                       </button>
-                      <button type="button" className="secondary-action" onClick={() => setActiveView("quran")}>
+                      <button type="button" className="secondary-action" onClick={() => navigateToView("quran")}>
                         <BookOpenText size={18} /> Afficher le Coran
                       </button>
                     </div>
@@ -808,7 +925,7 @@ export function AppShell() {
               <section className="featured-section">
                 <div className="section-title-row">
                   <div><p className="eyebrow">Accès rapide</p><h2>Sourates essentielles</h2></div>
-                  <button type="button" className="text-action" onClick={() => setActiveView("quran")}>Tout parcourir <ChevronRight size={16} /></button>
+                  <button type="button" className="text-action" onClick={() => navigateToView("quran")}>Tout parcourir <ChevronRight size={16} /></button>
                 </div>
                 <div className="featured-grid">
                   {featuredSurahs.filter((surah) => !library.hiddenRecommendations.includes(`surah:${surah.number}`)).map((surah) => (
@@ -870,9 +987,10 @@ export function AppShell() {
 
               {(searchType === "all" || searchType === "quran") && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
 
-              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} query={query} onOpen={playSpokenContent} onQueue={queueSpokenContent} onAddToPlaylist={addSpokenToPlaylist} downloadStates={downloadStates} onDownload={downloadSpokenContent} />}
+              {selectedCollection && <section className="section-title-row route-context"><div><p className="eyebrow">Collection éditoriale</p><h2>{selectedCollection.title}</h2><small>{selectedCollection.description}</small></div></section>}
+              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} contentIds={selectedCollectionContentIds} query={query} onOpen={playSpokenContent} onQueue={queueSpokenContent} onAddToPlaylist={addSpokenToPlaylist} downloadStates={downloadStates} onDownload={downloadSpokenContent} />}
 
-              {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
+              {searchType === "spoken" && (selectedCreator || selectedSeries || selectedCollection) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); setSelectedCollectionId(null); navigateToView("search"); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>playSpokenContent(content)} />}
               {searchType === "spoken" && selectedSeries && <SeriesProfile series={selectedSeries} contents={spokenContents} followed={library.follows.some((item)=>item.id===selectedSeries.id&&item.type==="SERIES")} notifications={library.follows.find((item)=>item.id===selectedSeries.id&&item.type==="SERIES")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedSeries.id,"SERIES")} onToggleNotifications={(enabled)=>setFollowNotification(selectedSeries.id,"SERIES",enabled)} onOpen={(content)=>playSpokenContent(content)} />}
             </div>
@@ -1114,7 +1232,7 @@ export function AppShell() {
                     ))}
                   </div>
                 ) : (
-                  <div className="empty-library"><Heart size={22} /><strong>Aucune sourate favorite</strong><p>Utilisez le cœur d’une sourate dans le catalogue pour la retrouver ici.</p><button type="button" className="secondary-action" onClick={() => setActiveView("search")}>Parcourir les sourates</button></div>
+                  <div className="empty-library"><Heart size={22} /><strong>Aucune sourate favorite</strong><p>Utilisez le cœur d’une sourate dans le catalogue pour la retrouver ici.</p><button type="button" className="secondary-action" onClick={() => navigateToView("search")}>Parcourir les sourates</button></div>
                 )}
               </section>}
 
@@ -1426,7 +1544,7 @@ export function AppShell() {
         />
       )}
 
-      <MobileNavigation activeView={activeView} onChange={setActiveView} />
+      <MobileNavigation activeView={activeView} onChange={navigateToView} />
     </div>
   );
 }

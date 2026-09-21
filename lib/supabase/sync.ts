@@ -255,7 +255,12 @@ async function insertChunks<T>(insert: (rows: T[]) => Promise<{ error: { message
 function stableUuid(input: string) {
   let hash = 2166136261;
   for (let index = 0; index < input.length; index += 1) hash = Math.imul(hash ^ input.charCodeAt(index), 16777619);
-  const hex = `${(hash >>> 0).toString(16).padStart(8, "0")}${Array.from({ length: 24 }, (_, index) => ((hash + index * 2654435761) >>> 0).toString(16).padStart(8, "0"))).join("")}`.slice(0, 32).split("");
+  let value = (hash >>> 0).toString(16).padStart(8, "0");
+  for (let index = 0; index < 4; index += 1) {
+    hash = Math.imul(hash ^ (index + 1), 16777619);
+    value += (hash >>> 0).toString(16).padStart(8, "0");
+  }
+  const hex = value.slice(0, 32).split("");
   hex[12] = "5";
   hex[16] = ((parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
   return `${hex.slice(0, 8).join("")}-${hex.slice(8, 12).join("")}-${hex.slice(12, 16).join("")}-${hex.slice(16, 20).join("")}-${hex.slice(20).join("")}`;

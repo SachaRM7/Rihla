@@ -21,17 +21,19 @@ type Props = {
   onAddToPlaylist?: (content: ContentItem) => void;
   downloadStates?: Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">;
   onDownload?: (content: ContentItem, asset: MediaAsset) => void;
+  contentIds?: string[];
 };
 
-export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPlaylist, downloadStates = {}, onDownload }: Props) {
+export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPlaylist, downloadStates = {}, onDownload, contentIds }: Props) {
   const [language, setLanguage] = useState("");
   const [duration, setDuration] = useState<SpokenDurationFilter>("all");
   const [creatorId, setCreatorId] = useState("");
 
-  const options = useMemo(() => spokenFilterOptions(catalog, query), [catalog, query]);
+  const scopedCatalog = useMemo(() => contentIds ? { ...catalog, contents: catalog.contents.filter((item) => contentIds.includes(item.id)) } : catalog, [catalog, contentIds]);
+  const options = useMemo(() => spokenFilterOptions(scopedCatalog, query), [query, scopedCatalog]);
   const results = useMemo(
-    () => searchSpokenCatalog(catalog, query, { language: language || undefined, duration, creatorId: creatorId || undefined }),
-    [catalog, creatorId, duration, language, query],
+    () => searchSpokenCatalog(scopedCatalog, query, { language: language || undefined, duration, creatorId: creatorId || undefined }),
+    [creatorId, duration, language, query, scopedCatalog],
   );
 
   const hasFilters = options.languages.length > 1 || options.hasDurations || options.creators.length > 0;
@@ -45,8 +47,8 @@ export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPl
 
     <div className="section-title-row"><div><p className="eyebrow">Cours, archives et contenus audio</p><h2 id="spoken-results-title">Contenus disponibles</h2></div><span className="result-count">{results.length}</span></div>
     {results.length ? <div className="spoken-search-list">{results.map(({item,durationMs,creators})=>{
-      const asset = item.mediaAssetIds.map((id)=>catalog.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
-      const downloadable = Boolean(asset && canDownloadOffline(asset,catalog.rights));
+      const asset = item.mediaAssetIds.map((id)=>scopedCatalog.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
+      const downloadable = Boolean(asset && canDownloadOffline(asset,scopedCatalog.rights));
       return <div className="spoken-search-result" key={item.id}>
         <button type="button" className="spoken-search-main" onClick={()=>onOpen(item)}>
           <span className="search-hit-copy"><strong>{item.title}</strong><span>{item.description ?? creators.map((creator)=>creator.name).join(" · ")}</span><small>{[creators.map((creator)=>creator.name).join(" · "),item.language.toUpperCase(),formatMediaDuration(durationMs)].filter(Boolean).join(" · ")}</small></span>
