@@ -3,6 +3,7 @@
 import {
   Gauge,
   Bookmark,
+  ListPlus,
   LoaderCircle,
   Pause,
   Play,
@@ -62,6 +63,7 @@ type Props = {
   onSetSleepTimer: (minutes: number | null) => void;
   onSetSleepAtEnd: (mode: "ayah" | "surah" | null) => void;
   onShare: () => void;
+  onQueue?: () => void;
 };
 
 export function FullPlayer({
@@ -99,6 +101,7 @@ export function FullPlayer({
   onSetSleepTimer,
   onSetSleepAtEnd,
   onShare,
+  onQueue,
 }: Props) {
   const { dialogRef, onDialogKeyDown, requestClose } = useModalAccessibility({ onClose });
   const ayah = detail.ayahs[activeIndex];
@@ -151,6 +154,9 @@ export function FullPlayer({
             )}
           </div>
           <div className="player-track-actions">
+            {onQueue && <button type="button" className="queue-add-action" aria-label="Ajouter l’ayah à la file" onClick={onQueue}>
+              <ListPlus size={17} />
+            </button>}
             <button type="button" className="icon-button" aria-label="Partager cette ayah" onClick={onShare}>
               <Share2 size={19} />
             </button>

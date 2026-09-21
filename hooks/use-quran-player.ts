@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
 import type { SurahDetail } from "@/lib/quran/types";
+import { clearMediaSession, setMediaSessionMetadata, setMediaSessionPlayback } from "@/lib/media-session";
 
 export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "buffering" | "error";
 
@@ -18,6 +19,7 @@ type PlayerOptions = {
   onSurahEnded?: () => void;
   stopAfterCurrentAyah?: boolean;
   onAyahEnded?: () => void;
+  mediaSessionEnabled?: boolean;
 };
 
 function readableAudioError() {
@@ -36,6 +38,7 @@ export function useQuranPlayer({
   onSurahEnded,
   stopAfterCurrentAyah = false,
   onAyahEnded,
+  mediaSessionEnabled = true,
 }: PlayerOptions) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const detailRef = useRef(detail);
@@ -434,46 +437,42 @@ export function useQuranPlayer({
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
-    if ("setPositionState" in navigator.mediaSession && Number.isFinite(audio.duration) && audio.duration > 0) {
-      try {
-        navigator.mediaSession.setPositionState({
-          duration: audio.duration,
-          playbackRate: audio.playbackRate,
-          position: Math.min(audio.currentTime, audio.duration),
-        });
-      } catch {}
-    }
-    navigator.mediaSession.playbackState = status === "playing" ? "playing" : status === "paused" || status === "ready" ? "paused" : "none";
-  }, [currentTime, duration, playbackRate, status]);
+    if (!mediaSessionEnabled || !audio) return;
+    setMediaSessionPlayback({
+      state: status === "playing" ? "playing" : status === "paused" || status === "ready" ? "paused" : "none",
+      duration: duration || audio.duration,
+      position: currentTime,
+      playbackRate: audio.playbackRate || playbackRate,
+    });
+  }, [currentTime, duration, mediaSessionEnabled, playbackRate, status]);
 
   useEffect(() => {
-    if (!detail || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    if (!mediaSessionEnabled || !detail) return;
     const ayah = detail.ayahs[activeIndex];
     if (!ayah) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}`,
-      artist: detail.reciterName,
-      album: "RIHLA · Le Coran",
-    });
-    navigator.mediaSession.setActionHandler("play", play);
-    navigator.mediaSession.setActionHandler("pause", pause);
-    navigator.mediaSession.setActionHandler("previoustrack", previous);
-    navigator.mediaSession.setActionHandler("nexttrack", next);
-    navigator.mediaSession.setActionHandler("seekto", (details) => {
+    const seekTo = (details: MediaSessionActionDetails) => {
       const audio = audioRef.current;
       if (!audio || details.seekTime === undefined || !Number.isFinite(audio.duration)) return;
       audio.currentTime = Math.min(Math.max(details.seekTime, 0), audio.duration);
       setCurrentTime(audio.currentTime);
+    };
+    const actions: Partial<Record<MediaSessionAction, MediaSessionActionHandler | null>> = {
+      play,
+      pause,
+      previoustrack: previous,
+      nexttrack: next,
+      seekto: seekTo,
+    };
+    setMediaSessionMetadata({
+      title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}`,
+      artist: detail.reciterName,
+      album: "RIHLA · Le Coran",
+      actions,
     });
     return () => {
-      navigator.mediaSession.setActionHandler("play", null);
-      navigator.mediaSession.setActionHandler("pause", null);
-      navigator.mediaSession.setActionHandler("previoustrack", null);
-      navigator.mediaSession.setActionHandler("nexttrack", null);
-      navigator.mediaSession.setActionHandler("seekto", null);
+      clearMediaSession(Object.keys(actions) as MediaSessionAction[]);
     };
-  }, [activeIndex, detail, next, pause, play, previous]);
+  }, [activeIndex, detail, mediaSessionEnabled, next, pause, play, previous]);
 
   return {
     status,

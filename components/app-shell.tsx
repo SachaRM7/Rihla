@@ -27,7 +27,7 @@ import { AyahList } from "@/components/ayah-list";
 import { AyahNoteDialog } from "@/components/ayah-note-dialog";
 import { CreatorProfile } from "@/components/creator-profile";
 import { PlaybackQueue } from "@/components/playback-queue";
-import { SpokenPlayer } from "@/components/spoken-player";
+import { UniversalSpokenPlayer } from "@/components/universal-spoken-player";
 import { SpokenSearchResults } from "@/components/spoken-search-results";
 import { SeriesProfile } from "@/components/series-profile";
 import { FullPlayer } from "@/components/full-player";
@@ -245,6 +245,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   const [queueCurrentId, setQueueCurrentId] = useState<string | null>(null);
   const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
   const [spokenAutoplay, setSpokenAutoplay] = useState(false);
+  const [spokenPlayerOpen, setSpokenPlayerOpen] = useState(false);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(() => initialRoute?.kind === "creator" ? SPOKEN_CATALOG.creators.find((item) => item.slug === initialRoute.slug)?.id ?? null : null);
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(() => initialRoute?.kind === "series" ? SPOKEN_CATALOG.series.find((item) => item.slug === initialRoute.slug)?.id ?? null : null);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(() => initialRoute?.kind === "collection" ? (SPOKEN_CATALOG.collections ?? []).find((item) => item.slug === initialRoute.slug)?.id ?? null : null);
@@ -500,6 +501,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     stopAfterCurrentAyah: Boolean((queueCurrentId && library.playbackQueue.find((entry) => entry.id === queueCurrentId)?.item.family === "QURAN") || (activePlaylistRun && library.playlists.find((item)=>item.id===activePlaylistRun.playlistId)?.itemOrder[activePlaylistRun.index]?.startsWith("quran:"))),
     onAyahEnded: () => { if (queueCurrentId) advanceQueue(true); else if (activePlaylistRun) advancePlaylist(); },
     onSurahEnded: () => { if (queueCurrentId) advanceQueue(true); else if (activePlaylistRun) advancePlaylist(); },
+    mediaSessionEnabled: !spokenNowPlaying,
   });
   const {
     loadedSourceUrl,
@@ -597,7 +599,12 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     savePlaybackProgress,
   ]);
 
-  const openSurah = useCallback((number: number, ayah?: number, positionMs = 0, autoplay = false) => {
+  const openSurah = useCallback((number: number, ayah?: number, positionMs = 0, autoplay = false, preserveQueue = false, preservePlaylist = false) => {
+    setSpokenAutoplay(false);
+    setSpokenPlayerOpen(false);
+    setSpokenNowPlaying(null);
+    if (!preserveQueue) setQueueCurrentId(null);
+    if (!preservePlaylist) setActivePlaylistRun(null);
     requestedAyahRef.current = ayah ?? 1;
     requestedPositionRef.current = positionMs;
     requestedAutoplayRef.current = autoplay;
@@ -665,9 +672,9 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   };
 
   const queueSpokenContent = (content: ContentItem) => {
-    const asset = content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item&&item.kind==="AUDIO"));
+    const asset = content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item));
     if(!asset) return;
-    const entry: QueueEntry = { id: crypto.randomUUID(), addedAt: new Date().toISOString(), item: { id: content.id, family: "SPOKEN", title: content.title, subtitle: content.description, mediaUrl: asset.url, durationMs: asset.durationMs, contentId: content.id } };
+    const entry: QueueEntry = { id: crypto.randomUUID(), addedAt: new Date().toISOString(), item: { id: content.id, family: "SPOKEN", title: content.title, subtitle: content.description, artworkUrl: content.artworkUrl, mediaUrl: asset.url, durationMs: asset.durationMs, contentId: content.id } };
     setPlaybackQueue([...library.playbackQueue, entry]);
     setShareMessage("Ajouté à la file d’attente");
   };
@@ -684,9 +691,9 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   };
 
   const queueSpokenNext = (content: ContentItem) => {
-    const asset = content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item&&item.kind==="AUDIO"));
+    const asset = content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item));
     if(!asset) return;
-    insertQueueEntry({ id: crypto.randomUUID(), addedAt: new Date().toISOString(), item: { id: content.id, family: "SPOKEN", title: content.title, subtitle: content.description, mediaUrl: asset.url, durationMs: asset.durationMs, contentId: content.id } }, "next");
+    insertQueueEntry({ id: crypto.randomUUID(), addedAt: new Date().toISOString(), item: { id: content.id, family: "SPOKEN", title: content.title, subtitle: content.description, artworkUrl: content.artworkUrl, mediaUrl: asset.url, durationMs: asset.durationMs, contentId: content.id } }, "next");
     setShareMessage("Lecture ajoutée ensuite");
   };
 
@@ -710,9 +717,9 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
 
   const playPlaylistItem = (playlistId:string,index:number) => {
     const playlist=library.playlists.find((item)=>item.id===playlistId); const key=playlist?.itemOrder[index]; if(!playlist||!key)return;
-    pausePlayback(); setSpokenNowPlaying(null); setActivePlaylistRun({playlistId,index});
-    if(key.startsWith("quran:")){const [surah,ayah]=key.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true);return;}
-    const content=SPOKEN_CATALOG.contents.find((item)=>item.id===key.slice(7)); if(content)playSpokenContent(content);
+    pausePlayback(); setSpokenPlayerOpen(false); setSpokenNowPlaying(null); setActivePlaylistRun({playlistId,index});
+    if(key.startsWith("quran:")){const [surah,ayah]=key.slice(6).split(":").map(Number);openSurah(surah,ayah,0,true,false,true);return;}
+    const content=SPOKEN_CATALOG.contents.find((item)=>item.id===key.slice(7)); if(content)playSpokenContent(content, true, true, "playlist");
   };
   const advancePlaylist = () => {
     if(!activePlaylistRun)return; const playlist=library.playlists.find((item)=>item.id===activePlaylistRun.playlistId); if(!playlist)return;
@@ -736,14 +743,21 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     }
   }, [activePlaylistRun, library.playlists, pausePlayback]);
 
-  const playSpokenContent = useCallback((content: ContentItem, updateRoute = true, autoplay = false) => {
-    const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
+  const playSpokenContent = useCallback((content: ContentItem, updateRoute = true, autoplay = false, context: "manual" | "queue" | "playlist" = "manual") => {
+    const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item));
     if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
     const preferred = preferredMediaVariant(asset, SPOKEN_CATALOG.variants ?? [], library.audioQuality);
+    pausePlayback();
+    setPlayerOpen(false);
+    setSpokenPlayerOpen(false);
+    if (context === "manual") {
+      setQueueCurrentId(null);
+      setActivePlaylistRun(null);
+    }
     setSpokenNowPlaying({ content, asset: preferred ? { ...asset, url: preferred.url } : asset });
     setSpokenAutoplay(autoplay);
     if (updateRoute) pushRoute({ kind: "content", slug: content.slug });
-  }, [library.audioQuality, pushRoute]);
+  }, [library.audioQuality, pausePlayback, pushRoute]);
 
   const playQueueEntry = (entry: QueueEntry) => {
     setQueueCurrentId(entry.id);
@@ -759,7 +773,8 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       }
       setSpokenNowPlaying(null);
       setSpokenAutoplay(false);
-      openSurah(reference.surah, reference.ayah, 0, true);
+      setSpokenPlayerOpen(false);
+      openSurah(reference.surah, reference.ayah, 0, true, true);
       return;
     }
     const content = SPOKEN_CATALOG.contents.find((item) => item.id === entry.item.contentId || item.id === entry.item.id);
@@ -769,7 +784,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       setShareMessage("Contenu retiré de la file : il n’est plus disponible");
       return;
     }
-    playSpokenContent(content, true, true);
+    playSpokenContent(content, true, true, "queue");
   };
 
   const advanceQueue = (automatic = false) => {
@@ -808,9 +823,21 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     if (queueCurrentId) advanceQueue(false);
     else player.next();
   };
+  const previousSpokenEntry = () => {
+    if (queueCurrentId) previousQueueEntry();
+    else if (activePlaylistRun && activePlaylistRun.index > 0) playPlaylistItem(activePlaylistRun.playlistId, activePlaylistRun.index - 1);
+  };
+  const nextSpokenEntry = () => {
+    if (queueCurrentId) advanceQueue(false);
+    else if (activePlaylistRun) advancePlaylist();
+  };
   const currentQueueIndex = library.playbackQueue.findIndex((entry) => entry.id === queueCurrentId);
   const canPreviousQueue = queueCurrentId ? currentQueueIndex > 0 : player.canPrevious;
   const canNextQueue = queueCurrentId ? currentQueueIndex >= 0 && currentQueueIndex < library.playbackQueue.length - 1 : player.canNext;
+  const canPreviousSpoken = queueCurrentId ? currentQueueIndex > 0 : Boolean(activePlaylistRun && activePlaylistRun.index > 0);
+  const canNextSpoken = queueCurrentId
+    ? currentQueueIndex >= 0 && currentQueueIndex < library.playbackQueue.length - 1
+    : Boolean(activePlaylistRun && activePlaylistRun.index < (library.playlists.find((item) => item.id === activePlaylistRun.playlistId)?.itemOrder.length ?? 0) - 1);
 
   useEffect(() => {
     if (!pendingContentSlug || !spokenContents.length) return;
@@ -1189,7 +1216,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
                         continuousView={library.continuousQuran}
                         memorizationMode={library.memorizationMode}
                         memorizationRevealDelay={library.memorizationRevealDelay}
-                        onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); }}
+                        onSelect={(index) => { const ayah = detail.ayahs[index]; if (ayah) { setQueueCurrentId(null); setActivePlaylistRun(null); setSpokenPlayerOpen(false); setSpokenNowPlaying(null); setSpokenAutoplay(false); saveReadingProgress(detail.surah.number, ayah.numberInSurah); player.selectAyah(index, true); } }}
                         onToggleFavorite={(ayah) => toggleFavoriteAyah(detail.surah.number, ayah)}
                         onShare={(ayah) => shareAyah(ayah)}
                         onOpenTafsir={(ayah) => setTafsirTarget(ayah)}
@@ -1533,7 +1560,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
         </main>
       </div>
 
-      <MiniPlayer
+      {!spokenNowPlaying && <MiniPlayer
         detail={detail}
         activeIndex={activeIndex}
         status={player.status}
@@ -1546,9 +1573,9 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
         onNext={nextQueueEntry}
         canPrevious={canPreviousQueue}
         canNext={canNextQueue}
-      />
+      />}
 
-      {playerOpen && detail && (
+      {playerOpen && detail && !spokenNowPlaying && (
         <FullPlayer
           detail={detail}
           activeIndex={activeIndex}
@@ -1599,6 +1626,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
             if (mode) setSleepTimer(null);
           }}
           onShare={() => currentAyah && shareAyah(currentAyah.numberInSurah, player.currentTime * 1000)}
+          onQueue={() => currentAyah && queueQuranAyah(currentAyah.numberInSurah, "end")}
         />
       )}
 
@@ -1606,12 +1634,20 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
 
       {activeView === "library" && library.playbackQueue.length > 0 && <div className="queue-drawer"><PlaybackQueue queue={library.playbackQueue} currentId={queueCurrentId} onPlay={playQueueEntry} onRemove={(id)=>{setPlaybackQueue(removeQueueEntry(library.playbackQueue,id));if(id===queueCurrentId){setQueueCurrentId(null);pausePlayback();setSpokenNowPlaying(null);}}} onMove={(id,toIndex)=>setPlaybackQueue(moveQueueEntry(library.playbackQueue,id,toIndex))} onClear={()=>{setPlaybackQueue([]);setQueueCurrentId(null);pausePlayback();setSpokenNowPlaying(null);}} /></div>}
       
-            {spokenNowPlaying && <SpokenPlayer
+            {spokenNowPlaying && <UniversalSpokenPlayer
+        key={spokenNowPlaying.content.id}
         content={spokenNowPlaying.content}
         asset={spokenNowPlaying.asset}
         variants={SPOKEN_CATALOG.variants ?? []}
         playbackRate={library.spokenPlaybackRate}
         autoplay={spokenAutoplay}
+        compact={!spokenPlayerOpen}
+        onOpen={() => setSpokenPlayerOpen(true)}
+        onPrevious={previousSpokenEntry}
+        onNext={nextSpokenEntry}
+        canPrevious={canPreviousSpoken}
+        canNext={canNextSpoken}
+        onQueue={() => queueSpokenContent(spokenNowPlaying.content)}
         transcript={SPOKEN_CATALOG.transcripts?.find((item) => item.contentId === spokenNowPlaying.content.id)}
         transcriptSegments={SPOKEN_CATALOG.transcriptSegments ?? []}
         chapters={(SPOKEN_CATALOG.chapters ?? []).filter((item) => item.contentId === spokenNowPlaying.content.id)}
@@ -1619,7 +1655,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
         onProgress={(positionMs, durationMs) => saveSpokenProgress(spokenNowPlaying.content.id, positionMs, durationMs)}
         onEnded={() => { if (queueCurrentId) advanceQueue(true); else advancePlaylist(); }}
         onReportIssue={() => setShareMessage("Signalement enregistré localement · envoi serveur à connecter")}
-        onClose={() => { setSpokenAutoplay(false); setSpokenNowPlaying(null); }}
+        onClose={() => { setSpokenAutoplay(false); setSpokenPlayerOpen(false); setSpokenNowPlaying(null); }}
       />}
       
             {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
