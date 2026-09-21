@@ -146,6 +146,8 @@ export function AppShell() {
     setStudyLoop,
     saveAyahNote,
     createPlaylist,
+    createPlaylistWithAyah,
+    createPlaylistWithSpoken,
     toggleAyahInPlaylist,
     deletePlaylist,
     movePlaylistAyah,
@@ -521,7 +523,7 @@ export function AppShell() {
   const selectedCreator = SPOKEN_CATALOG.creators.find((item) => item.id === selectedCreatorId) ?? null;
   const selectedSeries = SPOKEN_CATALOG.series.find((item) => item.id === selectedSeriesId) ?? null;
   const addSpokenToPlaylist = (content: ContentItem) => {
-    if (!library.playlists.length) { const title=window.prompt("Créez d’abord une playlist"); if(title)createPlaylist(title); return; }
+    if (!library.playlists.length) { const title=window.prompt("Créez votre première playlist"); if(title){createPlaylistWithSpoken(title,content.id);showShareMessage("Playlist créée avec ce contenu");} return; }
     const choice=window.prompt(`Ajouter à quelle playlist ?\n${library.playlists.map((playlist,index)=>`${index+1}. ${playlist.title}`).join("\n")}`);
     const playlist=library.playlists[Number(choice)-1]; if(!playlist)return;
     if(!playlist.allowMixedContent && playlist.ayahKeys.length>0){showShareMessage("Cette playlist contient du Coran · activez d’abord le mélange");return;}
@@ -901,7 +903,7 @@ export function AppShell() {
                         onShare={(ayah) => shareAyah(ayah)}
                         onOpenTafsir={(ayah) => setTafsirTarget(ayah)}
                         onAddToPlaylist={(ayah) => {
-                          if (!library.playlists.length) { const title = window.prompt("Créez d’abord une playlist"); if (title) createPlaylist(title); return; }
+                          if (!library.playlists.length) { const title = window.prompt("Créez votre première playlist"); if (title) { createPlaylistWithAyah(title, detail.surah.number, ayah); showShareMessage("Playlist créée avec ce passage"); } return; }
                           const choice = window.prompt(`Ajouter à quelle playlist ?\n${library.playlists.map((playlist, index) => `${index + 1}. ${playlist.title}`).join("\n")}`);
                           const playlist = library.playlists[Number(choice) - 1];
                           if (playlist) {
@@ -973,30 +975,7 @@ export function AppShell() {
                 </div> : <div className="empty-library compact"><ListMusic size={22} /><strong>Aucune playlist</strong><p>Créez une collection personnelle pour organiser vos écoutes.</p></div>}
               </section>}
 
-              {librarySection === "playlists" && selectedPlaylistId && (() => {
-                const playlist = library.playlists.find((item) => item.id === selectedPlaylistId);
-                if (!playlist) return null;
-                return <section className="library-section playlist-detail">
-                  <div className="section-title-row">
-                    <div><p className="eyebrow">Playlist</p><h2>{playlist.title}</h2></div>
-                    <button type="button" className="text-action" onClick={() => { const title = window.prompt("Nouveau nom", playlist.title); if (title) renamePlaylist(playlist.id, title); }}><Pencil size={15}/> Renommer</button>
-                  </div>
-                  {playlist.ayahKeys.length ? <div className="playlist-items">
-                    {playlist.ayahKeys.map((key, index) => {
-                      const [surahNumber, ayahNumber] = key.split(":").map(Number);
-                      const surah = surahs.find((item) => item.number === surahNumber);
-                      return <div className="playlist-item" key={key}>
-                        <button type="button" className="playlist-open" onClick={() => openSurah(surahNumber, ayahNumber)}><span>{key}</span><strong>{surah?.englishName ?? `Sourate ${surahNumber}`}</strong></button>
-                        <button type="button" disabled={index === 0} aria-label="Monter" onClick={() => movePlaylistAyah(playlist.id,index,index-1)}><ArrowUp size={15}/></button>
-                        <button type="button" disabled={index === playlist.ayahKeys.length-1} aria-label="Descendre" onClick={() => movePlaylistAyah(playlist.id,index,index+1)}><ArrowDown size={15}/></button>
-                        <button type="button" aria-label="Retirer" onClick={() => toggleAyahInPlaylist(playlist.id,surahNumber,ayahNumber)}>×</button>
-                      </div>;
-                    })}
-                  </div> : <div className="empty-library compact"><ListMusic size={22}/><strong>Playlist vide</strong><p>Ajoutez des passages depuis le menu d’un verset.</p></div>}
-                </section>;
-              })()}
-
-              {(librarySection === "all" || librarySection === "history") && <section className="library-section">
+                            {(librarySection === "all" || librarySection === "history") && <section className="library-section">
                 <div className="section-title-row"><div><p className="eyebrow">Reprendre</p><h2>Historique d’écoute</h2></div></div>
                 {recentHistory.length ? (
                   <div className="history-list">
