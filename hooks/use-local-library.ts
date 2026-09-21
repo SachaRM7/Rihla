@@ -550,6 +550,18 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, studyLoop: sanitizeStudyLoop(studyLoop) }));
   }, []);
 
+  const createPlaylistWithAyah = useCallback((title: string, surah: number, ayah: number) => {
+    const normalized = title.trim().slice(0,80); if(!normalized)return;
+    const now=Date.now(); const key=`${surah}:${ayah}`;
+    setLibrary((current)=>({...current,playlists:[{id:crypto.randomUUID(),title:normalized,ayahKeys:[key],spokenContentIds:[],itemOrder:[`quran:${key}`],allowMixedContent:false,createdAt:now,updatedAt:now},...current.playlists]}));
+  }, []);
+
+  const createPlaylistWithSpoken = useCallback((title: string, contentId: string) => {
+    const normalized = title.trim().slice(0,80); if(!normalized)return;
+    const now=Date.now();
+    setLibrary((current)=>({...current,playlists:[{id:crypto.randomUUID(),title:normalized,ayahKeys:[],spokenContentIds:[contentId],itemOrder:[`spoken:${contentId}`],allowMixedContent:false,createdAt:now,updatedAt:now},...current.playlists]}));
+  }, []);
+
   const createPlaylist = useCallback((title: string) => {
     const normalized = title.trim().slice(0, 80);
     if (!normalized) return;
@@ -695,6 +707,8 @@ export function useLocalLibrary() {
     setStudyLoop,
     saveAyahNote,
     createPlaylist,
+    createPlaylistWithAyah,
+    createPlaylistWithSpoken,
     toggleAyahInPlaylist,
     toggleSpokenInPlaylist,
     setPlaylistMixedContent,
