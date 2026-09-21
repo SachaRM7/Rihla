@@ -550,6 +550,17 @@ export function AppShell() {
     setShareMessage("Ajouté à la file d’attente");
   };
 
+  const downloadSpokenContent = (content: ContentItem, asset: MediaAsset) => {
+    if (library.wifiOnlyDownloads) {
+      const connection=(navigator as Navigator & {connection?:{type?:string}}).connection;
+      if (connection?.type && connection.type!=="wifi") { showShareMessage("Téléchargement réservé au Wi-Fi"); return; }
+    }
+    setDownloadStates((current)=>({...current,[content.id]:"DOWNLOADING"}));
+    void downloadMediaAsset(asset)
+      .then(()=>{setDownloadStates((current)=>({...current,[content.id]:"AVAILABLE"}));showShareMessage("Disponible hors connexion");})
+      .catch((error)=>{setDownloadStates((current)=>({...current,[content.id]:"ERROR"}));showShareMessage(error instanceof Error?error.message:"Téléchargement impossible");});
+  };
+
   const playPlaylistItem = (playlistId:string,index:number) => {
     const playlist=library.playlists.find((item)=>item.id===playlistId); const key=playlist?.itemOrder[index]; if(!playlist||!key)return;
     pausePlayback(); setSpokenNowPlaying(null); setActivePlaylistRun({playlistId,index});
@@ -836,7 +847,7 @@ export function AppShell() {
 
               {(searchType === "all" || searchType === "quran") && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
 
-              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} query={query} onOpen={playSpokenContent} />}
+              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} query={query} onOpen={playSpokenContent} onQueue={queueSpokenContent} onAddToPlaylist={addSpokenToPlaylist} downloadStates={downloadStates} onDownload={downloadSpokenContent} />}
 
               {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>playSpokenContent(content)} />}
