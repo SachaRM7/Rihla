@@ -317,7 +317,7 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, [onStopAtEndConsumed, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
+  }, [onStopAtEndConsumed, onSurahEnded, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
 
   useEffect(() => {
     const audio = audioRef.current;
