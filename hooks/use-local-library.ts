@@ -206,6 +206,19 @@ function localDayKey(date = new Date()) {
   return year + "-" + month + "-" + day;
 }
 
+function sanitizePlaylist(value: unknown): PersonalPlaylist | null {
+  if (!value || typeof value !== "object") return null;
+  const item = value as Partial<PersonalPlaylist>;
+  if (typeof item.id !== "string" || typeof item.title !== "string" || !Array.isArray(item.ayahKeys)) return null;
+  const ayahKeys=[...new Set(item.ayahKeys.filter((key): key is string=>typeof key==="string"&&/^\d{1,3}:\d{1,3}$/.test(key)))];
+  const spokenContentIds=[...new Set((Array.isArray(item.spokenContentIds)?item.spokenContentIds:[]).filter((id): id is string=>typeof id==="string"&&id.length>0))];
+  const valid=new Set([...ayahKeys.map((key)=>`quran:${key}`),...spokenContentIds.map((id)=>`spoken:${id}`)]);
+  const requested=Array.isArray(item.itemOrder)?item.itemOrder.filter((key): key is string=>typeof key==="string"&&valid.has(key)):[];
+  const itemOrder=[...new Set([...requested,...valid])];
+  const mixed=ayahKeys.length>0&&spokenContentIds.length>0;
+  return { id:item.id, title:item.title.trim().slice(0,80)||"Playlist", ayahKeys, spokenContentIds, itemOrder, allowMixedContent:mixed?true:item.allowMixedContent===true, createdAt:Number.isFinite(item.createdAt)?Number(item.createdAt):Date.now(), updatedAt:Number.isFinite(item.updatedAt)?Number(item.updatedAt):Date.now() };
+}
+
 function sanitizeLibrary(value: unknown): LocalLibrary {
   if (!value || typeof value !== "object") return DEFAULT_LIBRARY;
   const candidate = value as Partial<LocalLibrary>;
@@ -271,7 +284,7 @@ function sanitizeLibrary(value: unknown): LocalLibrary {
     listeningHistory,
     ayahNotes,
     historyEnabled: typeof candidate.historyEnabled === "boolean" ? candidate.historyEnabled : true,
-    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.filter((item) => Boolean(item && typeof item === "object" && typeof (item as PersonalPlaylist).id === "string" && typeof (item as PersonalPlaylist).title === "string" && Array.isArray((item as PersonalPlaylist).ayahKeys))).slice(0, 100).map((item) => ({ ...(item as PersonalPlaylist), spokenContentIds: Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.filter((id): id is string => typeof id === "string") : [], itemOrder: Array.isArray((item as PersonalPlaylist).itemOrder) ? (item as PersonalPlaylist).itemOrder.filter((id): id is string => typeof id === "string") : [...(item as PersonalPlaylist).ayahKeys.map((key) => `quran:${key}`), ...(Array.isArray((item as PersonalPlaylist).spokenContentIds) ? (item as PersonalPlaylist).spokenContentIds.map((id) => `spoken:${id}`) : [])], allowMixedContent: (item as PersonalPlaylist).allowMixedContent === true })) : [],
+    playlists: Array.isArray(candidate.playlists) ? candidate.playlists.map(sanitizePlaylist).filter((item): item is PersonalPlaylist => Boolean(item)).slice(0,100) : [],
     quranReadingSurah: Number.isInteger(candidate.quranReadingSurah) && candidate.quranReadingSurah! >= 1 && candidate.quranReadingSurah! <= 114 ? candidate.quranReadingSurah! : 1,
     quranReadingAyah: Number.isInteger(candidate.quranReadingAyah) && candidate.quranReadingAyah! >= 1 ? candidate.quranReadingAyah! : 1,
     quranReadingUpdatedAt: Number.isFinite(candidate.quranReadingUpdatedAt) ? Math.max(0, Number(candidate.quranReadingUpdatedAt)) : 0,
