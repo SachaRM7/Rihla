@@ -36,6 +36,7 @@ import { PreferencesPanel } from "@/components/preferences-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
 import { moveQueueEntry, removeQueueEntry } from "@/lib/playback-queue";
 import type { QueueEntry } from "@/lib/playback";
+import { downloadMediaAsset, isMediaDownloaded } from "@/lib/offline-storage";
 import { preferredMediaVariant } from "@/lib/media-variants";
 import { canDownloadOffline } from "@/lib/offline";
 import { publicContents } from "@/lib/catalog";
@@ -518,6 +519,17 @@ export function AppShell() {
   const recentReadingDays = Object.entries(library.readingDays).sort(([a],[b]) => b.localeCompare(a)).slice(0,7);
 
   const spokenContents = publicContents(SPOKEN_CATALOG);
+  useEffect(() => {
+    if (!hydrated || !SPOKEN_CATALOG.media.length) return;
+    let cancelled=false;
+    void Promise.all(spokenContents.map(async(content)=>{
+      const asset=content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item&&item.kind==="AUDIO"));
+      return [content.id,asset?await isMediaDownloaded(asset.url):false] as const;
+    })).then((entries)=>{if(!cancelled)setDownloadStates(Object.fromEntries(entries.filter(([,available])=>available).map(([id])=>[id,"AVAILABLE" as const])));});
+    return()=>{cancelled=true;};
+  }, [hydrated]);
+
+
   const hasSpokenContents = spokenContents.length > 0;
   const selectedCreator = SPOKEN_CATALOG.creators.find((item) => item.id === selectedCreatorId) ?? null;
   const selectedSeries = SPOKEN_CATALOG.series.find((item) => item.id === selectedSeriesId) ?? null;
@@ -805,7 +817,8 @@ export function AppShell() {
               {searchType === "spoken" && hasSpokenContents && !selectedCreator && !selectedSeries && <div className="spoken-catalog-list">{spokenContents.map((item) => {
                 const asset = item.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((media)=>media.id===id)).find((media): media is MediaAsset=>Boolean(media&&media.kind==="AUDIO"));
                 const allowed = Boolean(asset && canDownloadOffline(asset,SPOKEN_CATALOG.rights));
-                return <div className="spoken-catalog-row" key={item.id}><button type="button" onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_"," ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18}/></button><button type="button" className="queue-add-action" onClick={()=>queueSpokenContent(item)} aria-label={`Ajouter ${item.title} à la file d’attente`}><Plus size={16}/>File</button><button type="button" className="queue-add-action" onClick={()=>addSpokenToPlaylist(item)} aria-label={`Ajouter ${item.title} à une playlist`}><ListMusic size={16}/>Playlist</button>{asset && <OfflineDownloadControl allowed={allowed} status={downloadStates[item.id]} onDownload={()=>{ if(library.wifiOnlyDownloads){ const connection=(navigator as Navigator & {connection?:{type?:string}}).connection; if(connection?.type && connection.type!=="wifi"){setShareMessage("Téléchargement réservé au Wi-Fi");return;} } setDownloadStates((current)=>({...current,[item.id]:"QUEUED"})); setShareMessage("Téléchargement prêt · stockage hors connexion à connecter"); }} />}</div>;
+                return <div className="spoken-catalog-row" key={item.id}><button type="button" onClick={() => playSpokenContent(item)}><div><strong>{item.title}</strong><small>{item.type.replaceAll("_"," ").toLocaleLowerCase("fr")}</small></div><ChevronRight size={18}/></button><button type="button" className="queue-add-action" onClick={()=>queueSpokenContent(item)} aria-label={`Ajouter ${item.title} à la file d’attente`}><Plus size={16}/>File</button><button type="button" className="queue-add-action" onClick={()=>addSpokenToPlaylist(item)} aria-label={`Ajouter ${item.title} à une playlist`}><ListMusic size={16}/>Playlist</button>{asset && <OfflineDownloadControl allowed={allowed} status={downloadStates[item.id]} onDownload={()=>{ if(library.wifiOnlyDownloads){ const connection=(navigator as Navigator & {connection?:{type?:string}}).connection; if(connection?.type && connection.type!=="wifi"){setShareMessage("Téléchargement réservé au Wi-Fi");return;} } setDownloadStates((current)=>({...current,[item.id]:"DOWNLOADING"}));
+                  void downloadMediaAsset(asset).then(()=>{setDownloadStates((current)=>({...current,[item.id]:"AVAILABLE"}));setShareMessage("Disponible hors connexion");}).catch((error)=>{setDownloadStates((current)=>({...current,[item.id]:"ERROR"}));setShareMessage(error instanceof Error?error.message:"Téléchargement impossible");}); }} />}</div>;
               })}</div>}
               {searchType === "spoken" && (selectedCreator || selectedSeries) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>{ if(content.mediaAssetIds.length) playSpokenContent(content); else if(content.seriesId) { setSelectedCreatorId(null); setSelectedSeriesId(content.seriesId); } }} />}
