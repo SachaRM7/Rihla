@@ -896,7 +896,13 @@ export function AppShell() {
                           if (!library.playlists.length) { const title = window.prompt("Créez d’abord une playlist"); if (title) createPlaylist(title); return; }
                           const choice = window.prompt(`Ajouter à quelle playlist ?\n${library.playlists.map((playlist, index) => `${index + 1}. ${playlist.title}`).join("\n")}`);
                           const playlist = library.playlists[Number(choice) - 1];
-                          if (playlist) { toggleAyahInPlaylist(playlist.id, detail.surah.number, ayah); showShareMessage(`Ajouté à ${playlist.title}`); }
+                          if (playlist) {
+                            if (!playlist.allowMixedContent && playlist.spokenContentIds.length > 0) { showShareMessage("Cette playlist contient des contenus parlés · activez d’abord le mélange"); return; }
+                            const key = `${detail.surah.number}:${ayah}`;
+                            const already = playlist.ayahKeys.includes(key);
+                            toggleAyahInPlaylist(playlist.id, detail.surah.number, ayah);
+                            showShareMessage(already ? `Retiré de ${playlist.title}` : `Ajouté à ${playlist.title}`);
+                          }
                         }}
                         onEditNote={(ayah) => setNoteTarget({
                           surah: detail.surah.number,
