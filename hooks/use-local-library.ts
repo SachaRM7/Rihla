@@ -569,6 +569,14 @@ export function useLocalLibrary() {
     }) }));
   }, []);
 
+  const removePlaylistFormat = useCallback((playlistId: string, format: "QURAN" | "SPOKEN") => {
+    setLibrary((current) => ({ ...current, playlists: current.playlists.map((playlist) => {
+      if (playlist.id !== playlistId) return playlist;
+      if (format === "QURAN") return { ...playlist, ayahKeys: [], itemOrder: playlist.itemOrder.filter((item) => !item.startsWith("quran:")), allowMixedContent: false, updatedAt: Date.now() };
+      return { ...playlist, spokenContentIds: [], itemOrder: playlist.itemOrder.filter((item) => !item.startsWith("spoken:")), allowMixedContent: false, updatedAt: Date.now() };
+    }) }));
+  }, []);
+
   const duplicatePlaylist = useCallback((playlistId: string) => {
     setLibrary((current) => {
       const source = current.playlists.find((item) => item.id === playlistId); if (!source) return current;
@@ -691,6 +699,7 @@ export function useLocalLibrary() {
     toggleSpokenInPlaylist,
     setPlaylistMixedContent,
     duplicatePlaylist,
+    removePlaylistFormat,
     deletePlaylist,
     movePlaylistAyah,
     movePlaylistItem,
