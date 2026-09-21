@@ -103,7 +103,7 @@ export type LocalLibrary = {
   playbackQueue: QueueEntry[];
 };
 
-const DEFAULT_LIBRARY: LocalLibrary = {
+export const DEFAULT_LIBRARY: LocalLibrary = {
   version: 1,
   favoriteSurahs: [],
   favoriteAyahs: [],
@@ -219,7 +219,7 @@ function sanitizePlaylist(value: unknown): PersonalPlaylist | null {
   return { id:item.id, title:item.title.trim().slice(0,80)||"Playlist", ayahKeys, spokenContentIds, itemOrder, allowMixedContent:mixed?true:item.allowMixedContent===true, createdAt:Number.isFinite(item.createdAt)?Number(item.createdAt):Date.now(), updatedAt:Number.isFinite(item.updatedAt)?Number(item.updatedAt):Date.now() };
 }
 
-function sanitizeLibrary(value: unknown): LocalLibrary {
+export function sanitizeLibrary(value: unknown): LocalLibrary {
   if (!value || typeof value !== "object") return DEFAULT_LIBRARY;
   const candidate = value as Partial<LocalLibrary>;
   if (candidate.version !== 1) return DEFAULT_LIBRARY;

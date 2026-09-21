@@ -1183,7 +1183,7 @@ export function AppShell() {
                 <p>Adaptez l’apparence et la lecture sans encombrer votre bibliothèque.</p>
               </section>
 
-              <AccountPanel library={library} hydrated={hydrated} />
+              <AccountPanel library={library} hydrated={hydrated} restoreLibrary={importData} />
 
               <PreferencesPanel
                 theme={library.theme}

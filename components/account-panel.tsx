@@ -4,11 +4,13 @@ import { KeyRound, LoaderCircle, LogIn, LogOut, Mail, ShieldCheck, Trash2, UserR
 import { useState } from "react";
 import type { LocalLibrary } from "@/hooks/use-local-library";
 import { useSupabaseAuth, type AuthMode } from "@/hooks/use-supabase-auth";
+import { useCloudSync } from "@/hooks/use-cloud-sync";
 
-type Props = { library: LocalLibrary; hydrated: boolean };
+type Props = { library: LocalLibrary; hydrated: boolean; restoreLibrary: (raw: string) => boolean };
 
-export function AccountPanel({ library, hydrated }: Props) {
+export function AccountPanel({ library, hydrated, restoreLibrary }: Props) {
   const auth = useSupabaseAuth(library, hydrated);
+  const sync = useCloudSync({ user: auth.user, localLibrary: library, hydrated, restoreLibrary });
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,6 +44,12 @@ export function AccountPanel({ library, hydrated }: Props) {
       </div>
     </>}
     {auth.configured && auth.user && <div className="account-authenticated">
+      <div className="cloud-sync-status" role="status">
+        <span className={`sync-status-dot ${sync.status}`} aria-hidden="true" />
+        <span><strong>{sync.status === "syncing" ? "Synchronisation en cours" : sync.status === "synced" ? "Synchronisé" : sync.status === "offline" ? "Hors connexion" : sync.status === "error" ? "Synchronisation en attente" : "Synchronisation prête"}</strong><small>{sync.pending ? "Vos changements seront renvoyés dès le retour du réseau." : sync.lastSyncedAt ? `Dernière synchronisation à ${new Date(sync.lastSyncedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.` : "Les données restent privées et sont restaurées sur vos appareils."}</small></span>
+        <button type="button" className="text-action" onClick={() => void sync.syncNow()} disabled={sync.status === "syncing"}>Synchroniser</button>
+      </div>
+      {sync.error && <p className="account-feedback error" role="alert">{sync.error}</p>}
       <div className="account-identity"><span className="account-avatar"><UserRound size={18}/></span><div><strong>{auth.user.email ?? "Compte connecté"}</strong><small>Session persistante activée · mode invité conservé sur cet appareil</small></div></div>
       <p className="account-migration-note">À la première connexion, le snapshot local est envoyé comme événement privé de synchronisation. Les données ne sont pas publiées.</p>
       <form className="account-form account-inline-form" onSubmit={async (event) => { event.preventDefault(); if (newEmail.trim()) await auth.updateEmail(newEmail); }}>
