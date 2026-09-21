@@ -589,7 +589,7 @@ export function useLocalLibrary() {
     const key = `${surah}:${ayah}`;
     setLibrary((current) => ({
       ...current,
-      playlists: current.playlists.map((playlist) => playlist.id !== playlistId ? playlist : {
+      playlists: current.playlists.map((playlist) => playlist.id !== playlistId ? playlist : (!playlist.allowMixedContent && playlist.spokenContentIds.length > 0 && !playlist.ayahKeys.includes(key)) ? playlist : {
         ...playlist,
         ayahKeys: playlist.ayahKeys.includes(key) ? playlist.ayahKeys.filter((item) => item !== key) : [...playlist.ayahKeys, key],
         itemOrder: playlist.ayahKeys.includes(key) ? playlist.itemOrder.filter((item) => item !== `quran:${key}`) : [...playlist.itemOrder, `quran:${key}`],
