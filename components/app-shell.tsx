@@ -373,6 +373,8 @@ export function AppShell() {
     studyLoop: library.studyLoop,
     stopAtEnd: sleepAtEnd,
     onStopAtEndConsumed: () => setSleepAtEnd(null),
+    stopAfterCurrentAyah: Boolean(activePlaylistRun && library.playlists.find((item)=>item.id===activePlaylistRun.playlistId)?.itemOrder[activePlaylistRun.index]?.startsWith("quran:")),
+    onAyahEnded: () => { if (activePlaylistRun) advancePlaylist(); },
     onSurahEnded: () => { if (activePlaylistRun) advancePlaylist(); },
   });
   const {
