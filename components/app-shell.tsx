@@ -543,6 +543,16 @@ export function AppShell() {
     playPlaylistItem(playlist.id,nextIndex);
   };
 
+  useEffect(() => {
+    if (!activePlaylistRun) return;
+    const playlist = library.playlists.find((item) => item.id === activePlaylistRun.playlistId);
+    if (!playlist || activePlaylistRun.index >= playlist.itemOrder.length) {
+      setActivePlaylistRun(null);
+      pausePlayback();
+      setSpokenNowPlaying(null);
+    }
+  }, [activePlaylistRun, library.playlists, pausePlayback]);
+
   const playSpokenContent = (content: ContentItem) => {
     const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item && item.kind === "AUDIO"));
     if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
