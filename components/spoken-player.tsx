@@ -9,9 +9,9 @@ import { MediaChapters } from "@/components/media-chapters";
 import { TimedTranscript } from "@/components/timed-transcript";
 import { SpokenSkipControls } from "@/components/spoken-skip-controls";
 
-type Props = { content: ContentItem; asset: MediaAsset; variants?: MediaVariant[]; playbackRate: PlaybackRate; transcript?: Transcript; transcriptSegments?: TranscriptSegment[]; chapters?: MediaChapter[]; initialPositionMs?: number; onProgress?:(positionMs:number,durationMs:number)=>void; onEnded?:()=>void; onReportIssue?:(kind:"TEXT"|"TIMING"|"SOURCE"|"UNAVAILABLE",note?:string)=>void; onClose:()=>void };
+type Props = { content: ContentItem; asset: MediaAsset; variants?: MediaVariant[]; playbackRate: PlaybackRate; transcript?: Transcript; transcriptSegments?: TranscriptSegment[]; chapters?: MediaChapter[]; initialPositionMs?: number; autoplay?: boolean; onProgress?:(positionMs:number,durationMs:number)=>void; onEnded?:()=>void; onReportIssue?:(kind:"TEXT"|"TIMING"|"SOURCE"|"UNAVAILABLE",note?:string)=>void; onClose:()=>void };
 
-export function SpokenPlayer({ content, asset, variants=[], playbackRate, transcript, transcriptSegments=[], chapters=[], initialPositionMs=0, onProgress, onEnded, onReportIssue, onClose }: Props) {
+export function SpokenPlayer({ content, asset, variants=[], playbackRate, transcript, transcriptSegments=[], chapters=[], initialPositionMs=0, autoplay=false, onProgress, onEnded, onReportIssue, onClose }: Props) {
   const audioRef = useRef<HTMLAudioElement|null>(null);
   const videoRef = useRef<HTMLVideoElement|null>(null);
   const [mediaKind,setMediaKind]=useState<MediaKind>(asset.kind);
@@ -32,6 +32,7 @@ export function SpokenPlayer({ content, asset, variants=[], playbackRate, transc
   }, [mediaKind]);
 
   useEffect(()=>{ const media=mediaKind==="VIDEO"?videoRef.current:audioRef.current; if(media) media.playbackRate=playbackRate; },[mediaKind,playbackRate]);
+  useEffect(()=>{ if(!autoplay || loading) return; const media=mediaKind==="VIDEO"?videoRef.current:audioRef.current; if(media?.paused) void media.play().catch(()=>undefined); },[autoplay, loading, mediaKind]);
   useEffect(()=>{
     if(typeof navigator==="undefined" || !("mediaSession" in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({ title: content.title, artist: content.description ?? "RIHLA", album: "RIHLA" });

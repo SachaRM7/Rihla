@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Bookmark, ListPlus, MoreHorizontal, Navigation, Share2, StickyNote } from "lucide-react";
+import { BookOpenText, Bookmark, ListPlus, MoreHorizontal, Navigation, Play, Share2, StickyNote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { TranslationCompare } from "@/components/translation-compare";
@@ -22,6 +22,7 @@ type Props = {
   onEditNote: (ayahNumber: number) => void;
   onShare: (ayahNumber: number) => void;
   onAddToPlaylist: (ayahNumber: number) => void;
+  onQueueAyah?: (ayahNumber: number, mode?: "next" | "end") => void;
   onOpenTafsir: (ayahNumber: number) => void;
 };
 
@@ -58,6 +59,7 @@ export function AyahList({
   onEditNote,
   onShare,
   onAddToPlaylist,
+  onQueueAyah,
   onOpenTafsir,
 }: Props) {
   const activeRef = useRef<HTMLElement | null>(null);
@@ -141,6 +143,7 @@ export function AyahList({
                       <MoreHorizontal size={18} aria-hidden="true" />
                     </summary>
                     <div className="ayah-more-menu">
+                      {onQueueAyah && <><button type="button" onClick={() => onQueueAyah(ayah.numberInSurah, "end")}><ListPlus size={16} /> Ajouter à la file</button><button type="button" onClick={() => onQueueAyah(ayah.numberInSurah, "next")}><Play size={16} /> Lire ensuite</button></>}
                       <button type="button" onClick={() => onEditNote(ayah.numberInSurah)}><StickyNote size={16} /> Ajouter une note</button>
                       <button type="button" onClick={() => onOpenTafsir(ayah.numberInSurah)}><BookOpenText size={16} /> Tafsir & sources</button>
                       <button type="button" onClick={() => onAddToPlaylist(ayah.numberInSurah)}><ListPlus size={16} /> Ajouter à une playlist</button>

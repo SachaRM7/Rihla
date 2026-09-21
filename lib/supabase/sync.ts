@@ -248,7 +248,7 @@ export async function pullCloudLibrary(client: Client, userId: string) {
   return readSnapshot(preference?.value) ?? readSnapshot(rows.latestEvent?.payload) ?? rowsToLibrary(rows);
 }
 
-async function insertChunks<T>(insert: (rows: T[]) => Promise<{ error: { message: string } | null }>, rows: T[]) {
+async function insertChunks<T>(insert: (rows: T[]) => PromiseLike<{ error: { message: string } | null }>, rows: T[]) {
   for (let index = 0; index < rows.length; index += 100) rowError("Écriture de la synchronisation", (await insert(rows.slice(index, index + 100))).error);
 }
 

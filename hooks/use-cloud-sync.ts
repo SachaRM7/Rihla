@@ -24,6 +24,7 @@ export function useCloudSync({ user, localLibrary, hydrated, restoreLibrary }: P
   const busyRef = useRef(false);
   const queuedRef = useRef(false);
   const initializedRef = useRef(false);
+  const syncNowRef = useRef<(() => Promise<void>) | null>(null);
   const timerRef = useRef<number | null>(null);
   const [status, setStatus] = useState<CloudSyncStatus>(client && user ? "idle" : "disabled");
   const [error, setError] = useState<string | null>(null);
@@ -68,23 +69,30 @@ export function useCloudSync({ user, localLibrary, hydrated, restoreLibrary }: P
       busyRef.current = false;
       if (queuedRef.current) {
         queuedRef.current = false;
-        window.setTimeout(() => void syncNow(), 0);
+        window.setTimeout(() => void syncNowRef.current?.(), 0);
       }
     }
   }, [client, hydrated, user]);
 
+  useEffect(() => { syncNowRef.current = syncNow; }, [syncNow]);
+
   useEffect(() => {
     initializedRef.current = false;
     if (!client || !user || !hydrated) {
-      setStatus(client ? "idle" : "disabled");
-      setPending(false);
-      return;
+      const frame = window.requestAnimationFrame(() => {
+        setStatus(client ? "idle" : "disabled");
+        setPending(false);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
     let marker = false;
     try { marker = window.localStorage.getItem(syncInitializedKey(user.id)) === "1"; } catch { /* best effort */ }
     initializedRef.current = marker;
-    setPending(hasSyncOutbox(user.id));
-    void syncNow();
+    const frame = window.requestAnimationFrame(() => {
+      setPending(hasSyncOutbox(user.id));
+      void syncNow();
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [client, hydrated, syncNow, user]);
 
   useEffect(() => {

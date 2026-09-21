@@ -18,13 +18,14 @@ type Props = {
   query: string;
   onOpen: (content: ContentItem) => void;
   onQueue?: (content: ContentItem) => void;
+  onPlayNext?: (content: ContentItem) => void;
   onAddToPlaylist?: (content: ContentItem) => void;
   downloadStates?: Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">;
   onDownload?: (content: ContentItem, asset: MediaAsset) => void;
   contentIds?: string[];
 };
 
-export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPlaylist, downloadStates = {}, onDownload, contentIds }: Props) {
+export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onPlayNext, onAddToPlaylist, downloadStates = {}, onDownload, contentIds }: Props) {
   const [language, setLanguage] = useState("");
   const [duration, setDuration] = useState<SpokenDurationFilter>("all");
   const [creatorId, setCreatorId] = useState("");
@@ -55,6 +56,7 @@ export function SpokenSearchResults({ catalog, query, onOpen, onQueue, onAddToPl
           <ChevronRight size={17}/>
         </button>
         <div className="spoken-search-actions">
+          {onPlayNext && <button type="button" onClick={()=>onPlayNext(item)} aria-label={`Lire ${item.title} ensuite`}><Plus size={15}/>Ensuite</button>}
           {onQueue && <button type="button" onClick={()=>onQueue(item)} aria-label={`Ajouter ${item.title} à la file`}><Plus size={15}/>File</button>}
           {onAddToPlaylist && <button type="button" onClick={()=>onAddToPlaylist(item)} aria-label={`Ajouter ${item.title} à une playlist`}><ListMusic size={15}/>Playlist</button>}
           {asset && onDownload && <OfflineDownloadControl allowed={downloadable} status={downloadStates[item.id]} onDownload={()=>onDownload(item,asset)} />}
