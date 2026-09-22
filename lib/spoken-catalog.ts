@@ -42,9 +42,9 @@ export const SPOKEN_CATALOG: CatalogBundle = {
       attributionText: "The Meaning of the Glorious Koran — Mohammed Marmaduke Pickthall; LibriVox recording via Internet Archive.",
       evidenceUrl: "https://archive.org/metadata/meaning_glorious_koran_0810_librivox",
       verifiedAt: "2026-09-21",
-      reviewNotes: "Notice et fichier MP3 vérifiés individuellement le 21 septembre 2026. La traduction anglaise et la récitation restent présentées comme une interprétation audio, distincte du texte coranique canonique.",
+      reviewNotes: "Notice et fichier MP3 vérifiés individuellement le 21 septembre 2026. La notice Internet Archive déclare Public Domain Mark 1.0 ; sa page autorise la copie et la redistribution (sources relues automatiquement le 22 septembre 2026, sans constituer une nouvelle validation humaine ou juridique). Le cache local est activé ; aucun hébergement serveur du fichier n’est mis en place. La traduction anglaise reste distincte du texte coranique canonique.",
       verification: "HUMAN_VERIFIED",
-      capabilities: { displayMetadata: "YES", embed: "YES", streamRemote: "YES", hostCopy: "NO", downloadOffline: "YES", transcribe: "YES", translate: "YES", createChapters: "YES", createClips: "YES", modify: "YES", commercialUse: "YES" },
+      capabilities: { displayMetadata: "YES", embed: "YES", streamRemote: "YES", hostCopy: "YES", downloadOffline: "YES", transcribe: "YES", translate: "YES", createChapters: "YES", createClips: "YES", modify: "YES", commercialUse: "YES" },
     },
     {
       id: "rights-ia-moors",

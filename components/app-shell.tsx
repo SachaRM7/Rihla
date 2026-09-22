@@ -21,6 +21,7 @@ import {
   Bell,
   StickyNote,
   WifiOff,
+  Download,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AyahList } from "@/components/ayah-list";
@@ -38,7 +39,10 @@ import { AccountPanel } from "@/components/account-panel";
 import { QuranSearchResults } from "@/components/quran-search-results";
 import { moveQueueEntry, removeQueueEntry } from "@/lib/playback-queue";
 import type { QueueEntry } from "@/lib/playback";
-import { downloadMediaAsset, isMediaDownloaded } from "@/lib/offline-storage";
+import { useDownloads } from "@/hooks/use-downloads";
+import { DownloadLibrary } from "@/components/download-library";
+import { DownloadOptionsDialog } from "@/components/download-options-dialog";
+import type { DownloadQuality, DownloadRecord, StorageEstimate } from "@/lib/download-types";
 import { preferredMediaVariant } from "@/lib/media-variants";
 import { publicContents } from "@/lib/catalog";
 import { SPOKEN_CATALOG } from "@/lib/spoken-catalog";
@@ -61,6 +65,7 @@ import type {
 } from "@/lib/quran/types";
 
 const FEATURED_SURAHS = [1, 18, 36, 55, 67, 112];
+const DOWNLOAD_CATALOG = { ...SPOKEN_CATALOG, contentIds: publicContents(SPOKEN_CATALOG).map((content) => content.id) };
 const THEME_COLORS = {
   olive: "#0a0c0a",
   rose: "#0f0a0d",
@@ -234,13 +239,16 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   const [detailAttempt, setDetailAttempt] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [query, setQuery] = useState("");
-  const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists">("all");
+  const [librarySection, setLibrarySection] = useState<"all" | "favorites" | "bookmarks" | "notes" | "history" | "playlists" | "downloads">("all");
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [quranJump, setQuranJump] = useState("");
   const [tafsirTarget, setTafsirTarget] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
-  const [downloadStates, setDownloadStates] = useState<Record<string, "QUEUED"|"DOWNLOADING"|"AVAILABLE"|"ERROR">>({});
+  const downloads = useDownloads({ catalog: DOWNLOAD_CATALOG, wifiOnly: library.wifiOnlyDownloads });
+  const [pendingDownload, setPendingDownload] = useState<{ content: ContentItem; asset: MediaAsset; quality?: DownloadQuality } | null>(null);
+  const [downloadEstimate, setDownloadEstimate] = useState<StorageEstimate | null>(null);
+  const downloadRecords = useMemo(() => Object.fromEntries(downloads.records.map((record) => [record.contentId, record])), [downloads.records]);
   const [activePlaylistRun, setActivePlaylistRun] = useState<{playlistId:string;index:number}|null>(null);
   const [queueCurrentId, setQueueCurrentId] = useState<string | null>(null);
   const [spokenNowPlaying, setSpokenNowPlaying] = useState<{ content: ContentItem; asset: MediaAsset } | null>(null);
@@ -268,7 +276,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   const requestedPositionRef = useRef<number | null>(null);
   const requestedAutoplayRef = useRef(false);
 
-  const applyRoute = useCallback((route: PublicRoute) => {
+  const applyRoute = useCallback((route: PublicRoute, resolveContent = true) => {
     if (route.kind === "quran") {
       setActiveView("quran");
       setSelectedNumber(route.surah);
@@ -308,7 +316,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       setSelectedCreatorId(null);
       setSelectedSeriesId(null);
       setSelectedCollectionId(null);
-      setPendingContentSlug(route.slug);
+      setPendingContentSlug(resolveContent ? route.slug : null);
       return;
     }
     setActiveView("home");
@@ -317,8 +325,8 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     setSelectedCollectionId(null);
   }, []);
 
-  const pushRoute = useCallback((route: PublicRoute, replace = false) => {
-    applyRoute(route);
+  const pushRoute = useCallback((route: PublicRoute, replace = false, resolveContent = true) => {
+    applyRoute(route, resolveContent);
     const path = publicRoutePath(route);
     if (`${window.location.pathname}${window.location.search}` !== path) {
       window.history[replace ? "replaceState" : "pushState"]({}, "", path);
@@ -649,15 +657,6 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   const spokenContents = useMemo(() => publicContents(SPOKEN_CATALOG), []);
   const selectedCollection = (SPOKEN_CATALOG.collections ?? []).find((item) => item.id === selectedCollectionId) ?? null;
   const selectedCollectionContentIds = selectedCollection?.contentIds;
-  useEffect(() => {
-    if (!hydrated || !SPOKEN_CATALOG.media.length) return;
-    let cancelled=false;
-    void Promise.all(spokenContents.map(async(content)=>{
-      const asset=content.mediaAssetIds.map((id)=>SPOKEN_CATALOG.media.find((item)=>item.id===id)).find((item): item is MediaAsset=>Boolean(item&&item.kind==="AUDIO"));
-      return [content.id,asset?await isMediaDownloaded(asset.url):false] as const;
-    })).then((entries)=>{if(!cancelled)setDownloadStates(Object.fromEntries(entries.filter(([,available])=>available).map(([id])=>[id,"AVAILABLE" as const])));});
-    return()=>{cancelled=true;};
-  }, [hydrated, spokenContents]);
 
 
   const hasSpokenContents = spokenContents.length > 0;
@@ -705,14 +704,21 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   };
 
   const downloadSpokenContent = (content: ContentItem, asset: MediaAsset) => {
-    if (library.wifiOnlyDownloads) {
-      const connection=(navigator as Navigator & {connection?:{type?:string}}).connection;
-      if (connection?.type && connection.type!=="wifi") { showShareMessage("Téléchargement réservé au Wi-Fi"); return; }
-    }
-    setDownloadStates((current)=>({...current,[content.id]:"DOWNLOADING"}));
-    void downloadMediaAsset(asset)
-      .then(()=>{setDownloadStates((current)=>({...current,[content.id]:"AVAILABLE"}));showShareMessage("Disponible hors connexion");})
-      .catch((error)=>{setDownloadStates((current)=>({...current,[content.id]:"ERROR"}));showShareMessage(error instanceof Error?error.message:"Téléchargement impossible");});
+    if (!isOnline) { showShareMessage("Reconnectez-vous pour télécharger ce média."); return; }
+    setPendingDownload({ content, asset });
+  };
+
+  const refreshDownloads = async () => {
+    await downloads.refresh();
+    try { setDownloadEstimate(await downloads.storageEstimate()); }
+    catch { setDownloadEstimate(null); }
+  };
+
+  const retryDownload = (record: DownloadRecord) => {
+    const content = spokenContents.find((item) => item.id === record.contentId);
+    const asset = SPOKEN_CATALOG.media.find((item) => item.id === record.mediaAssetId);
+    if (!content || !asset) { showShareMessage("Ce contenu n’est plus disponible au téléchargement."); return; }
+    setPendingDownload({ content, asset, quality: record.quality });
   };
 
   const playPlaylistItem = (playlistId:string,index:number) => {
@@ -744,9 +750,15 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
   }, [activePlaylistRun, library.playlists, pausePlayback]);
 
   const playSpokenContent = useCallback((content: ContentItem, updateRoute = true, autoplay = false, context: "manual" | "queue" | "playlist" = "manual") => {
+    if (!spokenContents.some((item) => item.id === content.id)) {
+      setShareMessage("Ce contenu n’est plus disponible.");
+      return;
+    }
     const asset = content.mediaAssetIds.map((id) => SPOKEN_CATALOG.media.find((item) => item.id === id)).find((item): item is MediaAsset => Boolean(item));
     if (!asset) { setShareMessage("Aucun audio autorisé disponible"); return; }
     const preferred = preferredMediaVariant(asset, SPOKEN_CATALOG.variants ?? [], library.audioQuality);
+    const downloaded = !isOnline ? downloads.records.find((record) => record.contentId === content.id && record.mediaAssetId === asset.id && record.status === "AVAILABLE") : undefined;
+    const cachedVariant = downloaded?.variantId ? SPOKEN_CATALOG.variants?.find((variant) => variant.id === downloaded.variantId && variant.mediaAssetId === asset.id) : undefined;
     pausePlayback();
     setPlayerOpen(false);
     setSpokenPlayerOpen(false);
@@ -754,10 +766,12 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       setQueueCurrentId(null);
       setActivePlaylistRun(null);
     }
-    setSpokenNowPlaying({ content, asset: preferred ? { ...asset, url: preferred.url } : asset });
+    const selectedAsset = downloaded ? { ...asset, url: downloaded.url, mimeType: cachedVariant?.mimeType ?? asset.mimeType, sizeBytes: downloaded.sizeBytes ?? undefined, checksumSha1: downloaded.checksum ?? undefined }
+      : preferred ? { ...asset, url: preferred.url, mimeType: preferred.mimeType ?? asset.mimeType, sizeBytes: preferred.sizeBytes, checksumSha1: preferred.checksumSha1 } : asset;
+    setSpokenNowPlaying({ content, asset: selectedAsset });
     setSpokenAutoplay(autoplay);
-    if (updateRoute) pushRoute({ kind: "content", slug: content.slug });
-  }, [library.audioQuality, pausePlayback, pushRoute]);
+    if (updateRoute) pushRoute({ kind: "content", slug: content.slug }, false, false);
+  }, [library.audioQuality, pausePlayback, pushRoute, spokenContents, isOnline, downloads.records]);
 
   const playQueueEntry = (entry: QueueEntry) => {
     setQueueCurrentId(entry.id);
@@ -844,13 +858,14 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     const content = spokenContents.find((item) => item.slug === pendingContentSlug);
     const frame = window.requestAnimationFrame(() => {
       setPendingContentSlug(null);
-      if (content) playSpokenContent(content);
+      if (content) playSpokenContent(content, false);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [pendingContentSlug, playSpokenContent, spokenContents]);
 
   useEffect(() => {
     if (activeView !== "search" || !initializedRef.current || selectedCreator || selectedSeries || selectedCollection) return;
+    if (window.location.pathname.startsWith("/content/")) return;
     const params = new URLSearchParams();
     params.set("view", "search");
     if (query) params.set("q", query);
@@ -1113,7 +1128,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
               {(searchType === "all" || searchType === "quran") && <QuranSearchResults query={query} onQueryChange={setQuery} onOpen={(surah, ayah) => openSurah(surah, ayah)} />}
 
               {selectedCollection && <section className="section-title-row route-context"><div><p className="eyebrow">Collection éditoriale</p><h2>{selectedCollection.title}</h2><small>{selectedCollection.description}</small></div></section>}
-              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} contentIds={selectedCollectionContentIds} query={query} onOpen={playSpokenContent} onQueue={queueSpokenContent} onPlayNext={queueSpokenNext} onAddToPlaylist={addSpokenToPlaylist} downloadStates={downloadStates} onDownload={downloadSpokenContent} />}
+              {hasSpokenContents && (searchType === "all" || searchType === "spoken") && !selectedCreator && !selectedSeries && <SpokenSearchResults catalog={SPOKEN_CATALOG} contentIds={selectedCollectionContentIds} query={query} onOpen={playSpokenContent} onQueue={queueSpokenContent} onPlayNext={queueSpokenNext} onAddToPlaylist={addSpokenToPlaylist} downloadRecords={downloadRecords} onDownload={downloadSpokenContent} />}
 
               {searchType === "spoken" && (selectedCreator || selectedSeries || selectedCollection) && <button type="button" className="text-action spoken-profile-back" onClick={() => { setSelectedCreatorId(null); setSelectedSeriesId(null); setSelectedCollectionId(null); navigateToView("search"); }}>← Tous les contenus parlés</button>}
               {searchType === "spoken" && selectedCreator && <CreatorProfile creator={selectedCreator} contents={spokenContents.filter((item)=>item.creatorIds.includes(selectedCreator.id))} followed={library.follows.some((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")} notifications={library.follows.find((item)=>item.id===selectedCreator.id&&item.type==="CREATOR")?.notify ?? false} onToggleFollow={()=>toggleFollow(selectedCreator.id,"CREATOR")} onToggleNotifications={(enabled)=>setFollowNotification(selectedCreator.id,"CREATOR",enabled)} onOpenContent={(content)=>playSpokenContent(content)} />}
@@ -1260,9 +1275,15 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
                 <button type="button" onClick={() => setLibrarySection("notes")}><StickyNote size={19} /><span><strong>Notes</strong><small>{library.ayahNotes.length} note{library.ayahNotes.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => setLibrarySection("history")}><History size={19} /><span><strong>Historique</strong><small>Reprendre vos dernières écoutes</small></span><ChevronRight size={17} /></button>
                 <button type="button" onClick={() => { setSelectedPlaylistId(null); setLibrarySection("playlists"); }}><ListMusic size={19} /><span><strong>Playlists</strong><small>{library.playlists.length} collection{library.playlists.length > 1 ? "s" : ""}</small></span><ChevronRight size={17} /></button>
+                <button type="button" onClick={() => { setLibrarySection("downloads"); void refreshDownloads(); }}><Download size={19}/><span><strong>Téléchargements</strong><small>{downloads.records.filter((record) => record.status === "AVAILABLE").length} disponible(s) sur cet appareil</small></span><ChevronRight size={17}/></button>
               </section>
 
               {librarySection !== "all" && <button type="button" className="text-action library-back" onClick={() => { setSelectedPlaylistId(null); setLibrarySection("all"); }}>← Toute la bibliothèque</button>}
+              {(librarySection === "all" || librarySection === "downloads") && <DownloadLibrary records={downloads.records} loading={downloads.loading} error={downloads.error} estimate={downloadEstimate} online={isOnline}
+                onPlay={(contentId) => { const content = spokenContents.find((item) => item.id === contentId); if (content) playSpokenContent(content, true, true); }}
+                onCancel={(id) => { void downloads.cancel(id).catch((error: unknown) => showShareMessage(error instanceof Error ? error.message : "Annulation impossible.")); }}
+                onRemove={async (id) => { await downloads.remove(id); await refreshDownloads(); showShareMessage("Téléchargement supprimé de cet appareil."); }}
+                onRetry={retryDownload} onRefresh={() => { void refreshDownloads(); }} onBrowse={() => { navigateToView("search"); setSearchType("spoken"); setQuery(""); }}/>}
               {(librarySection === "all" || librarySection === "playlists") && <section className="library-section">
                 <div className="section-title-row">
                   <div><p className="eyebrow">Collections personnelles</p><h2>Playlists</h2></div>
@@ -1643,6 +1664,8 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
         autoplay={spokenAutoplay}
         compact={!spokenPlayerOpen}
         onOpen={() => setSpokenPlayerOpen(true)}
+        onMinimize={() => setSpokenPlayerOpen(false)}
+        artist={spokenNowPlaying.content.creatorIds.map((id) => SPOKEN_CATALOG.creators.find((creator) => creator.id === id)?.name).filter(Boolean).join(" · ")}
         onPrevious={previousSpokenEntry}
         onNext={nextSpokenEntry}
         canPrevious={canPreviousSpoken}
@@ -1659,6 +1682,17 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       />}
       
             {shareMessage && <div className="action-toast" role="status" aria-live="polite">{shareMessage}</div>}
+
+      {pendingDownload && <DownloadOptionsDialog content={pendingDownload.content} asset={pendingDownload.asset} variants={SPOKEN_CATALOG.variants ?? []} preference={pendingDownload.quality ?? library.audioQuality} wifiOnly={library.wifiOnlyDownloads}
+        onClose={() => setPendingDownload(null)} onDownload={(quality, consent) => {
+          const { content, asset } = pendingDownload;
+          navigateToView("library");
+          setLibrarySection("downloads");
+          void downloads.download(content, asset, quality, { consent }).then((result) => {
+            showShareMessage(result.ok ? "Disponible hors connexion sur cet appareil." : result.message ?? "Téléchargement non terminé.");
+            void refreshDownloads();
+          }).catch((error: unknown) => showShareMessage(error instanceof Error ? error.message : "Téléchargement impossible."));
+        }}/>}
 
       {tafsirTarget && detail && <TafsirDialog surahNumber={detail.surah.number} ayahNumber={tafsirTarget} source={detail.source} onClose={() => setTafsirTarget(null)} />}
 

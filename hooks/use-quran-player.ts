@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
 import type { SurahDetail } from "@/lib/quran/types";
 import { clearMediaSession, setMediaSessionMetadata, setMediaSessionPlayback } from "@/lib/media-session";
@@ -53,6 +53,9 @@ export function useQuranPlayer({
   const onSurahEndedRef = useRef(onSurahEnded);
   const onAyahEndedRef = useRef(onAyahEnded);
   const stopAfterCurrentAyahRef = useRef(stopAfterCurrentAyah);
+  const stopAtEndRef = useRef(stopAtEnd);
+  const onStopAtEndConsumedRef = useRef(onStopAtEndConsumed);
+  const mediaOwner = useId();
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
@@ -83,7 +86,9 @@ export function useQuranPlayer({
     onSurahEndedRef.current = onSurahEnded;
     onAyahEndedRef.current = onAyahEnded;
     stopAfterCurrentAyahRef.current = stopAfterCurrentAyah;
-  }, [activeIndex, detail, onActiveIndexChange, onAyahEnded, onSurahEnded, playbackRate, repeatMode, stopAfterCurrentAyah, studyLoop]);
+    stopAtEndRef.current = stopAtEnd;
+    onStopAtEndConsumedRef.current = onStopAtEndConsumed;
+  }, [activeIndex, detail, onActiveIndexChange, onAyahEnded, onSurahEnded, playbackRate, repeatMode, stopAfterCurrentAyah, studyLoop, stopAtEnd, onStopAtEndConsumed]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(resetRepeatProgress);
@@ -190,11 +195,11 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
-      if (stopAtEnd === "ayah" || (stopAtEnd === "surah" && indexRef.current >= (detailRef.current?.ayahs.length ?? 1) - 1)) {
+      if (stopAtEndRef.current === "ayah" || (stopAtEndRef.current === "surah" && indexRef.current >= (detailRef.current?.ayahs.length ?? 1) - 1)) {
         playWhenLoadedRef.current = false;
         setStatus("paused");
         setCurrentTime(0);
-        onStopAtEndConsumed?.();
+        onStopAtEndConsumedRef.current?.();
         return;
       }
       const currentDetail = detailRef.current;
@@ -337,7 +342,7 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, [onStopAtEndConsumed, resetRepeatProgress, resetStudyLoopProgress, stopAtEnd]);
+  }, [resetRepeatProgress, resetStudyLoopProgress]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -394,6 +399,10 @@ export function useQuranPlayer({
 
   const pause = useCallback(() => {
     playWhenLoadedRef.current = false;
+    if (pauseTimeoutRef.current !== null) {
+      window.clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
     audioRef.current?.pause();
   }, []);
 
@@ -439,12 +448,13 @@ export function useQuranPlayer({
     const audio = audioRef.current;
     if (!mediaSessionEnabled || !audio) return;
     setMediaSessionPlayback({
+      owner: mediaOwner,
       state: status === "playing" ? "playing" : status === "paused" || status === "ready" ? "paused" : "none",
       duration: duration || audio.duration,
       position: currentTime,
       playbackRate: audio.playbackRate || playbackRate,
     });
-  }, [currentTime, duration, mediaSessionEnabled, playbackRate, status]);
+  }, [currentTime, duration, mediaSessionEnabled, mediaOwner, playbackRate, status]);
 
   useEffect(() => {
     if (!mediaSessionEnabled || !detail) return;
@@ -464,15 +474,16 @@ export function useQuranPlayer({
       seekto: seekTo,
     };
     setMediaSessionMetadata({
+      owner: mediaOwner,
       title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}`,
       artist: detail.reciterName,
       album: "RIHLA · Le Coran",
       actions,
     });
     return () => {
-      clearMediaSession(Object.keys(actions) as MediaSessionAction[]);
+      clearMediaSession(Object.keys(actions) as MediaSessionAction[], mediaOwner);
     };
-  }, [activeIndex, detail, mediaSessionEnabled, next, pause, play, previous]);
+  }, [activeIndex, detail, mediaSessionEnabled, mediaOwner, next, pause, play, previous]);
 
   return {
     status,

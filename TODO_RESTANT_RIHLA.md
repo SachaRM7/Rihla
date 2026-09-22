@@ -183,6 +183,8 @@ La queue existe mais doit devenir un vrai moteur de lecture séquentielle.
 
 Le Cache Storage est branché mais le chantier n’est pas terminé.
 
+Point intermédiaire du 22 septembre 2026 : implémentation, preuves de test et limites consignées dans [docs/REPRISE.md](docs/REPRISE.md). La liste ci-dessous reste le périmètre à valider avant clôture du chantier.
+
 À faire :
 
 - Service Worker ;

@@ -2,10 +2,12 @@ export type MediaSessionPlaybackState = "none" | "paused" | "playing";
 
 type MetadataOptions = {
   title: string;
-  artist: string;
+  artist?: string;
   album: string;
   artworkUrl?: string;
   actions: Partial<Record<MediaSessionAction, MediaSessionActionHandler | null>>;
+  /** Metadata claims ownership; playback updates and cleanup must match it. */
+  owner?: string;
 };
 
 type PlaybackOptions = {
@@ -13,28 +15,45 @@ type PlaybackOptions = {
   duration?: number;
   position?: number;
   playbackRate?: number;
+  owner?: string;
 };
+
+// A previously mounted Quran player must not clear a spoken player's session.
+let activeOwner: string | null = null;
+let ownerSequence = 0;
+
+export function createMediaSessionOwner(label: string) {
+  ownerSequence += 1;
+  return `${label}:${ownerSequence}`;
+}
+
+export function isMediaSessionOwner(owner: string) {
+  return activeOwner === owner;
+}
 
 function getMediaSession() {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return null;
   return navigator.mediaSession;
 }
 
-export function setMediaSessionMetadata({ title, artist, album, artworkUrl, actions }: MetadataOptions) {
+export function setMediaSessionMetadata({ title, artist, album, artworkUrl, actions, owner }: MetadataOptions) {
+  if (owner !== undefined) activeOwner = owner;
+
   const mediaSession = getMediaSession();
   if (!mediaSession) return;
 
-  try {
+  const resolvedArtist = artist ?? "RIHLA";
+  if (typeof MediaMetadata === "function") try {
     mediaSession.metadata = new MediaMetadata({
       title,
-      artist,
+      artist: resolvedArtist,
       album,
       artwork: artworkUrl
         ? [{ src: artworkUrl, sizes: "512x512" }]
         : [{ src: "/favicon.svg", sizes: "any", type: "image/svg+xml" }],
     });
   } catch {
-    mediaSession.metadata = new MediaMetadata({ title, artist, album });
+    mediaSession.metadata = new MediaMetadata({ title, artist: resolvedArtist, album });
   }
 
   for (const [action, handler] of Object.entries(actions) as Array<[
@@ -49,7 +68,9 @@ export function setMediaSessionMetadata({ title, artist, album, artworkUrl, acti
   }
 }
 
-export function setMediaSessionPlayback({ state, duration, position, playbackRate = 1 }: PlaybackOptions) {
+export function setMediaSessionPlayback({ state, duration, position, playbackRate = 1, owner }: PlaybackOptions) {
+  if (owner !== undefined && activeOwner !== owner) return;
+
   const mediaSession = getMediaSession();
   if (!mediaSession) return;
 
@@ -67,7 +88,12 @@ export function setMediaSessionPlayback({ state, duration, position, playbackRat
   }
 }
 
-export function clearMediaSession(actions: MediaSessionAction[]) {
+export function clearMediaSession(actions: MediaSessionAction[], owner?: string) {
+  // A session that has already been taken over by another player must not be
+  // torn down by the previous owner's cleanup.
+  if (owner !== undefined && activeOwner !== null && activeOwner !== owner) return;
+  if (owner !== undefined) activeOwner = null;
+
   const mediaSession = getMediaSession();
   if (!mediaSession) return;
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { ListPlus, LoaderCircle, Pause, Play, RotateCcw, SkipBack, SkipForward, Timer, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ListPlus, LoaderCircle, Minimize2, Pause, Play, RotateCcw, SkipBack, SkipForward, Timer, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ContentItem, MediaAsset, MediaChapter, MediaKind, MediaVariant, Transcript, TranscriptSegment } from "@/lib/domain";
 import type { PlaybackRate } from "@/lib/preferences";
 import { clearMediaSession, setMediaSessionMetadata, setMediaSessionPlayback } from "@/lib/media-session";
+import { mediaUrlForKind } from "@/lib/media-variants";
+import { useSpokenMedia } from "@/hooks/use-spoken-media";
 import { MediaModeSwitch } from "@/components/media-mode-switch";
 import { MediaChapters } from "@/components/media-chapters";
 import { TimedTranscript } from "@/components/timed-transcript";
@@ -22,7 +24,9 @@ type Props = {
   initialPositionMs?: number;
   autoplay?: boolean;
   compact?: boolean;
+  artist?: string;
   onOpen?: () => void;
+  onMinimize?: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
   canPrevious?: boolean;
@@ -55,7 +59,9 @@ export function UniversalSpokenPlayer({
   initialPositionMs = 0,
   autoplay = false,
   compact = false,
+  artist,
   onOpen,
+  onMinimize,
   onPrevious,
   onNext,
   canPrevious = false,
@@ -66,207 +72,84 @@ export function UniversalSpokenPlayer({
   onReportIssue,
   onClose,
 }: Props) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const switchPositionRef = useRef<number | null>(null);
-  const switchTargetRef = useRef<MediaKind | null>(null);
-  const switchResumeRef = useRef(false);
   const [mediaKind, setMediaKind] = useState<MediaKind>(asset.kind);
-  const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [position, setPosition] = useState(initialPositionMs / 1000);
-  const [duration, setDuration] = useState((asset.durationMs ?? 0) / 1000);
-  const [error, setError] = useState<string | null>(null);
   const [sleepMinutes, setSleepMinutes] = useState<number | null>(null);
   const [sleepAtEnd, setSleepAtEnd] = useState(false);
-  const lastSavedRef = useRef(initialPositionMs);
-  const sleepDeadlineRef = useRef<number | null>(null);
-
-  const media = useCallback(() => mediaKind === "VIDEO" ? videoRef.current : audioRef.current, [mediaKind]);
-
-  const seek = useCallback((seconds: number) => {
-    const target = media();
-    if (!target) return;
-    target.currentTime = Math.min(Math.max(seconds, 0), target.duration || seconds);
-    setPosition(target.currentTime);
-  }, [media]);
-
-  const playCurrentMedia = useCallback(() => {
-    const target = media();
-    if (!target) return;
-    void target.play().catch(() => {
-      setError("La lecture automatique est bloquée. Appuyez sur lecture pour démarrer le média.");
-      setLoading(false);
-    });
-  }, [media]);
-
-  const toggleCurrentMedia = useCallback(() => {
-    const target = media();
-    if (!target) return;
-    if (target.paused) playCurrentMedia();
-    else target.pause();
-  }, [media, playCurrentMedia]);
+  const owner = useId();
+  const previousRef = useRef(onPrevious);
+  const nextRef = useRef(onNext);
+  useEffect(() => { previousRef.current = onPrevious; nextRef.current = onNext; }, [onNext, onPrevious]);
+  const audioUrl = mediaUrlForKind(asset, variants, "AUDIO");
+  const videoUrl = mediaUrlForKind(asset, variants, "VIDEO");
+  const { mediaRef, setMediaRef, handlers, position, duration, playing, loading, error, play: playCurrentMedia, pause, toggle: toggleCurrentMedia, seek, retry, save, prepareSwitch } = useSpokenMedia({
+    url: mediaKind === "VIDEO" ? videoUrl : audioUrl, kind: mediaKind, initialPositionMs, durationMs: asset.durationMs, playbackRate, autoplay, onProgress,
+    onEnded: () => { if (sleepAtEnd) setSleepAtEnd(false); else onEnded?.(); },
+  });
 
   useEffect(() => {
-    const target = media();
-    if (target) target.playbackRate = playbackRate;
-  }, [media, playbackRate]);
-
-  useEffect(() => {
-    if (!autoplay || loading) return;
-    playCurrentMedia();
-  }, [autoplay, loading, mediaKind, playCurrentMedia]);
-
-  useEffect(() => {
-    const target = media();
     setMediaSessionPlayback({
+      owner,
       state: playing ? "playing" : loading ? "none" : "paused",
-      duration: duration || target?.duration,
+      duration,
       position,
       playbackRate,
     });
-  }, [duration, loading, media, playbackRate, playing, position]);
+  }, [duration, loading, owner, playbackRate, playing, position]);
 
   useEffect(() => {
     const actions: Partial<Record<MediaSessionAction, MediaSessionActionHandler | null>> = {
       play: playCurrentMedia,
-      pause: () => media()?.pause(),
-      previoustrack: onPrevious ?? null,
-      nexttrack: onNext ?? null,
-      seekbackward: () => seek((media()?.currentTime ?? 0) - 15),
-      seekforward: () => seek((media()?.currentTime ?? 0) + 15),
+      pause,
+      previoustrack: canPrevious ? () => previousRef.current?.() : null,
+      nexttrack: canNext ? () => nextRef.current?.() : null,
+      seekbackward: () => seek((mediaRef.current?.currentTime ?? 0) - 15),
+      seekforward: () => seek((mediaRef.current?.currentTime ?? 0) + 15),
       seekto: (details) => {
         if (details.seekTime !== undefined) seek(details.seekTime);
       },
     };
     setMediaSessionMetadata({
       title: content.title,
-      artist: content.description ?? "RIHLA",
+      owner,
+      artist: artist ?? "RIHLA",
       album: "RIHLA · Contenu parlé",
       artworkUrl: content.artworkUrl,
       actions,
     });
-    return () => clearMediaSession(MEDIA_SESSION_ACTIONS);
-  }, [content.artworkUrl, content.description, content.title, media, onNext, onPrevious, playCurrentMedia, seek]);
+    return () => clearMediaSession(MEDIA_SESSION_ACTIONS, owner);
+  }, [artist, canNext, canPrevious, content.artworkUrl, content.title, mediaRef, owner, pause, playCurrentMedia, seek]);
 
   useEffect(() => {
-    if (sleepMinutes === null) {
-      sleepDeadlineRef.current = null;
-      return;
-    }
-    sleepDeadlineRef.current = Date.now() + sleepMinutes * 60_000;
+    if (sleepMinutes === null) return;
+    const deadline = Date.now() + sleepMinutes * 60_000;
     const timer = window.setInterval(() => {
-      if (sleepDeadlineRef.current && Date.now() >= sleepDeadlineRef.current) {
-        media()?.pause();
+      if (Date.now() >= deadline) {
+        pause();
         setSleepMinutes(null);
       }
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [media, sleepMinutes]);
-
-  const handleLoadedMetadata = (kind: MediaKind, target: HTMLMediaElement) => {
-    if (switchTargetRef.current && switchTargetRef.current !== kind) return;
-    const switching = switchTargetRef.current === kind;
-    const targetPosition = switching && switchPositionRef.current !== null
-      ? switchPositionRef.current
-      : initialPositionMs / 1000;
-    target.currentTime = Math.min(targetPosition, target.duration || targetPosition);
-    target.playbackRate = playbackRate;
-    setDuration(target.duration || 0);
-    setPosition(target.currentTime);
-    setLoading(false);
-    setError(null);
-    if (switching) {
-      switchPositionRef.current = null;
-      switchTargetRef.current = null;
-      if (switchResumeRef.current) {
-        switchResumeRef.current = false;
-        void target.play().catch(() => setError("Impossible de reprendre ce média automatiquement."));
-      }
-    }
-  };
-
-  const handleTimeUpdate = (target: HTMLMediaElement) => {
-    const positionMs = target.currentTime * 1000;
-    const durationMs = (target.duration || 0) * 1000;
-    setPosition(target.currentTime);
-    if (Math.abs(positionMs - lastSavedRef.current) >= 5000) {
-      lastSavedRef.current = positionMs;
-      onProgress?.(positionMs, durationMs);
-    }
-  };
-
-  const handleEnded = (target: HTMLMediaElement) => {
-    const durationMs = (target.duration || duration) * 1000;
-    setPlaying(false);
-    setLoading(false);
-    setPosition(target.duration || duration);
-    onProgress?.(durationMs, durationMs);
-    if (sleepAtEnd) {
-      setSleepAtEnd(false);
-      target.pause();
-    } else {
-      onEnded?.();
-    }
-  };
+  }, [pause, sleepMinutes]);
 
   const switchMedia = (kind: MediaKind) => {
     if (kind === mediaKind) return;
-    const current = media();
-    switchPositionRef.current = current?.currentTime ?? position;
-    switchTargetRef.current = kind;
-    switchResumeRef.current = playing;
-    current?.pause();
-    setError(null);
-    setLoading(true);
+    prepareSwitch();
     setMediaKind(kind);
   };
-
-  const retry = () => {
-    const target = media();
-    if (!target) return;
-    setError(null);
-    setLoading(true);
-    target.load();
-    playCurrentMedia();
-  };
-
-  const audioUrl = asset.kind === "AUDIO" ? asset.url : variants.find((item) => item.kind === "AUDIO")?.url;
-  const videoUrl = asset.kind === "VIDEO" ? asset.url : variants.find((item) => item.kind === "VIDEO")?.url;
   const audioAvailable = Boolean(audioUrl);
   const videoAvailable = Boolean(videoUrl);
   const busy = loading;
 
   return (
     <section className={`spoken-player ${compact ? "spoken-player-compact" : "spoken-player-expanded"}`} aria-label="Lecteur de contenu parlé">
-      {audioUrl && <audio
-        ref={audioRef}
-        className="spoken-audio"
-        src={audioUrl}
-        preload="auto"
-        onLoadedMetadata={(event) => handleLoadedMetadata("AUDIO", event.currentTarget)}
-        onTimeUpdate={(event) => handleTimeUpdate(event.currentTarget)}
-        onPlay={() => { setPlaying(true); setLoading(false); setError(null); }}
-        onPause={() => setPlaying(false)}
-        onWaiting={() => setLoading(true)}
-        onCanPlay={() => { setLoading(false); setError(null); }}
-        onError={() => { setLoading(false); setPlaying(false); setError("Ce média est indisponible ou a expiré. Réessayez ou choisissez une autre source."); }}
-        onEnded={(event) => handleEnded(event.currentTarget)}
-      />}
-      {videoUrl && <video
-        ref={videoRef}
+      {mediaKind === "AUDIO" ? <audio ref={setMediaRef} className="spoken-audio" preload="metadata" {...handlers}/>
+      : <video
+        ref={setMediaRef}
         className={mediaKind === "VIDEO" && !compact ? "spoken-video active" : "spoken-video"}
-        src={videoUrl}
         playsInline
         controls={false}
-        onLoadedMetadata={(event) => handleLoadedMetadata("VIDEO", event.currentTarget)}
-        onTimeUpdate={(event) => handleTimeUpdate(event.currentTarget)}
-        onPlay={() => { setPlaying(true); setLoading(false); setError(null); }}
-        onPause={() => setPlaying(false)}
-        onWaiting={() => setLoading(true)}
-        onCanPlay={() => { setLoading(false); setError(null); }}
-        onError={() => { setLoading(false); setPlaying(false); setError("Cette vidéo est indisponible ou a expiré. Réessayez ou choisissez une autre source."); }}
-        onEnded={(event) => handleEnded(event.currentTarget)}
+        preload="metadata"
+        {...handlers}
       />}
 
       {compact ? (
@@ -293,7 +176,8 @@ export function UniversalSpokenPlayer({
             <div><p className="eyebrow">En cours</p><h2>{content.title}</h2></div>
             <div className="spoken-player-header-actions">
               {onQueue && <button type="button" className="queue-add-action" onClick={onQueue}><ListPlus size={15} /> File</button>}
-              <button type="button" className="icon-button" aria-label="Fermer le lecteur" onClick={() => { onProgress?.(position * 1000, duration * 1000); onClose(); }}><X size={18} /></button>
+              {onMinimize && <button type="button" className="icon-button" aria-label="Réduire le lecteur" onClick={onMinimize}><Minimize2 size={18}/></button>}
+              <button type="button" className="icon-button" aria-label="Arrêter et fermer le lecteur" onClick={() => { save(); pause(); onClose(); }}><X size={18} /></button>
             </div>
           </header>
           {content.artworkUrl && <div className="spoken-player-artwork" role="img" aria-label={content.artworkAlt ?? content.title} style={{ backgroundImage: `url(${content.artworkUrl})` }} />}
@@ -312,7 +196,7 @@ export function UniversalSpokenPlayer({
             </button>
             <button type="button" className="player-icon-button" onClick={onNext} disabled={!onNext || !canNext} aria-label="Contenu suivant"><SkipForward size={20} fill="currentColor" /></button>
           </div>
-          <div className="spoken-sleep"><span><Timer size={15} />Minuterie</span><select value={sleepMinutes ?? ""} onChange={(event) => { setSleepAtEnd(false); setSleepMinutes(event.target.value ? Number(event.target.value) : null); }}><option value="">Désactivée</option><option value={10}>10 min</option><option value={20}>20 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select><button type="button" className={sleepAtEnd ? "active" : ""} aria-pressed={sleepAtEnd} onClick={() => { setSleepMinutes(null); setSleepAtEnd(!sleepAtEnd); }}>Fin de l’épisode</button></div>
+          <div className="spoken-sleep"><span><Timer size={15} />Minuterie</span><select aria-label="Minuterie d’arrêt" value={sleepMinutes ?? ""} onChange={(event) => { setSleepAtEnd(false); setSleepMinutes(event.target.value ? Number(event.target.value) : null); }}><option value="">Désactivée</option><option value={10}>10 min</option><option value={20}>20 min</option><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select><button type="button" className={sleepAtEnd ? "active" : ""} aria-pressed={sleepAtEnd} onClick={() => { setSleepMinutes(null); setSleepAtEnd(!sleepAtEnd); }}>Fin de l’épisode</button></div>
           {chapters.length > 0 && <MediaChapters chapters={chapters} positionMs={position * 1000} onSeek={(ms) => seek(ms / 1000)} />}
           {transcript && transcriptSegments.length > 0 && <TimedTranscript transcript={transcript} segments={transcriptSegments} positionMs={position * 1000} onSeek={(ms) => seek(ms / 1000)} onReportIssue={onReportIssue} />}
         </>

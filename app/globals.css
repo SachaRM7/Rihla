@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+.download-list{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.download-row{display:grid;gap:16px;padding:16px 0;border-bottom:1px solid var(--line-strong)}
+.download-copy{min-width:0}.download-copy h3{margin:0;font-size:1rem;overflow-wrap:anywhere}.download-copy p{margin:8px 0;color:var(--muted);font-size:.875rem;line-height:1.5}.download-copy progress{width:100%;accent-color:var(--accent)}
+.download-actions{display:flex;flex-wrap:wrap;gap:8px}.download-actions button{min-height:44px;min-width:44px}.download-library .secondary-action,.download-dialog .secondary-action{border-color:var(--muted)}.spoken-search-actions .offline-download{min-height:44px!important;font-size:.75rem}
+.download-storage,.download-policy{color:var(--muted);font-size:.875rem;line-height:1.6}.download-policy{margin-bottom:24px}.download-error{color:var(--danger)!important}
+.download-dialog h2{margin:0;font-size:1.25rem}.download-dialog p{line-height:1.6;overflow-wrap:anywhere}.download-quality{display:grid;gap:8px}.download-quality select{min-width:0;min-height:44px;border:1px solid var(--muted);border-radius:8px;background:var(--surface);padding:8px;color:var(--ivory);font-size:1rem}
+.download-consent{display:flex;align-items:flex-start;gap:12px;line-height:1.6;margin-top:16px}.download-consent input{min-width:24px;width:24px;height:24px;margin:8px 0;accent-color:var(--accent)}.download-consent span{padding:4px 0}.download-dialog footer{margin-top:24px}
+.offline-notice{position:fixed;z-index:90;top:calc(8px + env(safe-area-inset-top));left:16px;right:16px;max-width:640px;margin:auto;padding:16px;border:1px solid var(--muted);border-radius:12px;background:var(--surface);color:var(--ivory);box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:8px}.offline-notice p{flex-basis:100%;margin:0 0 8px;font-size:.875rem;line-height:1.6}
+@media(min-width:760px){.download-row{grid-template-columns:minmax(0,1fr) auto;align-items:center}.download-actions{justify-content:flex-end;max-width:360px}}
+
 :root {
   --ink:#0a0c0a;--ink-soft:#101410;--surface:#171c17;--surface-2:#202620;
   --ivory:#f4f0e5;--cream:#ded8c8;--muted:#b7bbaf;--faint:#93998e;
