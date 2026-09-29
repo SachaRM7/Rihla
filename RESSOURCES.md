@@ -4,6 +4,10 @@ Ce registre doit être relu avant chaque nouveau lot fonctionnel. Il sépare les
 
 Pour tout lot UI/UX, lire aussi `C:\Users\SachaRbone\.codex\RESSOURCES.md` puis `design-system/MASTER.md`. Les références servent à extraire des patterns adaptés à RIHLA — hiérarchie, densité, interaction, accessibilité et motion — et non à copier un écran.
 
+## Références UI/UX gratuites
+
+- **Rewamp UI** : [composants React et animations](https://www.rewampui.com/components), dont le code source est accessible gratuitement. À utiliser comme référence d’interaction et de motion adaptée à RIHLA ; vérifier la licence et les dépendances avant toute intégration de code.
+
 ## Coran — sources actuellement utilisées
 
 - **Quran Foundation / Quran.com API v4** : texte uthmani, balises de tajwid, récitation et segments temporels mot à mot pour l’expérience karaoké.
