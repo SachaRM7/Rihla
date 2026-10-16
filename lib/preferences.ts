@@ -38,6 +38,14 @@ export const AUDIO_QUALITY_LABELS: Record<AudioQuality, string> = {
   high: "Haute",
 };
 
+export const AUDIO_LANGUAGES = ["ar", "fr", "ar-fr"] as const;
+export type AudioLanguage = (typeof AUDIO_LANGUAGES)[number];
+export const AUDIO_LANGUAGE_LABELS: Record<AudioLanguage, string> = {
+  ar: "Arabe",
+  fr: "Français",
+  "ar-fr": "Arabe puis français",
+};
+
 export const PLAYBACK_RATES = [0.75, 1, 1.25, 1.5] as const;
 export type PlaybackRate = (typeof PLAYBACK_RATES)[number];
 
@@ -73,6 +81,10 @@ export function isReadingSize(value: unknown): value is ReadingSize {
 
 export function isAudioQuality(value: unknown): value is AudioQuality {
   return AUDIO_QUALITIES.some((quality) => quality === value);
+}
+
+export function isAudioLanguage(value: unknown): value is AudioLanguage {
+  return AUDIO_LANGUAGES.some((language) => language === value);
 }
 
 export function isPlaybackRate(value: unknown): value is PlaybackRate {

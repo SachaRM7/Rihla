@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import type { PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
+import type { AudioLanguage, PlaybackRate, RepeatMode, StudyLoopPreference } from "@/lib/preferences";
+import {
+  ayahSegmentUrl,
+  firstAudioSegment,
+  isSegmentAllowed,
+  nextAudioSegment,
+  type AudioSegment,
+} from "@/lib/quran/audio-tracks";
 import type { SurahDetail } from "@/lib/quran/types";
 import { clearMediaSession, setMediaSessionMetadata, setMediaSessionPlayback } from "@/lib/media-session";
 
@@ -12,6 +19,7 @@ type PlayerOptions = {
   activeIndex: number;
   onActiveIndexChange: (index: number) => void;
   playbackRate: PlaybackRate;
+  audioLanguage?: AudioLanguage;
   repeatMode: RepeatMode;
   studyLoop: StudyLoopPreference | null;
   stopAtEnd?: "ayah" | "surah" | null;
@@ -31,6 +39,7 @@ export function useQuranPlayer({
   activeIndex,
   onActiveIndexChange,
   playbackRate,
+  audioLanguage = "ar",
   repeatMode,
   studyLoop,
   stopAtEnd = null,
@@ -55,6 +64,8 @@ export function useQuranPlayer({
   const stopAfterCurrentAyahRef = useRef(stopAfterCurrentAyah);
   const stopAtEndRef = useRef(stopAtEnd);
   const onStopAtEndConsumedRef = useRef(onStopAtEndConsumed);
+  const audioLanguageRef = useRef(audioLanguage);
+  const segmentRef = useRef<AudioSegment>(firstAudioSegment(audioLanguage));
   const mediaOwner = useId();
 
   const [status, setStatus] = useState<PlaybackStatus>("idle");
@@ -64,6 +75,7 @@ export function useQuranPlayer({
   const [error, setError] = useState<string | null>(null);
   const [repeatIteration, setRepeatIteration] = useState(1);
   const [studyLoopIteration, setStudyLoopIteration] = useState(1);
+  const [segment, setSegment] = useState<AudioSegment>(() => firstAudioSegment(audioLanguage));
   const pauseTimeoutRef = useRef<number | null>(null);
 
   const resetRepeatProgress = useCallback(() => {
@@ -74,6 +86,11 @@ export function useQuranPlayer({
   const resetStudyLoopProgress = useCallback(() => {
     studyLoopIterationRef.current = 1;
     setStudyLoopIteration(1);
+  }, []);
+
+  const changeSegment = useCallback((next: AudioSegment) => {
+    segmentRef.current = next;
+    setSegment(next);
   }, []);
 
   useEffect(() => {
@@ -106,6 +123,8 @@ export function useQuranPlayer({
     const ayah = currentDetail?.ayahs[index];
     if (!audio || !ayah) return;
 
+    changeSegment(firstAudioSegment(audioLanguageRef.current));
+    const sourceUrl = ayahSegmentUrl(ayah, segmentRef.current);
     playWhenLoadedRef.current = autoplay;
     setError(null);
     setStatus("loading");
@@ -114,8 +133,8 @@ export function useQuranPlayer({
     setLoadedSourceUrl("");
     resetRepeatProgress();
 
-    if (audio.src !== ayah.audioUrl) {
-      audio.src = ayah.audioUrl;
+    if (audio.src !== sourceUrl) {
+      audio.src = sourceUrl;
       audio.load();
     }
 
@@ -125,7 +144,7 @@ export function useQuranPlayer({
         setStatus("ready");
       });
     }
-  }, [resetRepeatProgress]);
+  }, [changeSegment, resetRepeatProgress]);
 
   useEffect(() => {
     const audio = new Audio();
@@ -195,6 +214,22 @@ export function useQuranPlayer({
     };
     const onEnded = () => {
       stopClock();
+      const endedAyah = detailRef.current?.ayahs[indexRef.current];
+      const followingSegment = endedAyah
+        ? nextAudioSegment(audioLanguageRef.current, segmentRef.current, endedAyah)
+        : null;
+      if (endedAyah && followingSegment) {
+        changeSegment(followingSegment);
+        setCurrentTime(0);
+        setDuration(0);
+        setLoadedSourceUrl("");
+        setStatus("loading");
+        audio.src = ayahSegmentUrl(endedAyah, followingSegment);
+        audio.load();
+        playWhenLoadedRef.current = true;
+        void audio.play().catch(() => setStatus("ready"));
+        return;
+      }
       if (stopAtEndRef.current === "ayah" || (stopAtEndRef.current === "surah" && indexRef.current >= (detailRef.current?.ayahs.length ?? 1) - 1)) {
         playWhenLoadedRef.current = false;
         setStatus("paused");
@@ -210,11 +245,12 @@ export function useQuranPlayer({
         if (!currentDetail || !targetAyah) return false;
         changeIndexRef.current(targetIndex);
         indexRef.current = targetIndex;
+        changeSegment(firstAudioSegment(audioLanguageRef.current));
         setCurrentTime(0);
         setDuration(0);
         setLoadedSourceUrl("");
         setStatus("loading");
-        audio.src = targetAyah.audioUrl;
+        audio.src = ayahSegmentUrl(targetAyah, segmentRef.current);
         audio.load();
         playWhenLoadedRef.current = autoplay;
         if (autoplay) void audio.play().catch(() => setStatus("ready"));
@@ -273,7 +309,17 @@ export function useQuranPlayer({
         const nextIteration = repeatIterationRef.current + 1;
         repeatIterationRef.current = nextIteration;
         setRepeatIteration(nextIteration);
-        audio.currentTime = 0;
+        const firstSegment = firstAudioSegment(audioLanguageRef.current);
+        if (endedAyah && segmentRef.current !== firstSegment) {
+          // En mode arabe puis français, chaque répétition reprend depuis la récitation.
+          changeSegment(firstSegment);
+          setDuration(0);
+          setLoadedSourceUrl("");
+          audio.src = ayahSegmentUrl(endedAyah, firstSegment);
+          audio.load();
+        } else {
+          audio.currentTime = 0;
+        }
         setCurrentTime(0);
         const repeatPauseMs = Math.max(0, (studyLoopRef.current?.pauseSeconds ?? 0) * 1000);
         if (repeatPauseMs > 0) {
@@ -342,12 +388,23 @@ export function useQuranPlayer({
       audio.removeEventListener("ended", onEnded);
       audioRef.current = null;
     };
-  }, [resetRepeatProgress, resetStudyLoopProgress]);
+  }, [changeSegment, resetRepeatProgress, resetStudyLoopProgress]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) audio.playbackRate = playbackRate;
   }, [playbackRate]);
+
+  useEffect(() => {
+    audioLanguageRef.current = audioLanguage;
+    if (isSegmentAllowed(audioLanguage, segmentRef.current)) return;
+    const audio = audioRef.current;
+    if (audio?.src && detailRef.current?.ayahs[indexRef.current]) {
+      loadAtIndex(indexRef.current, !audio.paused || playWhenLoadedRef.current);
+    } else {
+      queueMicrotask(() => changeSegment(firstAudioSegment(audioLanguage)));
+    }
+  }, [audioLanguage, changeSegment, loadAtIndex]);
 
 
 
@@ -373,7 +430,7 @@ export function useQuranPlayer({
     const ayah = detail.ayahs[activeIndex];
     if (!audio) return;
 
-    if (audio.src !== ayah.audioUrl) {
+    if (audio.src !== ayahSegmentUrl(ayah, segmentRef.current)) {
       loadAtIndex(activeIndex, playWhenLoadedRef.current);
     }
   }, [activeIndex, detail, loadAtIndex]);
@@ -386,7 +443,7 @@ export function useQuranPlayer({
 
     setError(null);
     playWhenLoadedRef.current = true;
-    if (audio.src !== ayah.audioUrl) {
+    if (audio.src !== ayahSegmentUrl(ayah, segmentRef.current)) {
       loadAtIndex(indexRef.current, true);
       return;
     }
@@ -473,17 +530,18 @@ export function useQuranPlayer({
       nexttrack: next,
       seekto: seekTo,
     };
+    const isFrench = segment === "fr" && Boolean(ayah.frenchAudioUrl);
     setMediaSessionMetadata({
       owner: mediaOwner,
-      title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}`,
-      artist: detail.reciterName,
+      title: `${detail.surah.englishName} · Ayah ${ayah.numberInSurah}${isFrench ? " · Traduction" : ""}`,
+      artist: isFrench ? detail.frenchAudioNarrator ?? detail.reciterName : detail.reciterName,
       album: "RIHLA · Le Coran",
       actions,
     });
     return () => {
       clearMediaSession(Object.keys(actions) as MediaSessionAction[], mediaOwner);
     };
-  }, [activeIndex, detail, mediaSessionEnabled, mediaOwner, next, pause, play, previous]);
+  }, [activeIndex, detail, mediaSessionEnabled, mediaOwner, next, pause, play, previous, segment]);
 
   return {
     status,
@@ -494,6 +552,7 @@ export function useQuranPlayer({
     error,
     repeatIteration,
     studyLoopIteration,
+    segment,
     play,
     pause,
     toggle,

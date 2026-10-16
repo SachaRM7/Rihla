@@ -25,6 +25,8 @@ export type AyahPlayback = {
   frenchText: string;
   translations?: AyahTranslation[];
   audioUrl: string;
+  /** Lecture audio de la traduction française, absente si la source est indisponible. */
+  frenchAudioUrl?: string;
   words: AyahWordTiming[];
 };
 
@@ -47,12 +49,15 @@ export type SourceAttribution = {
   termsUrl: string;
   translationName?: string;
   translationAuthor?: string;
+  frenchAudioName?: string;
+  frenchAudioNarrator?: string;
 };
 
 export type SurahDetail = {
   surah: SurahSummary;
   reciterId: string;
   reciterName: string;
+  frenchAudioNarrator?: string;
   ayahs: AyahPlayback[];
   source: SourceAttribution;
 };

@@ -3,6 +3,8 @@ import type { Reciter, SourceAttribution } from "./types";
 export const DEFAULT_RECITER_ID = "ar.alafasy";
 export const FRENCH_TRANSLATION_ID = "fr.hamidullah";
 export const QURAN_FOUNDATION_RECITATION_ID = 7;
+export const FRENCH_AUDIO_EDITION_ID = "fr.leclerc";
+export const FRENCH_AUDIO_NARRATOR = "Youssouf Leclerc";
 
 export const RECITERS: readonly Reciter[] = [
   { id: "ar.alafasy", name: "Mishary Rashid Alafasy", bitrate: 128 },
@@ -14,6 +16,8 @@ export const QURAN_SOURCE: SourceAttribution = {
   termsUrl: "https://api-docs.quran.com/legal/developer-terms/",
   translationName: "Traduction française Hamidullah",
   translationAuthor: "Muhammad Hamidullah",
+  frenchAudioName: "Lecture audio de la traduction française · Al Quran Cloud",
+  frenchAudioNarrator: FRENCH_AUDIO_NARRATOR,
 };
 
 export const FRENCH_SURAH_NAMES: readonly string[] = [

@@ -7,6 +7,7 @@ import { migrateLocalLibraryPayload, LOCAL_LIBRARY_SCHEMA_VERSION } from "@/lib/
 import { readLocalLibraryStorage, writeLocalLibraryStorage } from "@/lib/local-library-storage";
 import {
   isAppearanceMode,
+  isAudioLanguage,
   isAudioQuality,
   isPlaybackRate,
   isReadingSize,
@@ -15,6 +16,7 @@ import {
   isTranslationSize,
   sanitizeStudyLoop,
   type AppearanceMode,
+  type AudioLanguage,
   type AudioQuality,
   type PlaybackRate,
   type ReadingSize,
@@ -76,6 +78,7 @@ export type LocalLibrary = {
   playbackRate: PlaybackRate;
   repeatMode: RepeatMode;
   showTranslation: boolean;
+  audioLanguage: AudioLanguage;
   studyLoop: StudyLoopPreference | null;
   listeningHistory: ListeningHistoryItem[];
   ayahNotes: AyahNote[];
@@ -120,6 +123,7 @@ export const DEFAULT_LIBRARY: LocalLibrary = {
   playbackRate: 1,
   repeatMode: "off",
   showTranslation: true,
+  audioLanguage: "ar",
   studyLoop: null,
   listeningHistory: [],
   ayahNotes: [],
@@ -281,6 +285,7 @@ export function sanitizeLibrary(value: unknown): LocalLibrary {
     playbackRate: isPlaybackRate(candidate.playbackRate) ? candidate.playbackRate : 1,
     repeatMode: isRepeatMode(candidate.repeatMode) ? candidate.repeatMode : "off",
     showTranslation: typeof candidate.showTranslation === "boolean" ? candidate.showTranslation : true,
+    audioLanguage: isAudioLanguage(candidate.audioLanguage) ? candidate.audioLanguage : "ar",
     studyLoop: sanitizeStudyLoop(candidate.studyLoop),
     listeningHistory,
     ayahNotes,
@@ -559,6 +564,10 @@ export function useLocalLibrary() {
     setLibrary((current) => ({ ...current, showTranslation }));
   }, []);
 
+  const setAudioLanguage = useCallback((audioLanguage: AudioLanguage) => {
+    setLibrary((current) => ({ ...current, audioLanguage }));
+  }, []);
+
   const setStudyLoop = useCallback((studyLoop: StudyLoopPreference | null) => {
     setLibrary((current) => ({ ...current, studyLoop: sanitizeStudyLoop(studyLoop) }));
   }, []);
@@ -717,6 +726,7 @@ export function useLocalLibrary() {
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
+    setAudioLanguage,
     setStudyLoop,
     saveAyahNote,
     createPlaylist,

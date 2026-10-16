@@ -1,8 +1,10 @@
 "use client";
 
-import { Check, MoveVertical, Palette, Type } from "lucide-react";
+import { Check, Languages, MoveVertical, Palette, Type } from "lucide-react";
 import {
   APPEARANCE_LABELS,
+  AUDIO_LANGUAGES,
+  AUDIO_LANGUAGE_LABELS,
   APPEARANCE_MODES,
   COLOR_THEMES,
   READING_SIZES,
@@ -10,6 +12,7 @@ import {
   TRANSLATION_SIZES,
   TRANSLATION_SIZE_LABELS,
   type AppearanceMode,
+  type AudioLanguage,
   type ReadingSize,
   type ThemeId,
   type TranslationSize,
@@ -22,6 +25,8 @@ type Props = {
   translationSize: TranslationSize;
   autoScroll: boolean;
   showTranslation: boolean;
+  audioLanguage: AudioLanguage;
+  onAudioLanguageChange: (language: AudioLanguage) => void;
   onThemeChange: (theme: ThemeId) => void;
   onAppearanceChange: (appearance: AppearanceMode) => void;
   onReadingSizeChange: (size: ReadingSize) => void;
@@ -37,6 +42,8 @@ export function PreferencesPanel({
   translationSize,
   autoScroll,
   showTranslation,
+  audioLanguage,
+  onAudioLanguageChange,
   onThemeChange,
   onAppearanceChange,
   onReadingSizeChange,
@@ -125,6 +132,36 @@ export function PreferencesPanel({
             <span className="switch-track" aria-hidden="true"><i /></span>
           </button>
         </div>
+      </section>
+
+      <section className="preferences-section" aria-labelledby="audio-language-title">
+        <div className="section-title-row">
+          <div>
+            <p className="eyebrow">Écoute</p>
+            <h2 id="audio-language-title">Langue audio</h2>
+          </div>
+          <Languages size={20} aria-hidden="true" />
+        </div>
+        <p className="preferences-copy">
+          Écoutez la récitation arabe, la lecture de la traduction française, ou chaque verset en arabe suivi de sa traduction.
+        </p>
+        <div className="segmented-control" role="radiogroup" aria-label="Langue d’écoute du Coran">
+          {AUDIO_LANGUAGES.map((language) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={audioLanguage === language}
+              className={audioLanguage === language ? "selected" : ""}
+              key={language}
+              onClick={() => onAudioLanguageChange(language)}
+            >
+              {AUDIO_LANGUAGE_LABELS[language]}
+            </button>
+          ))}
+        </div>
+        <p className="preferences-copy">
+          Lecture française : Youssouf Leclerc (Al Quran Cloud). Sa formulation peut différer de la traduction Hamidullah affichée à l’écran.
+        </p>
       </section>
 
       <section className="preferences-section" aria-labelledby="appearance-title">

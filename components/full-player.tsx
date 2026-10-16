@@ -3,6 +3,7 @@
 import {
   Gauge,
   Bookmark,
+  Languages,
   ListPlus,
   LoaderCircle,
   Pause,
@@ -17,11 +18,15 @@ import {
 } from "lucide-react";
 import type { PlaybackStatus } from "@/hooks/use-quran-player";
 import {
+  AUDIO_LANGUAGES,
+  AUDIO_LANGUAGE_LABELS,
   PLAYBACK_RATES,
+  type AudioLanguage,
   type PlaybackRate,
   type RepeatMode,
   type StudyLoopPreference,
 } from "@/lib/preferences";
+import type { AudioSegment } from "@/lib/quran/audio-tracks";
 import { RECITERS } from "@/lib/quran/constants";
 import type { SurahDetail } from "@/lib/quran/types";
 import { formatTime } from "./mini-player";
@@ -41,6 +46,8 @@ type Props = {
   canPrevious: boolean;
   canNext: boolean;
   playbackRate: PlaybackRate;
+  audioLanguage: AudioLanguage;
+  audioSegment: AudioSegment;
   repeatMode: RepeatMode;
   repeatIteration: number;
   studyLoop: StudyLoopPreference | null;
@@ -57,6 +64,7 @@ type Props = {
   onToggleFavorite: () => void;
   onShowText: () => void;
   onPlaybackRateChange: (rate: PlaybackRate) => void;
+  onAudioLanguageChange: (language: AudioLanguage) => void;
   onRepeatModeChange: (mode: RepeatMode) => void;
   onApplyStudyLoop: (value: StudyLoopPreference) => void;
   onStopStudyLoop: () => void;
@@ -79,6 +87,8 @@ export function FullPlayer({
   canPrevious,
   canNext,
   playbackRate,
+  audioLanguage,
+  audioSegment,
   repeatMode,
   repeatIteration,
   studyLoop,
@@ -95,6 +105,7 @@ export function FullPlayer({
   onToggleFavorite,
   onShowText,
   onPlaybackRateChange,
+  onAudioLanguageChange,
   onRepeatModeChange,
   onApplyStudyLoop,
   onStopStudyLoop,
@@ -109,6 +120,8 @@ export function FullPlayer({
   const busy = status === "loading" || status === "buffering";
   const sleepTimerActive = sleepTimerRemaining > 0;
   const sleepTimerMinutes = Math.max(1, Math.ceil(sleepTimerRemaining / 60));
+  const frenchAvailable = Boolean(ayah.frenchAudioUrl);
+  const playingFrench = audioSegment === "fr" && frenchAvailable;
   const surahProgress = detail.ayahs.length > 0 ? ((activeIndex + (duration > 0 ? currentTime / duration : 0)) / detail.ayahs.length) * 100 : 0;
 
   return (
@@ -125,7 +138,7 @@ export function FullPlayer({
       >
         <header className="full-player-header">
           <div>
-            <p>Récitation en cours</p>
+            <p>{playingFrench ? "Traduction en cours" : "Récitation en cours"}</p>
             <h2 id="full-player-title">{detail.surah.englishName}</h2>
           </div>
           <button type="button" className="icon-button" onClick={requestClose} aria-label="Fermer le lecteur">
@@ -142,7 +155,16 @@ export function FullPlayer({
         <div className="player-track-copy">
           <div>
             <h3>Ayah {ayah.numberInSurah}</h3>
-            <p>{status === "buffering" ? "Mise en mémoire tampon…" : detail.reciterName}</p>
+            <p>
+              {status === "buffering"
+                ? "Mise en mémoire tampon…"
+                : playingFrench
+                  ? `Traduction française · ${detail.frenchAudioNarrator ?? "lecture"}`
+                  : detail.reciterName}
+            </p>
+            {audioLanguage !== "ar" && !frenchAvailable && (
+              <span className="repeat-progress">Lecture française indisponible · récitation arabe</span>
+            )}
             {studyLoop ? (
               <span className="repeat-progress">
                 A–B {studyLoop.startAyah}–{studyLoop.endAyah} · {studyLoop.cycles === "continuous" ? `passage ${studyLoopIteration}` : `${studyLoopIteration}/${studyLoop.cycles}`}
@@ -228,6 +250,19 @@ export function FullPlayer({
               onChange={(event) => onPlaybackRateChange(Number(event.target.value) as PlaybackRate)}
             >
               {PLAYBACK_RATES.map((rate) => <option value={rate} key={rate}>{rate}×</option>)}
+            </select>
+          </label>
+          <label className={`player-option ${audioLanguage !== "ar" ? "active" : ""}`}>
+            <span><Languages size={16} /> Écoute</span>
+            <select
+              name="audio-language"
+              autoComplete="off"
+              value={audioLanguage}
+              onChange={(event) => onAudioLanguageChange(event.target.value as AudioLanguage)}
+            >
+              {AUDIO_LANGUAGES.map((language) => (
+                <option value={language} key={language}>{AUDIO_LANGUAGE_LABELS[language]}</option>
+              ))}
             </select>
           </label>
           <label className={`player-option ${repeatMode !== "off" ? "active" : ""}`}>

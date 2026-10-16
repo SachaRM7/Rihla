@@ -1,5 +1,7 @@
 import {
   DEFAULT_RECITER_ID,
+  FRENCH_AUDIO_EDITION_ID,
+  FRENCH_AUDIO_NARRATOR,
   FRENCH_SURAH_NAMES,
   FRENCH_TRANSLATION_ID,
   QURAN_SOURCE,
@@ -358,10 +360,12 @@ export async function getSurahDetail(
     throw new RangeError("Invalid reciter");
   }
 
-  const [audioPayload, translationPayload, timedVersePayload] = await Promise.all([
+  const [audioPayload, translationPayload, timedVersePayload, frenchAudioPayload] = await Promise.all([
     fetchEnvelope(`/surah/${number}/${encodeURIComponent(requestedReciter)}`),
     fetchEnvelope(`/surah/${number}/${FRENCH_TRANSLATION_ID}`),
     getTimedVerses(number),
+    // La lecture française est un complément : son absence ne doit pas bloquer la récitation.
+    fetchEnvelope(`/surah/${number}/${FRENCH_AUDIO_EDITION_ID}`).catch(() => null),
   ]);
 
   const audioSurah = audioPayload.data as UpstreamSurah;
@@ -386,6 +390,24 @@ export async function getSurahDetail(
     throw new Error("Incomplete word timing data");
   }
 
+  const frenchAudioSurah = frenchAudioPayload?.data as UpstreamSurah | undefined;
+  const frenchAudioAyahs = Array.isArray(frenchAudioSurah?.ayahs)
+    ? (frenchAudioSurah.ayahs as UpstreamAyah[])
+    : [];
+  const frenchAudioByAyah = new Map<number, string>();
+  if (frenchAudioAyahs.length === audioAyahs.length) {
+    for (const frenchAyah of frenchAudioAyahs) {
+      const numberInSurah = Number(frenchAyah.numberInSurah);
+      if (
+        Number.isInteger(numberInSurah) &&
+        typeof frenchAyah.audio === "string" &&
+        frenchAyah.audio.startsWith("https://")
+      ) {
+        frenchAudioByAyah.set(numberInSurah, frenchAyah.audio);
+      }
+    }
+  }
+
   const ayahs: AyahPlayback[] = audioAyahs.map((audioAyah, index) => {
     const translationAyah = translationAyahs[index];
     const globalNumber = Number(audioAyah.number);
@@ -404,12 +426,15 @@ export async function getSurahDetail(
       throw new Error("Invalid ayah");
     }
 
+    const frenchAudioUrl = frenchAudioByAyah.get(numberInSurah);
+
     return {
       number: globalNumber,
       numberInSurah,
       arabicText: timedVerse.arabicText,
       frenchText: translationAyah.text,
       audioUrl: timedVerse.audioUrl,
+      ...(frenchAudioUrl ? { frenchAudioUrl } : {}),
       words: timedVerse.words,
     };
   });
@@ -423,6 +448,7 @@ export async function getSurahDetail(
     surah: normalizeSummary(audioSurah),
     reciterId: reciter.id,
     reciterName: reciter.name,
+    ...(frenchAudioByAyah.size > 0 ? { frenchAudioNarrator: FRENCH_AUDIO_NARRATOR } : {}),
     ayahs,
     source: QURAN_SOURCE,
   };

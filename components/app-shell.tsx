@@ -54,6 +54,8 @@ import { useQuranPlayer } from "@/hooks/use-quran-player";
 import { parseQuranJump } from "@/lib/quran/jump";
 import { resolveHizb, resolveJuz } from "@/lib/quran/navigation";
 import { DEFAULT_RECITER_ID, RECITERS } from "@/lib/quran/constants";
+import { ayahSegmentUrl, firstAudioSegment } from "@/lib/quran/audio-tracks";
+import { AUDIO_LANGUAGE_LABELS, type AudioLanguage } from "@/lib/preferences";
 import type { ContentItem, MediaAsset } from "@/lib/domain";
 import { parsePublicRoute, publicRoutePath, type PublicRoute } from "@/lib/public-routes";
 import type {
@@ -154,6 +156,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     setPlaybackRate,
     setRepeatMode,
     setShowTranslation,
+    setAudioLanguage,
     setStudyLoop,
     saveAyahNote,
     createPlaylist,
@@ -502,6 +505,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     activeIndex,
     onActiveIndexChange,
     playbackRate: library.playbackRate,
+    audioLanguage: library.audioLanguage,
     repeatMode: library.repeatMode,
     studyLoop: library.studyLoop,
     stopAtEnd: sleepAtEnd,
@@ -563,7 +567,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     if (
       !ayah ||
       requestedPosition === null ||
-      loadedSourceUrl !== ayah.audioUrl
+      loadedSourceUrl !== ayahSegmentUrl(ayah, firstAudioSegment(library.audioLanguage))
     ) {
       return;
     }
@@ -571,7 +575,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     if (requestedAutoplayRef.current) playPlayback();
     requestedPositionRef.current = null;
     requestedAutoplayRef.current = false;
-  }, [activeIndex, detail, loadedSourceUrl, playPlayback, seekPlayback]);
+  }, [activeIndex, detail, library.audioLanguage, loadedSourceUrl, playPlayback, seekPlayback]);
 
   useEffect(() => {
     const ayah = detail?.ayahs[activeIndex];
@@ -582,6 +586,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       player.status === "idle" ||
       player.status === "loading" ||
       player.status === "error" ||
+      player.segment !== firstAudioSegment(library.audioLanguage) ||
       (player.currentTime <= 0 && !player.isPlaying)
     ) {
       return;
@@ -599,9 +604,11 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     activeIndex,
     detail,
     hydrated,
+    library.audioLanguage,
     player.currentTime,
     player.duration,
     player.isPlaying,
+    player.segment,
     player.status,
     reciterId,
     savePlaybackProgress,
@@ -625,7 +632,8 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
       pushRoute({ kind: "quran", surah: number, ayah });
       if (
         nextIndex === activeIndex &&
-        loadedSourceUrl === detail.ayahs[nextIndex]?.audioUrl
+        detail.ayahs[nextIndex] &&
+        loadedSourceUrl === ayahSegmentUrl(detail.ayahs[nextIndex], firstAudioSegment(library.audioLanguage))
       ) {
         seekPlayback(positionMs / 1000);
         if (autoplay) playPlayback();
@@ -640,7 +648,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
     setActiveIndex(0);
     setDetail(null);
     pushRoute({ kind: "quran", surah: number, ayah });
-  }, [activeIndex, detail, loadedSourceUrl, playPlayback, pushRoute, seekPlayback, selectPlaybackAyah]);
+  }, [activeIndex, detail, library.audioLanguage, loadedSourceUrl, playPlayback, pushRoute, seekPlayback, selectPlaybackAyah]);
 
   const selectedSummary = useMemo(
     () => surahs.find((surah) => surah.number === selectedNumber) ?? null,
@@ -1224,7 +1232,7 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
                         detail={detail}
                         activeIndex={activeIndex}
                         isPlaying={player.isPlaying}
-                        currentTime={player.currentTime}
+                        currentTime={player.segment === "fr" && detail.ayahs[activeIndex]?.frenchAudioUrl ? Number.MAX_SAFE_INTEGER : player.currentTime}
                         favoriteAyahs={library.favoriteAyahs}
                         showTranslation={library.showTranslation}
                         autoScroll={library.autoScroll}
@@ -1457,6 +1465,11 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
                 translationSize={library.translationSize}
                 autoScroll={library.autoScroll}
                 showTranslation={library.showTranslation}
+                audioLanguage={library.audioLanguage}
+                onAudioLanguageChange={(language) => {
+                  setAudioLanguage(language);
+                  showShareMessage(`Écoute : ${AUDIO_LANGUAGE_LABELS[language].toLowerCase()}`);
+                }}
                 onThemeChange={(theme) => {
                   setTheme(theme);
                   showShareMessage("Couleur d’accent appliquée");
@@ -1610,6 +1623,8 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
           canPrevious={canPreviousQueue}
           canNext={canNextQueue}
           playbackRate={library.playbackRate}
+          audioLanguage={library.audioLanguage}
+          audioSegment={player.segment}
           repeatMode={library.repeatMode}
           repeatIteration={player.repeatIteration}
           studyLoop={activeStudyLoop}
@@ -1626,6 +1641,10 @@ export function AppShell({ initialRoute }: AppShellProps = {}) {
           onToggleFavorite={() => currentAyah && toggleFavoriteAyah(detail.surah.number, currentAyah.numberInSurah)}
           onShowText={showQuranView}
           onPlaybackRateChange={setPlaybackRate}
+          onAudioLanguageChange={(language: AudioLanguage) => {
+            setAudioLanguage(language);
+            showShareMessage(`Écoute : ${AUDIO_LANGUAGE_LABELS[language].toLowerCase()}`);
+          }}
           onRepeatModeChange={setRepeatMode}
           onApplyStudyLoop={(value) => {
             const startIndex = detail.ayahs.findIndex(
